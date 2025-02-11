@@ -1,6 +1,5 @@
 ﻿using BenchmarkDotNet.Running;
-using NZOrz.Benchmarks;
+using NZ.Orz.Benchmarks;
 
-new TypeMapBenchmarks().Setup();
-new TypeMapBenchmarks().TypeMapLookupSetPool();
-var summary = BenchmarkRunner.Run<TypeMapBenchmarks>();
+var a = new ParametersBenchmarks().F2Get();
+var summary = BenchmarkRunner.Run<ParametersBenchmarks>();
