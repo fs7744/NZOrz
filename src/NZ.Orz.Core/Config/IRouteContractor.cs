@@ -2,7 +2,7 @@
 
 public interface IRouteContractor
 {
-    Task<RouteConfig> LoadAllAsync(CancellationToken cancellationToken);
+    Task LoadAsync(CancellationToken cancellationToken);
 
     Task StopAsync(CancellationToken cancellationToken);
 }

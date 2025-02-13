@@ -10,4 +10,8 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\NZ.Orz.Core\NZ.Orz.Core.csproj" />
+  </ItemGroup>
+
 </Project>

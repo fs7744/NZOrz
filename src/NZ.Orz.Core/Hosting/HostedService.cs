@@ -19,7 +19,7 @@ internal class HostedService : IHostedService, IAsyncDisposable
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        var config = await contractor.LoadAllAsync(cancellationToken);
+        await contractor.LoadAsync(cancellationToken);
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
