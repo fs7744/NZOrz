@@ -4,6 +4,7 @@ namespace NZ.Orz.Config.Customize;
 
 public class RouteConfigBuilder
 {
+    public ServerOptions ServerOptions { get; } = new ServerOptions();
     public IServiceCollection Services { get; internal set; }
     internal List<ListenOptionsBuilder> EndPoints { get; private set; } = new List<ListenOptionsBuilder>();
 

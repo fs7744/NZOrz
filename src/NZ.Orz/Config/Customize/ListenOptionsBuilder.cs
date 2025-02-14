@@ -9,6 +9,7 @@ public class ListenOptionsBuilder
     private string key;
     public List<EndPoint> EndPoints { get; } = new List<EndPoint>();
     public List<Func<ConnectionDelegate, ConnectionDelegate>> Middlewares { get; } = new List<Func<ConnectionDelegate, ConnectionDelegate>>();
+    public GatewayProtocols Protocols { get; set; }
 
     public ListenOptionsBuilder(string key)
     {
@@ -40,7 +41,7 @@ public class ListenOptionsBuilder
             app = component(app);
         }
 
-        return new ListenOptions() { Key = key, EndPoints = EndPoints, ConnectionDelegate = app };
+        return new ListenOptions() { Key = key, EndPoints = EndPoints, ConnectionDelegate = app, Protocols = Protocols };
     }
 
     public ListenOptionsBuilder UseMiddleware(Func<ConnectionDelegate, ConnectionDelegate> middleware)
