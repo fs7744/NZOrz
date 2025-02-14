@@ -15,7 +15,20 @@ public static class NZAppExtensions
 
     public static HostApplicationBuilder ConfigureRoute(this HostApplicationBuilder builder, Action<RouteConfigBuilder> action)
     {
-        builder.Services.AddTransient<IRouteContractor>(i => new MemoryRouteConfigContractor(action, i));
+        var b = new RouteConfigBuilder
+        {
+            Services = builder.Services
+        };
+        action(b);
+        builder.Services.AddTransient<IRouteContractor>(i =>
+        {
+            return new MemoryRouteConfigContractor(b.EndPoints.Select(e =>
+            {
+                e.ServiceProvider = i;
+                return e.Build();
+            }).ToArray());
+        });
+
         return builder;
     }
 }

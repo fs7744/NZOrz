@@ -1,25 +1,17 @@
-﻿using System.Diagnostics.CodeAnalysis;
-
-namespace NZ.Orz.Config.Customize;
+﻿namespace NZ.Orz.Config.Customize;
 
 internal class MemoryRouteConfigContractor : IRouteContractor
 {
-    private Action<RouteConfigBuilder> action;
-    private readonly IServiceProvider provider;
+    private ListenOptions[] listenOptions;
 
-    public MemoryRouteConfigContractor(Action<RouteConfigBuilder> action, IServiceProvider provider)
+    public MemoryRouteConfigContractor(ListenOptions[] listenOptions)
     {
-        this.action = action;
-        this.provider = provider;
+        this.listenOptions = listenOptions;
     }
 
-    public async Task LoadAsync(CancellationToken cancellationToken)
+    public Task LoadAsync(CancellationToken cancellationToken)
     {
-        var c = action;
-        var builder = new RouteConfigBuilder();
-        builder.ServiceProvider = provider;
-        action(builder);
-        action = null;
+        return Task.CompletedTask;
     }
 
     public Task StopAsync(CancellationToken cancellationToken)

@@ -1,23 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Microsoft.Extensions.DependencyInjection;
 
 namespace NZ.Orz.Config.Customize;
 
 public class RouteConfigBuilder
 {
-    public IServiceProvider ServiceProvider { get; internal set; }
-
+    public IServiceCollection Services { get; internal set; }
     internal List<ListenOptionsBuilder> EndPoints { get; private set; } = new List<ListenOptionsBuilder>();
 
-    public void AddEndPoint(Action<ListenOptionsBuilder> action)
+    public void AddEndPoint(string key, Action<ListenOptionsBuilder> action)
     {
-        var builder = new ListenOptionsBuilder();
+        var builder = new ListenOptionsBuilder(key);
+        builder.Services = Services;
         EndPoints.Add(builder);
-        builder.ServiceProvider = ServiceProvider;
         action(builder);
     }
 }

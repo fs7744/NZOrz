@@ -19,11 +19,6 @@ public class GatewayListenersConfig
     public List<GatewayRouteRule> Rules { get; set; }
 }
 
-public enum GatewayProtocols
-{
-    TCP
-}
-
 public class GatewayRouteRule
 {
     public List<GatewayUpstream> Backends { get; set; }
