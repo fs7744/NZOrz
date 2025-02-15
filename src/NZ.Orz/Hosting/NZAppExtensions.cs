@@ -2,9 +2,6 @@
 using Microsoft.Extensions.Hosting;
 using NZ.Orz.Config;
 using NZ.Orz.Config.Customize;
-using NZ.Orz.Metrics;
-using NZ.Orz.Servers;
-using System.Diagnostics.Metrics;
 
 namespace NZ.Orz;
 
@@ -18,11 +15,7 @@ public static class NZAppExtensions
 
     public static HostApplicationBuilder ConfigureRoute(this HostApplicationBuilder builder, Action<RouteConfigBuilder> action)
     {
-        //defaults
-        builder.Services.AddSingleton<IMeterFactory, DummyMeterFactory>();
-        builder.Services.AddSingleton<IServer, OrzServer>();
-        builder.Services.AddSingleton<OrzTrace>();
-        builder.Services.AddSingleton<OrzMetrics>();
+        builder.UseOrzDefaults();
 
         var b = new RouteConfigBuilder
         {

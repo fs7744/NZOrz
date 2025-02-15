@@ -7,4 +7,6 @@ public interface IFeatureCollection : IEnumerable<KeyValuePair<object, object>>
     TFeature? GetFeature<TFeature>();
 
     void SetFeature<TFeature>(TFeature? instance);
+
+    void Clear();
 }

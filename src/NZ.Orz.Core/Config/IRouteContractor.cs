@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Primitives;
+using NZ.Orz.Sockets;
 
 namespace NZ.Orz.Config;
 
@@ -9,6 +10,8 @@ public interface IRouteContractor
     IChangeToken? GetReloadToken();
 
     ServerOptions GetServerOptions();
+
+    SocketTransportOptions? GetSocketTransportOptions();
 
     Task LoadAsync(CancellationToken cancellationToken);
 

@@ -67,4 +67,9 @@ public class FeatureCollection : IFeatureCollection
     {
         this[typeof(TFeature)] = instance;
     }
+
+    public void Clear()
+    {
+        _features?.Clear();
+    }
 }
