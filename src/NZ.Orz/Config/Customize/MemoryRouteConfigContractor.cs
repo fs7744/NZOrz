@@ -1,4 +1,6 @@
-﻿namespace NZ.Orz.Config.Customize;
+﻿using Microsoft.Extensions.Primitives;
+
+namespace NZ.Orz.Config.Customize;
 
 internal class MemoryRouteConfigContractor : IRouteContractor
 {
@@ -9,6 +11,16 @@ internal class MemoryRouteConfigContractor : IRouteContractor
     {
         this.serverOptions = serverOptions;
         this.listenOptions = listenOptions;
+    }
+
+    public IEnumerable<ListenOptions> GetListenOptions()
+    {
+        return listenOptions;
+    }
+
+    public IChangeToken? GetReloadToken()
+    {
+        return null;
     }
 
     public ServerOptions GetServerOptions()

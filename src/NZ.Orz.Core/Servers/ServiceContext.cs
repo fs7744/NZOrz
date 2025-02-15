@@ -1,11 +1,12 @@
 ﻿using NZ.Orz.Config;
+using NZ.Orz.Connections;
 using NZ.Orz.Infrastructure;
 using NZ.Orz.Metrics;
 using System.IO.Pipelines;
 
 namespace NZ.Orz.Servers;
 
-internal class ServiceContext
+public class ServiceContext
 {
     public OrzTrace Log { get; set; } = default!;
 
@@ -18,4 +19,5 @@ internal class ServiceContext
     public ServerOptions ServerOptions { get; set; } = default!;
 
     public OrzMetrics Metrics { get; set; } = default!;
+    public ConnectionManager ConnectionManager { get; set; } = default!;
 }

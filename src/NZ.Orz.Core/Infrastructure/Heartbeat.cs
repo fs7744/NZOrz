@@ -3,12 +3,12 @@ using NZ.Orz.Metrics;
 
 namespace NZ.Orz.Infrastructure;
 
-internal interface IHeartbeatHandler
+public interface IHeartbeatHandler
 {
     void OnHeartbeat();
 }
 
-internal class Heartbeat : IDisposable
+public class Heartbeat : IDisposable
 {
     public static readonly TimeSpan Interval = TimeSpan.FromSeconds(1);
 

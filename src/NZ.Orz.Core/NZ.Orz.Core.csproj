@@ -5,6 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>NZ.Orz</RootNamespace>
+	  <LangVersion>preview</LangVersion>
   </PropertyGroup>
 
 	<ItemGroup>
