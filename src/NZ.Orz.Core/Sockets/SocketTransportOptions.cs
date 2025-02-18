@@ -7,30 +7,23 @@ namespace NZ.Orz.Sockets;
 
 public class SocketTransportOptions
 {
-    private const string FinOnErrorSwitch = "Orz.Server.FinOnError";
-    private static readonly bool _finOnError;
+    public bool NoDelay { get; set; } = true;
 
-    static SocketTransportOptions()
-    {
-        AppContext.TryGetSwitch(FinOnErrorSwitch, out _finOnError);
-    }
+    public int Backlog { get; set; } = 512;
 
-    // Opt-out flag for back compat. Remove in 9.0 (or make public).
-    internal bool FinOnError { get; set; } = _finOnError;
+    public bool FinOnError { get; set; }
 
     public int IOQueueCount { get; set; } = Internal.IOQueue.DefaultCount;
 
     public bool WaitForDataBeforeAllocatingBuffer { get; set; } = true;
-
-    public bool NoDelay { get; set; } = true;
-
-    public int Backlog { get; set; } = 512;
 
     public long? MaxReadBufferSize { get; set; } = 1024 * 1024;
 
     public long? MaxWriteBufferSize { get; set; } = 64 * 1024;
 
     public bool UnsafePreferInlineScheduling { get; set; }
+
+    internal Func<MemoryPool<byte>> MemoryPoolFactory { get; set; } = PinnedBlockMemoryPoolFactory.Create;
 
     public Func<EndPoint, Socket> CreateBoundListenSocket { get; set; } = CreateDefaultBoundListenSocket;
 
@@ -59,8 +52,8 @@ public class SocketTransportOptions
                 break;
         }
 
+        listenSocket.Bind(endpoint);
+
         return listenSocket;
     }
-
-    internal Func<MemoryPool<byte>> MemoryPoolFactory { get; set; } = PinnedBlockMemoryPoolFactory.Create;
 }

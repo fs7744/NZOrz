@@ -22,13 +22,15 @@ public static class NZAppExtensions
             Services = builder.Services
         };
         action(b);
-        builder.Services.AddTransient<IRouteContractor>(i =>
+        var r = new MemoryRouteConfigContractor(b.ServerOptions, i => b.EndPoints.Select(e =>
         {
-            return new MemoryRouteConfigContractor(b.ServerOptions, b.EndPoints.Select(e =>
-            {
-                e.ServiceProvider = i;
-                return e.Build();
-            }).ToArray());
+            e.ServiceProvider = i;
+            return e.Build();
+        }).ToArray(), b.SocketTransportOptions);
+        builder.Services.AddSingleton<IRouteContractor>(i =>
+        {
+            r.ServiceProvider = i;
+            return r;
         });
 
         return builder;
