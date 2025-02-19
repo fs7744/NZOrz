@@ -11,18 +11,18 @@ internal sealed class PinnedBlockMemoryPool : MemoryPool<byte>
     /// <summary>
     /// The size of a block. 4096 is chosen because most operating systems use 4k pages.
     /// </summary>
-    private const int _blockSize = 4096;
+    private int _blockSize = 4096;
 
     /// <summary>
     /// Max allocation block size for pooled blocks,
     /// larger values can be leased but they will be disposed after use rather than returned to the pool.
     /// </summary>
-    public override int MaxBufferSize { get; } = _blockSize;
+    public override int MaxBufferSize { get => _blockSize; }
 
     /// <summary>
     /// The size of a block. 4096 is chosen because most operating systems use 4k pages.
     /// </summary>
-    public static int BlockSize => _blockSize;
+    public const int BlockSize = 4096;
 
     /// <summary>
     /// Thread-safe collection of blocks which are currently in the pool. A slab will pre-allocate all of the block tracking objects
@@ -42,6 +42,11 @@ internal sealed class PinnedBlockMemoryPool : MemoryPool<byte>
     /// </summary>
     private const int AnySize = -1;
 
+    public PinnedBlockMemoryPool(int blockSize)
+    {
+        _blockSize = blockSize;
+    }
+
     public override IMemoryOwner<byte> Rent(int size = AnySize)
     {
         if (size > _blockSize)
@@ -56,7 +61,7 @@ internal sealed class PinnedBlockMemoryPool : MemoryPool<byte>
             // block successfully taken from the stack - return it
             return block;
         }
-        return new MemoryPoolBlock(this, BlockSize);
+        return new MemoryPoolBlock(this, _blockSize);
     }
 
     /// <summary>

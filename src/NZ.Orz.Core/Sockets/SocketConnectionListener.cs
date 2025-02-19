@@ -1,8 +1,10 @@
 ﻿using Microsoft.Extensions.Logging;
+using NZ.Orz.Buffers;
 using NZ.Orz.Config;
 using NZ.Orz.Connections;
 using NZ.Orz.Connections.Exceptions;
 using NZ.Orz.Sockets.Internal;
+using System.Buffers;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
@@ -18,12 +20,15 @@ internal sealed class SocketConnectionListener : IConnectionListener
 
     public EndPoint EndPoint { get; private set; }
 
+    private bool isUdp;
+
     internal SocketConnectionListener(
         EndPoint endpoint,
         IRouteContractor contractor,
         ILoggerFactory loggerFactory)
     {
         EndPoint = endpoint;
+        isUdp = endpoint is UdpEndPoint;
         _options = contractor.GetSocketTransportOptions();
         var logger = loggerFactory.CreateLogger("Orz.Server.Transport.Sockets");
         _logger = logger;
@@ -50,10 +55,13 @@ internal sealed class SocketConnectionListener : IConnectionListener
         Debug.Assert(listenSocket.LocalEndPoint != null);
         EndPoint = listenSocket.LocalEndPoint;
 
-        listenSocket.Listen(_options.Backlog);
+        if (!isUdp)
+            listenSocket.Listen(_options.Backlog);
 
         _listenSocket = listenSocket;
     }
+
+    private MemoryPool<byte> test = PinnedBlockMemoryPoolFactory.Create(8192);
 
     public async ValueTask<ConnectionContext?> AcceptAsync(CancellationToken cancellationToken = default)
     {
@@ -62,16 +70,29 @@ internal sealed class SocketConnectionListener : IConnectionListener
             try
             {
                 Debug.Assert(_listenSocket != null, "Bind must be called first.");
-
-                var acceptSocket = await _listenSocket.AcceptAsync(cancellationToken);
-
-                // Only apply no delay to Tcp based endpoints
-                if (acceptSocket.LocalEndPoint is IPEndPoint)
+                if (isUdp)
                 {
-                    acceptSocket.NoDelay = _options.NoDelay;
+                    while (true)
+                    {
+                        var a = test.Rent();
+                        var d = await _listenSocket.ReceiveFromAsync(a.Memory, EndPoint, cancellationToken);
+                        Console.WriteLine($"{d.RemoteEndPoint} ： {d.ReceivedBytes}");
+                    }
+                    return null;
+                    return _factory.Create(_listenSocket);
                 }
+                else
+                {
+                    var acceptSocket = await _listenSocket.AcceptAsync(cancellationToken);
 
-                return _factory.Create(acceptSocket);
+                    // Only apply no delay to Tcp based endpoints
+                    if (acceptSocket.LocalEndPoint is IPEndPoint)
+                    {
+                        acceptSocket.NoDelay = _options.NoDelay;
+                    }
+
+                    return _factory.Create(acceptSocket);
+                }
             }
             catch (ObjectDisposedException)
             {

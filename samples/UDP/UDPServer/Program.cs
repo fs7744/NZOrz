@@ -1,6 +1,12 @@
 ﻿using System.Net.Sockets;
 using System.Net;
 using System.Text;
+using NZ.Orz;
+using NZ.Orz.Config;
+using Microsoft.Extensions.DependencyInjection;
+using UDPServer;
+using Microsoft.Extensions.Hosting;
+using NZ.Orz.Connections;
 
 static void StartListener()
 {
@@ -36,7 +42,7 @@ static void Client(string[] args)
 
     IPAddress broadcast = IPAddress.Parse("127.0.0.1");
     byte[] sendbuf = Encoding.ASCII.GetBytes(args[1]);
-    IPEndPoint ep = new IPEndPoint(broadcast, 11000);
+    IPEndPoint ep = new IPEndPoint(broadcast, 5000);
 
     client.Send(sendbuf, ep);
     Console.WriteLine("Message sent to the broadcast address");
@@ -46,15 +52,36 @@ static void Client(string[] args)
     Console.WriteLine($"Receive Message : {Encoding.ASCII.GetString(sendbuf)}");
 }
 
+static void Proxy(string[] args)
+{
+    var app = NZApp.CreateBuilder(args)
+    .ConfigureRoute(b =>
+    {
+        b.AddEndPoint("test", i =>
+        {
+            i.Protocols = GatewayProtocols.TCP;
+            i.Services.AddSingleton<TestProxyHandler>();
+            i.Listen(new UdpEndPoint(IPAddress.Parse("127.0.0.1"), 5000)).UseMiddleware<TestProxyHandler>();
+        });
+    })
+    .Build();
+
+    app.RunAsync().GetAwaiter().GetResult();
+}
+
 if (args.Length == 0)
 {
-    args = new string[] { "client", "test" };
+    args = new string[] { "proxy", "test" };
 }
 if (args[0].Equals("server"))
 {
     StartListener();
 }
-else
+else if (args[0].Equals("client"))
 {
     Client(args);
+}
+else
+{
+    Proxy(args);
 }

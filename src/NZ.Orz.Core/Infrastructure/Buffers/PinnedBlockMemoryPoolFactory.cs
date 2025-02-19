@@ -6,6 +6,11 @@ internal class PinnedBlockMemoryPoolFactory
 {
     public static MemoryPool<byte> Create()
     {
-        return new PinnedBlockMemoryPool();
+        return Create(4096);
+    }
+
+    public static MemoryPool<byte> Create(int blockSize)
+    {
+        return new PinnedBlockMemoryPool(blockSize);
     }
 }

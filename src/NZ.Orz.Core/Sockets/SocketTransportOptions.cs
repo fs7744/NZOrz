@@ -1,4 +1,5 @@
 ﻿using NZ.Orz.Buffers;
+using NZ.Orz.Connections;
 using System.Buffers;
 using System.Net;
 using System.Net.Sockets;
@@ -34,6 +35,10 @@ public class SocketTransportOptions
         {
             case UnixDomainSocketEndPoint unix:
                 listenSocket = new Socket(unix.AddressFamily, SocketType.Stream, ProtocolType.Unspecified);
+                break;
+
+            case UdpEndPoint udp:
+                listenSocket = new Socket(udp.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
                 break;
 
             case IPEndPoint ip:
