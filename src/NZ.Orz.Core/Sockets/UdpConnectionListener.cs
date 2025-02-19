@@ -17,6 +17,8 @@ internal sealed class UdpConnectionListener : IConnectionListener
     private ILogger _logger;
     private SocketTransportOptions? _options;
     private MemoryPool<byte> udpBufferPool;
+
+    //private readonly UdpAwaitableEventArgs _receiver;
     private Socket? _listenSocket;
 
     public UdpConnectionListener(UdpEndPoint? udpEndPoint, IRouteContractor contractor, ILoggerFactory loggerFactory)
@@ -25,6 +27,8 @@ internal sealed class UdpConnectionListener : IConnectionListener
         _logger = loggerFactory.CreateLogger("Orz.Server.Transport.Sockets.Udp");
         _options = contractor.GetSocketTransportOptions();
         udpBufferPool = PinnedBlockMemoryPoolFactory.Create(_options.UdpMaxSize);
+
+        //_receiver = new UdpAwaitableEventArgs(_options.UnsafePreferInlineScheduling ? PipeScheduler.Inline : PipeScheduler.ThreadPool);
     }
 
     public EndPoint EndPoint => udpEndPoint;
@@ -59,6 +63,7 @@ internal sealed class UdpConnectionListener : IConnectionListener
             {
                 Debug.Assert(_listenSocket != null, "Bind must be called first.");
                 var buffer = udpBufferPool.Rent();
+                //var r = await _receiver.ReceiveFromAsync(_listenSocket, buffer.Memory);
                 var r = await _listenSocket.ReceiveFromAsync(buffer.Memory, EndPoint, cancellationToken);
                 return new UdpConnectionContext(_listenSocket, r.RemoteEndPoint, r.ReceivedBytes, buffer);
             }

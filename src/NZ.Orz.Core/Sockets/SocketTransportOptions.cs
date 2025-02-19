@@ -8,7 +8,7 @@ namespace NZ.Orz.Sockets;
 
 public class SocketTransportOptions
 {
-    public int UdpMaxSize { get; set; } = 8192;
+    public int UdpMaxSize { get; set; } = 4096;
 
     public bool NoDelay { get; set; } = true;
 
