@@ -27,6 +27,7 @@ public static partial class NZApp
         builder.Services.TryAddSingleton<OrzTrace>();
         builder.Services.TryAddSingleton<OrzMetrics>();
         builder.Services.AddSingleton<IConnectionListenerFactory, SocketTransportFactory>();
+        builder.Services.AddSingleton<IConnectionListenerFactory, UdpTransportFactory>();
         builder.Services.AddSingleton<IConnectionFactory, SocketConnectionFactory>();
 
         return builder;

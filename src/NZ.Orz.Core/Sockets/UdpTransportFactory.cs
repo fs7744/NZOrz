@@ -2,16 +2,15 @@
 using NZ.Orz.Config;
 using NZ.Orz.Connections;
 using System.Net;
-using System.Net.Sockets;
 
 namespace NZ.Orz.Sockets;
 
-public sealed class SocketTransportFactory : IConnectionListenerFactory, IConnectionListenerFactorySelector
+public sealed class UdpTransportFactory : IConnectionListenerFactory, IConnectionListenerFactorySelector
 {
     private readonly IRouteContractor contractor;
     private readonly ILoggerFactory _logger;
 
-    public SocketTransportFactory(
+    public UdpTransportFactory(
         IRouteContractor contractor,
         ILoggerFactory loggerFactory)
     {
@@ -24,7 +23,7 @@ public sealed class SocketTransportFactory : IConnectionListenerFactory, IConnec
 
     public ValueTask<IConnectionListener> BindAsync(EndPoint endpoint, CancellationToken cancellationToken = default)
     {
-        var transport = new SocketConnectionListener(endpoint, contractor, _logger);
+        var transport = new UdpConnectionListener(endpoint as UdpEndPoint, contractor, _logger);
         transport.Bind();
         return new ValueTask<IConnectionListener>(transport);
     }
@@ -33,8 +32,7 @@ public sealed class SocketTransportFactory : IConnectionListenerFactory, IConnec
     {
         return endpoint switch
         {
-            IPEndPoint _ when endpoint is not UdpEndPoint => true,
-            UnixDomainSocketEndPoint _ => true,
+            UdpEndPoint _ => true,
             _ => false
         };
     }

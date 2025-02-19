@@ -1,34 +1,33 @@
 ﻿using Microsoft.Extensions.Logging;
+using NZ.Orz.Buffers;
 using NZ.Orz.Config;
 using NZ.Orz.Connections;
 using NZ.Orz.Connections.Exceptions;
 using NZ.Orz.Sockets.Internal;
+using System.Buffers;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 
 namespace NZ.Orz.Sockets;
 
-internal sealed class SocketConnectionListener : IConnectionListener
+internal sealed class UdpConnectionListener : IConnectionListener
 {
-    private readonly SocketConnectionContextFactory _factory;
-    private readonly ILogger _logger;
+    private UdpEndPoint? udpEndPoint;
+    private ILogger _logger;
+    private SocketTransportOptions? _options;
+    private MemoryPool<byte> udpBufferPool;
     private Socket? _listenSocket;
-    private readonly SocketTransportOptions _options;
 
-    public EndPoint EndPoint { get; private set; }
-
-    internal SocketConnectionListener(
-        EndPoint endpoint,
-        IRouteContractor contractor,
-        ILoggerFactory loggerFactory)
+    public UdpConnectionListener(UdpEndPoint? udpEndPoint, IRouteContractor contractor, ILoggerFactory loggerFactory)
     {
-        EndPoint = endpoint;
+        this.udpEndPoint = udpEndPoint;
+        _logger = loggerFactory.CreateLogger("Orz.Server.Transport.Sockets.Udp");
         _options = contractor.GetSocketTransportOptions();
-        var logger = loggerFactory.CreateLogger("Orz.Server.Transport.Sockets.Tcp");
-        _logger = logger;
-        _factory = new SocketConnectionContextFactory(contractor, logger);
+        udpBufferPool = PinnedBlockMemoryPoolFactory.Create(_options.UdpMaxSize);
     }
+
+    public EndPoint EndPoint => udpEndPoint;
 
     internal void Bind()
     {
@@ -48,9 +47,6 @@ internal sealed class SocketConnectionListener : IConnectionListener
         }
 
         Debug.Assert(listenSocket.LocalEndPoint != null);
-        EndPoint = listenSocket.LocalEndPoint;
-
-        listenSocket.Listen(_options.Backlog);
 
         _listenSocket = listenSocket;
     }
@@ -62,15 +58,9 @@ internal sealed class SocketConnectionListener : IConnectionListener
             try
             {
                 Debug.Assert(_listenSocket != null, "Bind must be called first.");
-                var acceptSocket = await _listenSocket.AcceptAsync(cancellationToken);
-
-                // Only apply no delay to Tcp based endpoints
-                if (acceptSocket.LocalEndPoint is IPEndPoint)
-                {
-                    acceptSocket.NoDelay = _options.NoDelay;
-                }
-
-                return _factory.Create(acceptSocket);
+                var buffer = udpBufferPool.Rent();
+                var r = await _listenSocket.ReceiveFromAsync(buffer.Memory, EndPoint, cancellationToken);
+                return new UdpConnectionContext(_listenSocket, r.RemoteEndPoint, r.ReceivedBytes, buffer);
             }
             catch (ObjectDisposedException)
             {
@@ -90,18 +80,18 @@ internal sealed class SocketConnectionListener : IConnectionListener
         }
     }
 
-    public ValueTask UnbindAsync(CancellationToken cancellationToken = default)
-    {
-        _listenSocket?.Dispose();
-        return default;
-    }
-
     public ValueTask DisposeAsync()
     {
         _listenSocket?.Dispose();
 
-        _factory.Dispose();
+        //_factory.Dispose();
 
+        return default;
+    }
+
+    public ValueTask UnbindAsync(CancellationToken cancellationToken = default)
+    {
+        _listenSocket?.Dispose();
         return default;
     }
 }
