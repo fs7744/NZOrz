@@ -1,6 +1,7 @@
 ﻿using NZ.Orz.Connections;
 using NZ.Orz.Sockets;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 
 namespace UDPServer;
@@ -20,7 +21,11 @@ public class TestProxyHandler : IMiddleware
     {
         if (connection is UdpConnectionContext context)
         {
-            Console.WriteLine($"{context.LocalEndPoint} received {Encoding.UTF8.GetString(context.ReceivedBytes.Span)} from {context.RemoteEndPoint}");
+            Console.WriteLine($"{context.LocalEndPoint} received {context.ReceivedBytesCount} from {context.RemoteEndPoint}");
+            var udp = new UdpClient();
+            await udp.SendAsync(context.ReceivedBytes, proxyServer);
+            var d = await udp.ReceiveAsync();
+            await context.Socket.SendToAsync(d.Buffer, context.RemoteEndPoint);
         }
 
         //upstream = await connectionFactory.ConnectAsync(proxyServer);
