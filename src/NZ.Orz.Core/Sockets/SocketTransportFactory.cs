@@ -34,6 +34,7 @@ public sealed class SocketTransportFactory : IConnectionListenerFactory, IConnec
     {
         return endpoint switch
         {
+            UdpEndPoint _ => true,
             IPEndPoint _ => true,
             UnixDomainSocketEndPoint _ => true,
             _ => false

@@ -1,5 +1,7 @@
 ﻿using NZ.Orz.Connections;
+using NZ.Orz.Sockets;
 using System.Net;
+using System.Text;
 
 namespace UDPServer;
 
@@ -16,10 +18,15 @@ public class TestProxyHandler : IMiddleware
 
     public async Task Invoke(ConnectionContext connection, ConnectionDelegate next)
     {
-        upstream = await connectionFactory.ConnectAsync(proxyServer);
-        var task1 = connection.Transport.Input.CopyToAsync(upstream.Transport.Output);
-        var task2 = upstream.Transport.Input.CopyToAsync(connection.Transport.Output);
-        await Task.WhenAny(task1, task2);
+        if (connection is UdpConnectionContext context)
+        {
+            Console.WriteLine($"{context.LocalEndPoint} received {Encoding.UTF8.GetString(context.ReceivedBytes.Span)} from {context.RemoteEndPoint}");
+        }
+
+        //upstream = await connectionFactory.ConnectAsync(proxyServer);
+        //var task1 = connection.Transport.Input.CopyToAsync(upstream.Transport.Output);
+        //var task2 = upstream.Transport.Input.CopyToAsync(connection.Transport.Output);
+        //await Task.WhenAny(task1, task2);
         await next(connection);
     }
 }

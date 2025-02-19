@@ -17,6 +17,7 @@ internal sealed class SocketConnectionListener : IConnectionListener
     private readonly ILogger _logger;
     private Socket? _listenSocket;
     private readonly SocketTransportOptions _options;
+    private MemoryPool<byte> udpBufferPool;
 
     public EndPoint EndPoint { get; private set; }
 
@@ -30,6 +31,10 @@ internal sealed class SocketConnectionListener : IConnectionListener
         EndPoint = endpoint;
         isUdp = endpoint is UdpEndPoint;
         _options = contractor.GetSocketTransportOptions();
+        if (isUdp)
+        {
+            udpBufferPool = PinnedBlockMemoryPoolFactory.Create(_options.UdpMaxSize);
+        }
         var logger = loggerFactory.CreateLogger("Orz.Server.Transport.Sockets");
         _logger = logger;
         _factory = new SocketConnectionContextFactory(contractor, logger);
@@ -61,8 +66,6 @@ internal sealed class SocketConnectionListener : IConnectionListener
         _listenSocket = listenSocket;
     }
 
-    private MemoryPool<byte> test = PinnedBlockMemoryPoolFactory.Create(8192);
-
     public async ValueTask<ConnectionContext?> AcceptAsync(CancellationToken cancellationToken = default)
     {
         while (true)
@@ -72,14 +75,9 @@ internal sealed class SocketConnectionListener : IConnectionListener
                 Debug.Assert(_listenSocket != null, "Bind must be called first.");
                 if (isUdp)
                 {
-                    while (true)
-                    {
-                        var a = test.Rent();
-                        var d = await _listenSocket.ReceiveFromAsync(a.Memory, EndPoint, cancellationToken);
-                        Console.WriteLine($"{d.RemoteEndPoint} ： {d.ReceivedBytes}");
-                    }
-                    return null;
-                    return _factory.Create(_listenSocket);
+                    var buffer = udpBufferPool.Rent();
+                    var r = await _listenSocket.ReceiveFromAsync(buffer.Memory, EndPoint, cancellationToken);
+                    return new UdpConnectionContext(_listenSocket, r.RemoteEndPoint, r.ReceivedBytes, buffer);
                 }
                 else
                 {

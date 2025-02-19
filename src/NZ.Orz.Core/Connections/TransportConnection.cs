@@ -9,34 +9,27 @@ using System.Net;
 
 namespace NZ.Orz.Connections;
 
-internal class TransportConnection : ConnectionContext,
+public class TransportConnection : ConnectionContext,
                                                  IConnectionIdFeature,
                                                  IConnectionTransportFeature,
                                                  IConnectionItemsFeature,
                                                  IMemoryPoolFeature,
                                                  IConnectionLifetimeFeature
 {
-    private IFeatureCollection? _items;
     private string? _connectionId;
 
     // Will only have a value if the transport is created from a multiplexed transport.
     public IFeatureCollection? MultiplexedConnectionFeatures { get; protected set; }
 
-    public TransportConnection()
-    {
-        _items = new FeatureCollection();
-        InitFeatures();
-    }
-
     private void InitFeatures()
     {
-        if (_items != null)
+        if (_Parameters != null)
         {
-            _items.SetFeature<IConnectionIdFeature>(this);
-            _items.SetFeature<IConnectionLifetimeFeature>(this);
-            _items.SetFeature<IMemoryPoolFeature>(this);
-            _items.SetFeature<IConnectionTransportFeature>(this);
-            _items.SetFeature<IConnectionItemsFeature>(this);
+            _Parameters.SetFeature<IConnectionIdFeature>(this);
+            _Parameters.SetFeature<IConnectionLifetimeFeature>(this);
+            _Parameters.SetFeature<IMemoryPoolFeature>(this);
+            _Parameters.SetFeature<IConnectionTransportFeature>(this);
+            _Parameters.SetFeature<IConnectionItemsFeature>(this);
             InitializeFeatures();
         }
     }
@@ -58,7 +51,7 @@ internal class TransportConnection : ConnectionContext,
 
     internal void ResetItems()
     {
-        _items?.Clear();
+        _Parameters?.Clear();
         InitFeatures();
     }
 
@@ -68,7 +61,20 @@ internal class TransportConnection : ConnectionContext,
 
     public override CancellationToken ConnectionClosed { get; set; }
 
-    public override IFeatureCollection Parameters => _items;
+    private IFeatureCollection _Parameters;
+
+    public override IFeatureCollection Parameters
+    {
+        get
+        {
+            if (_Parameters == null)
+            {
+                _Parameters = new FeatureCollection();
+                InitFeatures();
+            }
+            return _Parameters;
+        }
+    }
 
     // DO NOT remove this override to ConnectionContext.Abort. Doing so would cause
     // any TransportConnection that does not override Abort or calls base.Abort
