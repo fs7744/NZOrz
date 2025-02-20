@@ -1,8 +1,9 @@
 ﻿using NZ.Orz.Buffers;
-using NZ.Orz.Connections;
+using NZ.Orz.Config;
 using System.Buffers;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.Intrinsics.Arm;
 
 namespace NZ.Orz.Sockets;
 
@@ -28,9 +29,9 @@ public class SocketTransportOptions
 
     internal Func<MemoryPool<byte>> MemoryPoolFactory { get; set; } = PinnedBlockMemoryPoolFactory.Create;
 
-    public Func<EndPoint, Socket> CreateBoundListenSocket { get; set; } = CreateDefaultBoundListenSocket;
+    public Func<EndPoint, GatewayProtocols, Socket> CreateBoundListenSocket { get; set; } = CreateDefaultBoundListenSocket;
 
-    public static Socket CreateDefaultBoundListenSocket(EndPoint endpoint)
+    public static Socket CreateDefaultBoundListenSocket(EndPoint endpoint, GatewayProtocols protocols)
     {
         Socket listenSocket;
         switch (endpoint)
@@ -39,19 +40,21 @@ public class SocketTransportOptions
                 listenSocket = new Socket(unix.AddressFamily, SocketType.Stream, ProtocolType.Unspecified);
                 break;
 
-            case UdpEndPoint udp:
-                listenSocket = new Socket(udp.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
-                break;
-
             case IPEndPoint ip:
-                listenSocket = new Socket(ip.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-
-                // Kestrel expects IPv6Any to bind to both IPv6 and IPv4
-                if (ip.Address.Equals(IPAddress.IPv6Any))
+                if (protocols.HasFlag(GatewayProtocols.UDP))
                 {
-                    listenSocket.DualMode = true;
+                    listenSocket = new Socket(ip.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
                 }
+                else
+                {
+                    listenSocket = new Socket(ip.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
+                    // Kestrel expects IPv6Any to bind to both IPv6 and IPv4
+                    if (ip.Address.Equals(IPAddress.IPv6Any))
+                    {
+                        listenSocket.DualMode = true;
+                    }
+                }
                 break;
 
             default:

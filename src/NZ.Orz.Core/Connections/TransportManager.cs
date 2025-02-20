@@ -26,7 +26,7 @@ internal class TransportManager
 
     private OrzTrace Trace => _serviceContext.Log;
 
-    public async Task<EndPoint> BindAsync(EndPoint endPoint, ConnectionDelegate connectionDelegate, ListenOptions? endpointConfig, CancellationToken cancellationToken)
+    public async Task<EndPoint> BindAsync(EndPoint endPoint, GatewayProtocols protocols, ConnectionDelegate connectionDelegate, ListenOptions? endpointConfig, CancellationToken cancellationToken)
     {
         if (_transportFactories.Count == 0)
         {
@@ -36,9 +36,9 @@ internal class TransportManager
         foreach (var transportFactory in _transportFactories)
         {
             var selector = transportFactory as IConnectionListenerFactorySelector;
-            if (CanBindFactory(endPoint, selector))
+            if (CanBindFactory(endPoint, protocols, selector))
             {
-                var transport = await transportFactory.BindAsync(endPoint, cancellationToken).ConfigureAwait(false);
+                var transport = await transportFactory.BindAsync(endPoint, protocols, cancellationToken).ConfigureAwait(false);
                 StartAcceptLoop(new GenericConnectionListener(transport), c => connectionDelegate(c), endpointConfig);
                 return transport.EndPoint;
             }
@@ -55,7 +55,7 @@ internal class TransportManager
         throw new InvalidOperationException($"No registered {nameof(IConnectionListenerFactory)} supports endpoint {endPoint.GetType().Name}: {endPoint}");
     }
 
-    public async Task<EndPoint> BindAsync(EndPoint endPoint, MultiplexedConnectionDelegate multiplexedConnectionDelegate, ListenOptions listenOptions, CancellationToken cancellationToken)
+    public async Task<EndPoint> BindAsync(EndPoint endPoint, GatewayProtocols protocols, MultiplexedConnectionDelegate multiplexedConnectionDelegate, ListenOptions listenOptions, CancellationToken cancellationToken)
     {
         if (_multiplexedTransportFactories.Count == 0)
         {
@@ -67,9 +67,9 @@ internal class TransportManager
         foreach (var multiplexedTransportFactory in _multiplexedTransportFactories)
         {
             var selector = multiplexedTransportFactory as IConnectionListenerFactorySelector;
-            if (CanBindFactory(endPoint, selector))
+            if (CanBindFactory(endPoint, protocols, selector))
             {
-                var transport = await multiplexedTransportFactory.BindAsync(endPoint, features, cancellationToken).ConfigureAwait(false);
+                var transport = await multiplexedTransportFactory.BindAsync(endPoint, protocols, features, cancellationToken).ConfigureAwait(false);
                 StartAcceptLoop(new GenericMultiplexedConnectionListener(transport), c => multiplexedConnectionDelegate(c), listenOptions);
                 return transport.EndPoint;
             }
@@ -78,9 +78,9 @@ internal class TransportManager
         throw new InvalidOperationException($"No registered {nameof(IMultiplexedConnectionListenerFactory)} supports endpoint {endPoint.GetType().Name}: {endPoint}");
     }
 
-    private static bool CanBindFactory(EndPoint endPoint, IConnectionListenerFactorySelector? selector)
+    private static bool CanBindFactory(EndPoint endPoint, GatewayProtocols protocols, IConnectionListenerFactorySelector? selector)
     {
-        return selector?.CanBind(endPoint) ?? true;
+        return selector?.CanBind(endPoint, protocols) ?? true;
     }
 
     private void StartAcceptLoop<T>(IConnectionListener<T> connectionListener, Func<T, Task> connectionDelegate, ListenOptions? endpointConfig) where T : BaseConnectionContext

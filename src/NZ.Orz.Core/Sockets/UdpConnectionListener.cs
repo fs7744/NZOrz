@@ -13,7 +13,8 @@ namespace NZ.Orz.Sockets;
 
 internal sealed class UdpConnectionListener : IConnectionListener
 {
-    private UdpEndPoint? udpEndPoint;
+    private EndPoint? udpEndPoint;
+    private readonly GatewayProtocols protocols;
     private ILogger _logger;
     private SocketTransportOptions? _options;
     private MemoryPool<byte> udpBufferPool;
@@ -21,9 +22,10 @@ internal sealed class UdpConnectionListener : IConnectionListener
     //private readonly UdpAwaitableEventArgs _receiver;
     private Socket? _listenSocket;
 
-    public UdpConnectionListener(UdpEndPoint? udpEndPoint, IRouteContractor contractor, ILoggerFactory loggerFactory)
+    public UdpConnectionListener(EndPoint? udpEndPoint, GatewayProtocols protocols, IRouteContractor contractor, ILoggerFactory loggerFactory)
     {
         this.udpEndPoint = udpEndPoint;
+        this.protocols = protocols;
         _logger = loggerFactory.CreateLogger("Orz.Server.Transport.Sockets.Udp");
         _options = contractor.GetSocketTransportOptions();
         udpBufferPool = PinnedBlockMemoryPoolFactory.Create(_options.UdpMaxSize);
@@ -43,7 +45,7 @@ internal sealed class UdpConnectionListener : IConnectionListener
         Socket listenSocket;
         try
         {
-            listenSocket = _options.CreateBoundListenSocket(EndPoint);
+            listenSocket = _options.CreateBoundListenSocket(EndPoint, protocols);
         }
         catch (SocketException e) when (e.SocketErrorCode == SocketError.AddressAlreadyInUse)
         {

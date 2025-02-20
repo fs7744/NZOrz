@@ -6,7 +6,6 @@ using NZ.Orz.Config;
 using Microsoft.Extensions.DependencyInjection;
 using UDPServer;
 using Microsoft.Extensions.Hosting;
-using NZ.Orz.Connections;
 
 static void StartListener()
 {
@@ -59,9 +58,9 @@ static void Proxy(string[] args)
     {
         b.AddEndPoint("test", i =>
         {
-            i.Protocols = GatewayProtocols.TCP;
+            i.Protocols = GatewayProtocols.UDP;
             i.Services.AddSingleton<TestProxyHandler>();
-            i.Listen(new UdpEndPoint(IPAddress.Parse("127.0.0.1"), 5000)).UseMiddleware<TestProxyHandler>();
+            i.Listen(new IPEndPoint(IPAddress.Parse("127.0.0.1"), 5000)).UseMiddleware<TestProxyHandler>();
         });
     })
     .Build();

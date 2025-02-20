@@ -21,18 +21,19 @@ public sealed class UdpTransportFactory : IConnectionListenerFactory, IConnectio
         _logger = loggerFactory;
     }
 
-    public ValueTask<IConnectionListener> BindAsync(EndPoint endpoint, CancellationToken cancellationToken = default)
+    public ValueTask<IConnectionListener> BindAsync(EndPoint endpoint, GatewayProtocols protocols, CancellationToken cancellationToken = default)
     {
-        var transport = new UdpConnectionListener(endpoint as UdpEndPoint, contractor, _logger);
+        var transport = new UdpConnectionListener(endpoint, GatewayProtocols.UDP, contractor, _logger);
         transport.Bind();
         return new ValueTask<IConnectionListener>(transport);
     }
 
-    public bool CanBind(EndPoint endpoint)
+    public bool CanBind(EndPoint endpoint, GatewayProtocols protocols)
     {
+        if (!protocols.HasFlag(GatewayProtocols.UDP)) return false;
         return endpoint switch
         {
-            UdpEndPoint _ => true,
+            IPEndPoint _ => true,
             _ => false
         };
     }

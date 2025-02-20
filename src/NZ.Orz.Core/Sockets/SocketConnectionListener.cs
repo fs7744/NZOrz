@@ -15,15 +15,18 @@ internal sealed class SocketConnectionListener : IConnectionListener
     private readonly ILogger _logger;
     private Socket? _listenSocket;
     private readonly SocketTransportOptions _options;
+    private readonly GatewayProtocols protocols;
 
     public EndPoint EndPoint { get; private set; }
 
     internal SocketConnectionListener(
         EndPoint endpoint,
+        GatewayProtocols protocols,
         IRouteContractor contractor,
         ILoggerFactory loggerFactory)
     {
         EndPoint = endpoint;
+        this.protocols = protocols;
         _options = contractor.GetSocketTransportOptions();
         var logger = loggerFactory.CreateLogger("Orz.Server.Transport.Sockets.Tcp");
         _logger = logger;
@@ -40,7 +43,7 @@ internal sealed class SocketConnectionListener : IConnectionListener
         Socket listenSocket;
         try
         {
-            listenSocket = _options.CreateBoundListenSocket(EndPoint);
+            listenSocket = _options.CreateBoundListenSocket(EndPoint, protocols);
         }
         catch (SocketException e) when (e.SocketErrorCode == SocketError.AddressAlreadyInUse)
         {

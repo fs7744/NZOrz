@@ -22,18 +22,19 @@ public sealed class SocketTransportFactory : IConnectionListenerFactory, IConnec
         _logger = loggerFactory;
     }
 
-    public ValueTask<IConnectionListener> BindAsync(EndPoint endpoint, CancellationToken cancellationToken = default)
+    public ValueTask<IConnectionListener> BindAsync(EndPoint endpoint, GatewayProtocols protocols, CancellationToken cancellationToken = default)
     {
-        var transport = new SocketConnectionListener(endpoint, contractor, _logger);
+        var transport = new SocketConnectionListener(endpoint, protocols, contractor, _logger);
         transport.Bind();
         return new ValueTask<IConnectionListener>(transport);
     }
 
-    public bool CanBind(EndPoint endpoint)
+    public bool CanBind(EndPoint endpoint, GatewayProtocols protocols)
     {
+        if (!protocols.HasFlag(GatewayProtocols.TCP)) return false;
         return endpoint switch
         {
-            IPEndPoint _ when endpoint is not UdpEndPoint => true,
+            IPEndPoint _ => true,
             UnixDomainSocketEndPoint _ => true,
             _ => false
         };

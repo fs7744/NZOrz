@@ -87,9 +87,19 @@ public class OrzServer : IServer
     private async Task OnBind(ListenOptions options, CancellationToken cancellationToken)
     {
         // todo support tcp / udp / http 1 2 3
+
         foreach (var endPoint in options.EndPoints)
         {
-            await _transportManager.BindAsync(endPoint, options.ConnectionDelegate, options, cancellationToken);
+            var protocols = options.Protocols;
+            if (protocols.HasFlag(GatewayProtocols.TCP) || protocols.HasFlag(GatewayProtocols.UDP))
+            {
+                await _transportManager.BindAsync(endPoint, options.Protocols, options.ConnectionDelegate, options, cancellationToken);
+            }
+
+            //if (options.Protocols.HasFlag(GatewayProtocols.UDP))
+            //{
+            //    await _transportManager.BindAsync(endPoint, options.Protocols, options.MultiplexedConnectionDelegate, options, cancellationToken);
+            //}
         }
     }
 

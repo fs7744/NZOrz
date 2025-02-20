@@ -12,4 +12,5 @@ public class ListenOptions
     public IReadOnlyCollection<EndPoint> EndPoints { get; set; }
 
     public ConnectionDelegate ConnectionDelegate { get; set; }
+    public MultiplexedConnectionDelegate MultiplexedConnectionDelegate { get; set; }
 }
