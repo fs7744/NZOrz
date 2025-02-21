@@ -35,7 +35,7 @@ public class RouteTable<T> : IAsyncDisposable
     public async ValueTask<T> MatchAsync<R>(string key, R data, Func<T, R, bool> match)
     {
         var all = await FindAllAsync(key);
-        if (all == null) return default;
+        if (all.Length == 0) return default;
         foreach (var items in all.AsSpan())
         {
             foreach (var item in items)
@@ -79,7 +79,7 @@ public class RouteTable<T> : IAsyncDisposable
                 {
                     value = trie.Search(key, comparison).ToArray();
                     if (value.Length == 0)
-                        value = null;
+                        value = Array.Empty<PriorityRouteDataList<T>>();
                 }
                 writeSession.SetValue(value);
             }
