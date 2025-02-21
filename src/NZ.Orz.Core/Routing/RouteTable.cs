@@ -4,9 +4,9 @@ using System.Collections.Frozen;
 
 namespace NZ.Orz.Routing;
 
-public class RouteTable<T>
+public class RouteTable<T> : IAsyncDisposable
 {
-    private readonly RadixTrie<PriorityRouteDataList<T>> trie;
+    private RadixTrie<PriorityRouteDataList<T>> trie;
     private readonly StringComparison comparison;
     private RandomAccessCache<string, PriorityRouteDataList<T>[]> cache;
     private FrozenDictionary<string, PriorityRouteDataList<T>> exact;
@@ -86,5 +86,20 @@ public class RouteTable<T>
 
             return value;
         }
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        if (trie != null)
+        {
+            var r = trie;
+            trie = null;
+            exact = null;
+            var c = cache;
+            cache = null;
+            c.Dispose();
+            r.Dispose();
+        }
+        return default;
     }
 }

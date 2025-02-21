@@ -1,15 +1,26 @@
 ﻿namespace NZ.Orz.Routing;
 
-public class RadixTrieNode<T>
+public class RadixTrieNode<T> : IDisposable
 {
     public string Key;
     public T? Value;
     public List<RadixTrieNode<T>> Children;
+
+    public void Dispose()
+    {
+        if (Children != null)
+        {
+            var c = Children;
+            Children = null;
+            c.ForEach(x => x.Dispose());
+            c.Clear();
+        }
+    }
 }
 
-public class RadixTrie<T>
+public class RadixTrie<T> : IDisposable
 {
-    private readonly RadixTrieNode<T> trie;
+    private RadixTrieNode<T> trie;
 
     public RadixTrie()
     {
@@ -109,6 +120,16 @@ public class RadixTrie<T>
                     yield return item.Value;
                 }
             }
+        }
+    }
+
+    public void Dispose()
+    {
+        if (trie != null)
+        {
+            var r = trie;
+            trie = null;
+            r.Dispose();
         }
     }
 }
