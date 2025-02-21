@@ -83,22 +83,22 @@ public class RadixTrie<T>
         }
     }
 
-    public IEnumerable<T> Search(string key)
+    public IEnumerable<T> Search(string key, StringComparison comparison = StringComparison.Ordinal)
     {
-        return Search(trie, new StringSegment(0, key));
+        return Search(trie, new StringSegment(0, key), comparison);
     }
 
-    private static IEnumerable<T> Search(RadixTrieNode<T> trie, StringSegment key)
+    private static IEnumerable<T> Search(RadixTrieNode<T> trie, StringSegment key, StringComparison comparison)
     {
         if (trie.Children == null) yield break;
 
         foreach (var item in trie.Children)
         {
-            if (key.GetSpan.StartsWith(item.Key, StringComparison.OrdinalIgnoreCase))
+            if (key.GetSpan.StartsWith(item.Key, comparison))
             {
                 if (trie.Children != null)
                 {
-                    foreach (var item1 in Search(item, new StringSegment(key.Start + item.Key.Length, key.String)))
+                    foreach (var item1 in Search(item, new StringSegment(key.Start + item.Key.Length, key.String), comparison))
                     {
                         yield return item1;
                     }
