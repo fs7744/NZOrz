@@ -1,18 +1,19 @@
-﻿using DotNext.Runtime.Caching;
+﻿using DotNext.Collections.Generic;
+using DotNext.Runtime.Caching;
 using System.Collections.Frozen;
 
 namespace NZ.Orz.Routing;
 
 public class RouteTable<T>
 {
-    private readonly RadixTrie<T> trie;
+    private readonly RadixTrie<PriorityRouteDataList<T>> trie;
     private readonly StringComparison comparison;
-    private RandomAccessCache<string, T[]> cache;
-    private FrozenDictionary<string, T> exact;
+    private RandomAccessCache<string, PriorityRouteDataList<T>[]> cache;
+    private FrozenDictionary<string, PriorityRouteDataList<T>> exact;
 
-    public RouteTable(IDictionary<string, T> exact, RadixTrie<T> trie, int cacheSize = 1024, StringComparison comparison = StringComparison.Ordinal)
+    public RouteTable(IDictionary<string, PriorityRouteDataList<T>> exact, RadixTrie<PriorityRouteDataList<T>> trie, int cacheSize, StringComparison comparison)
     {
-        cache = new RandomAccessCache<string, T[]>(cacheSize);
+        cache = new RandomAccessCache<string, PriorityRouteDataList<T>[]>(cacheSize);
         this.trie = trie;
         this.comparison = comparison;
         this.exact = exact.ToFrozenDictionary(MatchComparison(comparison));
@@ -31,30 +32,35 @@ public class RouteTable<T>
         };
     }
 
-    public async ValueTask<T> FindAsync(string key)
+    public async ValueTask<T> MatchAsync<R>(string key, R data, Func<T, R, bool> match)
     {
-        if (exact.TryGetValue(key, out T result))
+        var all = await FindAllAsync(key);
+        if (all == null) return default;
+        foreach (var items in all.AsSpan())
         {
-            return result;
-        }
-        if (cache.TryRead(key, out var session))
-        {
-            return session.Value.FirstOrDefault();
-        }
-        else
-        {
-            using var writeSession = await cache.ChangeAsync(key);
-            if (!writeSession.TryGetValue(out var value))
+            foreach (var item in items)
             {
-                value = trie.Search(key, comparison).ToArray();
-                writeSession.SetValue(value);
+                var v = item.Value;
+                if (match(v, data))
+                {
+                    return v;
+                }
             }
-
-            return value.FirstOrDefault();
         }
+        return default;
     }
 
-    public async ValueTask<T[]> FindAllAsync(string key)
+    public async ValueTask<T> FirstAsync(string key)
+    {
+        var all = await FindAllAsync(key);
+        if (all == null) return default;
+        var f = all.FirstOrDefault();
+        if (f == null) return default;
+        var f2 = f.FirstOrDefault();
+        return f2.Value;
+    }
+
+    public async ValueTask<PriorityRouteDataList<T>[]> FindAllAsync(string key)
     {
         if (cache.TryRead(key, out var session))
         {
@@ -65,13 +71,15 @@ public class RouteTable<T>
             using var writeSession = await cache.ChangeAsync(key);
             if (!writeSession.TryGetValue(out var value))
             {
-                if (exact.TryGetValue(key, out T result))
+                if (exact.TryGetValue(key, out var result))
                 {
                     value = [result];
                 }
                 else
                 {
                     value = trie.Search(key, comparison).ToArray();
+                    if (value.Length == 0)
+                        value = null;
                 }
                 writeSession.SetValue(value);
             }
