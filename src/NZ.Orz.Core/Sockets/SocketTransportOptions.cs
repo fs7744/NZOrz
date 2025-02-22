@@ -3,7 +3,6 @@ using NZ.Orz.Config;
 using System.Buffers;
 using System.Net;
 using System.Net.Sockets;
-using System.Runtime.Intrinsics.Arm;
 
 namespace NZ.Orz.Sockets;
 
@@ -49,7 +48,7 @@ public class SocketTransportOptions
                 {
                     listenSocket = new Socket(ip.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
-                    // Kestrel expects IPv6Any to bind to both IPv6 and IPv4
+                    // expects IPv6Any to bind to both IPv6 and IPv4
                     if (ip.Address.Equals(IPAddress.IPv6Any))
                     {
                         listenSocket.DualMode = true;

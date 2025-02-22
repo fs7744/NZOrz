@@ -12,7 +12,7 @@ var app = NZApp.CreateBuilder(args)
         {
             i.Protocols = GatewayProtocols.TCP;
             i.Services.AddSingleton<TestProxyHandler>();
-            i.Listen(IPEndPoint.Parse("127.0.0.1:5000"), IPEndPoint.Parse("127.0.0.1:5001")).UseMiddleware<TestProxyHandler>();
+            i.Listen(IPEndPoint.Parse("[0000:0000:0000:0000:0000:0000:0000:0001]:5000"), IPEndPoint.Parse("127.0.0.1:5001")).UseMiddleware<TestProxyHandler>();
         });
     })
     .Build();
