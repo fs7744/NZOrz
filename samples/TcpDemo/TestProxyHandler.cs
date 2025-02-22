@@ -14,7 +14,8 @@ public class TestProxyHandler : IMiddleware
     private static RouteTable<IPEndPoint> CreateRouteTable()
     {
         var builder = new RouteTableBuilder<IPEndPoint>();
-        builder.Add("127.0.0.1:500", new IPEndPoint(IPAddress.Parse("14.215.177.38"), 80), RouteType.Prefix);
+        builder.Add("127.0.0.1:5000", new IPEndPoint(IPAddress.Parse("14.215.177.38"), 80), RouteType.Prefix);
+        builder.Add("127.0.0.1:5000", new IPEndPoint(IPAddress.Parse("14.215.177.31"), 80), RouteType.Prefix);
         return builder.Build();
     }
 
@@ -30,9 +31,11 @@ public class TestProxyHandler : IMiddleware
         if (n == null)
         {
             logger.LogWarning($"No match upstream {connection.LocalEndPoint}");
+            connection.Abort();
         }
         else
         {
+            logger.LogWarning($"match upstream {n}");
             CancellationTokenSource cts = new CancellationTokenSource();
             cts.CancelAfter(TimeSpan.FromSeconds(10));
             var upstream = await connectionFactory.ConnectAsync(n, cts.Token);
@@ -42,8 +45,8 @@ public class TestProxyHandler : IMiddleware
             var task2 = upstream.Transport.Input.CopyToAsync(connection.Transport.Output, cts.Token);
             await Task.WhenAny(task1, task2);
             upstream.Abort();
+            connection.Abort();
         }
-        await next(connection);
     }
 
     private bool MatchRoute(IPEndPoint point, ConnectionContext context)

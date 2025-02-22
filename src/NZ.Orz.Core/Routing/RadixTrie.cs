@@ -29,10 +29,15 @@ public class RadixTrie<T> : IDisposable
 
     public void Add(string key, T value, Func<T?, T?, T?> merge)
     {
+        Add(trie, key, () => value, merge);
+    }
+
+    public void Add(string key, Func<T> value, Func<T?, T?, T?> merge)
+    {
         Add(trie, key, value, merge);
     }
 
-    public static void Add(RadixTrieNode<T> curr, string term, T value, Func<T?, T?, T?> merge)
+    public static void Add(RadixTrieNode<T> curr, string term, Func<T> value, Func<T?, T?, T?> merge)
     {
         int common = 0;
         if (curr.Children != null)
@@ -50,7 +55,7 @@ public class RadixTrie<T> : IDisposable
                     //new      ab
                     if ((common == term.Length) && (common == key.Length))
                     {
-                        node.Value = merge(node.Value, value);
+                        node.Value = merge(node.Value, value());
                     }//new is subkey
                      //existing abcd
                      //new      ab
@@ -59,7 +64,7 @@ public class RadixTrie<T> : IDisposable
                     {
                         node.Key = key.Substring(common);
                         var child = new RadixTrieNode<T>() { Key = term.Substring(0, common), Children = new List<RadixTrieNode<T>>() { node } };
-                        child.Value = value;
+                        child.Value = value();
                         curr.Children[j] = child;
                     }
                     //if oldkey shorter (==common), then recursive addTerm (clause1)
@@ -76,7 +81,7 @@ public class RadixTrie<T> : IDisposable
                     {
                         var child = new RadixTrieNode<T>() { Key = term.Substring(0, common) };
                         node.Key = key.Substring(common);
-                        child.Children = new List<RadixTrieNode<T>>() { node, new RadixTrieNode<T>() { Key = term.Substring(common), Value = value } };
+                        child.Children = new List<RadixTrieNode<T>>() { node, new RadixTrieNode<T>() { Key = term.Substring(common), Value = value() } };
                         curr.Children[j] = child;
                     }
                     return;
@@ -86,11 +91,11 @@ public class RadixTrie<T> : IDisposable
 
         if (curr.Children == null)
         {
-            curr.Children = new List<RadixTrieNode<T>>() { new RadixTrieNode<T>() { Key = term, Value = value } };
+            curr.Children = new List<RadixTrieNode<T>>() { new RadixTrieNode<T>() { Key = term, Value = value() } };
         }
         else
         {
-            curr.Children.Add(new RadixTrieNode<T>() { Key = term, Value = value });
+            curr.Children.Add(new RadixTrieNode<T>() { Key = term, Value = value() });
         }
     }
 

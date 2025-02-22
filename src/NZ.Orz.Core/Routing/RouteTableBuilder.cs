@@ -1,5 +1,6 @@
 ﻿using DotNext.Collections.Generic;
 using System.Collections.Frozen;
+using System.Collections.Generic;
 
 namespace NZ.Orz.Routing;
 
@@ -37,11 +38,19 @@ public class RouteTableBuilder<T>
         {
             case RouteType.Exact:
                 var list = exact.GetOrAdd(key, CreatePriorityRouteDataList);
-                list.Add(priority, value);
+                if (list.TryGetValue(priority, out var v))
+                {
+                    v.Add(value);
+                }
+                else
+                {
+                    v = new List<T> { value };
+                    list.Add(priority, v);
+                }
                 break;
 
             case RouteType.Prefix:
-                trie.Add(key, new PriorityRouteDataList<T>() { { priority, value } }, MergePriorityRouteDataList);
+                trie.Add(key, () => new PriorityRouteDataList<T>() { { priority, new List<T>() { value } } }, MergePriorityRouteDataList);
                 break;
         }
     }
@@ -50,7 +59,17 @@ public class RouteTableBuilder<T>
     {
         if (list1 == null) return list2;
         if (list2 == null) return list1;
-        list1.AddAll(list2);
+        foreach (var item in list2)
+        {
+            if (list1.TryGetValue(item.Key, out var v))
+            {
+                v.AddAll(item.Value);
+            }
+            else
+            {
+                list1.Add(item.Key, item.Value);
+            }
+        }
         return list1;
     }
 

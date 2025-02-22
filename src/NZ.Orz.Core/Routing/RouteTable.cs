@@ -40,10 +40,13 @@ public class RouteTable<T> : IAsyncDisposable
         {
             foreach (var item in items)
             {
-                var v = item.Value;
-                if (match(v, data))
+                var vs = item.Value;
+                foreach (var v in vs)
                 {
-                    return v;
+                    if (match(v, data))
+                    {
+                        return v;
+                    }
                 }
             }
         }
@@ -56,8 +59,9 @@ public class RouteTable<T> : IAsyncDisposable
         if (all == null) return default;
         var f = all.FirstOrDefault();
         if (f == null) return default;
-        var f2 = f.FirstOrDefault();
-        return f2.Value;
+        var f2 = f.FirstOrDefault().Value;
+        if (f2 == null) return default;
+        return f2.FirstOrDefault();
     }
 
     public async ValueTask<PriorityRouteDataList<T>[]> FindAllAsync(string key)
