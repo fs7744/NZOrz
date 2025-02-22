@@ -4,7 +4,7 @@ using System.Collections.Frozen;
 
 namespace NZ.Orz.Routing;
 
-public class RouteTable<T> : IAsyncDisposable
+public class RouteTable<T> : IAsyncDisposable, IDisposable
 {
     private RadixTrie<PriorityRouteDataList<T>> trie;
     private readonly StringComparison comparison;
@@ -101,9 +101,14 @@ public class RouteTable<T> : IAsyncDisposable
             exact = null;
             var c = cache;
             cache = null;
-            c.Dispose();
-            r.Dispose();
+            c?.Dispose();
+            r?.Dispose();
         }
         return default;
+    }
+
+    public void Dispose()
+    {
+        DisposeAsync();
     }
 }

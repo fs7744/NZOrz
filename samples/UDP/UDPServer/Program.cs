@@ -1,11 +1,11 @@
-﻿using System.Net.Sockets;
-using System.Net;
-using System.Text;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using NZ.Orz;
 using NZ.Orz.Config;
-using Microsoft.Extensions.DependencyInjection;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
 using UDPServer;
-using Microsoft.Extensions.Hosting;
 
 static void StartListener()
 {

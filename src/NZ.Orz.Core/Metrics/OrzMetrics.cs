@@ -3,8 +3,8 @@ using NZ.Orz.Connections.Features;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Metrics;
-using System.Net.Sockets;
 using System.Net;
+using System.Net.Sockets;
 
 namespace NZ.Orz.Metrics;
 

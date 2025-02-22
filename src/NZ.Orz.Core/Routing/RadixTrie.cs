@@ -12,8 +12,8 @@ public class RadixTrieNode<T> : IDisposable
         {
             var c = Children;
             Children = null;
-            c.ForEach(x => x.Dispose());
-            c.Clear();
+            c?.ForEach(x => x.Dispose());
+            c?.Clear();
         }
     }
 }
@@ -134,7 +134,7 @@ public class RadixTrie<T> : IDisposable
         {
             var r = trie;
             trie = null;
-            r.Dispose();
+            r?.Dispose();
         }
     }
 }

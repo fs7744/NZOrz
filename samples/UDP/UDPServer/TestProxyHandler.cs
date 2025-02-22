@@ -2,7 +2,6 @@
 using NZ.Orz.Sockets;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 
 namespace UDPServer;
 
