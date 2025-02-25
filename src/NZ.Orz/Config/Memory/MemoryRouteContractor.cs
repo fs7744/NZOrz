@@ -5,8 +5,19 @@ namespace NZ.Orz.Config.Memory;
 
 public sealed class MemoryRouteContractor : IRouteContractor
 {
-    public MemoryRouteContractor(MemoryReverseProxyConfigBuilder memoryReverseProxyConfigBuilder)
+    private readonly ProxyConfigSnapshot proxyConfig;
+    private readonly ServerOptions serverOptions;
+    private readonly SocketTransportOptions socketTransportOptions;
+
+    public MemoryRouteContractor(MemoryReverseProxyConfigBuilder builder)
     {
+        proxyConfig = new ProxyConfigSnapshot()
+        {
+            Clusters = builder.Clusters.Select(i => i.Build()).ToList(),
+            Routes = builder.Routes.Select(i => i.Build()).ToList(),
+        };
+        serverOptions = builder.ServerOptions;
+        socketTransportOptions = builder.SocketTransportOptions;
     }
 
     public IEnumerable<ListenOptions> GetListenOptions()
@@ -16,31 +27,31 @@ public sealed class MemoryRouteContractor : IRouteContractor
 
     public IProxyConfig GetProxyConfig()
     {
-        throw new NotImplementedException();
+        return proxyConfig;
     }
 
     public IChangeToken? GetReloadToken()
     {
-        throw new NotImplementedException();
+        return null;
     }
 
     public ServerOptions GetServerOptions()
     {
-        throw new NotImplementedException();
+        return serverOptions;
     }
 
     public SocketTransportOptions? GetSocketTransportOptions()
     {
-        throw new NotImplementedException();
+        return socketTransportOptions;
     }
 
     public Task LoadAsync(CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        return Task.CompletedTask;
     }
 
     public Task StopAsync(CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        return Task.CompletedTask;
     }
 }

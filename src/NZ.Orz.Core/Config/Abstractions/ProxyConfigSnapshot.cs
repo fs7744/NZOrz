@@ -2,11 +2,11 @@
 
 namespace NZ.Orz.Config;
 
-public sealed class ProxyConfigSnapshot : IProxyConfig
+public sealed record ProxyConfigSnapshot : IProxyConfig
 {
-    public IReadOnlyList<RouteConfig> Routes { get; internal set; } = new List<RouteConfig>();
+    public IReadOnlyList<RouteConfig> Routes { get; init; }
 
-    public IReadOnlyList<ClusterConfig> Clusters { get; internal set; } = new List<ClusterConfig>();
+    public IReadOnlyList<ClusterConfig> Clusters { get; init; }
 
     public IChangeToken ChangeToken => null;
 }
