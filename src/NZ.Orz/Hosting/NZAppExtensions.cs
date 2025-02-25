@@ -1,38 +1,19 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using NZ.Orz.Config;
-using NZ.Orz.Config.Customize;
+using NZ.Orz.Config.Memory;
 
 namespace NZ.Orz;
 
 public static class NZAppExtensions
 {
-    public static HostApplicationBuilder ConfigureRouteContractor<Contractor>(this HostApplicationBuilder builder) where Contractor : class, IRouteContractor
+    /// <summary>
+    /// MemoryConfig is for test, it can't change config when app running
+    /// </summary>
+    public static IOrzApp UseMemoryConfig(this IOrzApp app, Action<MemoryReverseProxyConfigBuilder> action)
     {
-        builder.Services.AddSingleton<IRouteContractor, Contractor>();
-        return builder;
-    }
-
-    public static HostApplicationBuilder ConfigureRoute(this HostApplicationBuilder builder, Action<RouteConfigBuilder> action)
-    {
-        builder.UseOrzDefaults();
-
-        var b = new RouteConfigBuilder
-        {
-            Services = builder.Services
-        };
-        action(b);
-        var r = new MemoryRouteConfigContractor(b.ServerOptions, i => b.EndPoints.Select(e =>
-        {
-            e.ServiceProvider = i;
-            return e.Build();
-        }).ToArray(), b.SocketTransportOptions);
-        builder.Services.AddSingleton<IRouteContractor>(i =>
-        {
-            r.ServiceProvider = i;
-            return r;
-        });
-
-        return builder;
+        var builder = new MemoryReverseProxyConfigBuilder();
+        action?.Invoke(builder);
+        app.ApplicationBuilder.Services.AddSingleton<IRouteContractor>(builder.Build());
+        return app;
     }
 }

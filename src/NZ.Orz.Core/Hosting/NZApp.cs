@@ -13,14 +13,15 @@ namespace NZ.Orz;
 
 public static partial class NZApp
 {
-    public static HostApplicationBuilder CreateBuilder(string[] args = null)
+    public static IOrzApp CreateBuilder(string[] args = null)
     {
-        var builder = Host.CreateApplicationBuilder(args);
-        builder.Services.AddSingleton<IHostedService, HostedService>();
+        var builder = new OrzApp(Host.CreateApplicationBuilder(args));
+        builder.ApplicationBuilder.UseOrzDefaults();
+        builder.ApplicationBuilder.Services.AddSingleton<IHostedService, HostedService>();
         return builder;
     }
 
-    public static HostApplicationBuilder UseOrzDefaults(this HostApplicationBuilder builder)
+    internal static HostApplicationBuilder UseOrzDefaults(this HostApplicationBuilder builder)
     {
         builder.Services.TryAddSingleton<IMeterFactory, DummyMeterFactory>();
         builder.Services.TryAddSingleton<IServer, OrzServer>();

@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Hosting;
 using NZ.Orz;
 using NZ.Orz.Config;
+using NZ.Orz.Config.Customize;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -53,7 +54,8 @@ static void Client(string[] args)
 
 static void Proxy(string[] args)
 {
-    var app = NZApp.CreateBuilder(args)
+    var builder = NZApp.CreateBuilder(args);
+    builder.ApplicationBuilder
     .ConfigureRoute(b =>
     {
         b.AddEndPoint("test", i =>
@@ -62,8 +64,8 @@ static void Proxy(string[] args)
             i.Services.AddSingleton<TestProxyHandler>();
             i.Listen(new IPEndPoint(IPAddress.Parse("127.0.0.1"), 5000)).UseMiddleware<TestProxyHandler>();
         });
-    })
-    .Build();
+    });
+    var app = builder.Build();
 
     app.RunAsync().GetAwaiter().GetResult();
 }

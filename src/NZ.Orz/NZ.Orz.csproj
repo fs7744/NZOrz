@@ -14,4 +14,8 @@
     <ProjectReference Include="..\NZ.Orz.Core\NZ.Orz.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Config\Configuration\" />
+  </ItemGroup>
+
 </Project>

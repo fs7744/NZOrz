@@ -13,6 +13,8 @@ public interface IRouteContractor
 
     SocketTransportOptions? GetSocketTransportOptions();
 
+    IProxyConfig GetProxyConfig();
+
     Task LoadAsync(CancellationToken cancellationToken);
 
     Task StopAsync(CancellationToken cancellationToken);

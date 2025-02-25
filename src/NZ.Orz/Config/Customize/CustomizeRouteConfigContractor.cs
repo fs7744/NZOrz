@@ -3,7 +3,7 @@ using NZ.Orz.Sockets;
 
 namespace NZ.Orz.Config.Customize;
 
-internal class MemoryRouteConfigContractor : IRouteContractor
+internal class CustomizeRouteConfigContractor : IRouteContractor
 {
     private readonly ServerOptions serverOptions;
     private ListenOptions[] listenOptions;
@@ -12,7 +12,7 @@ internal class MemoryRouteConfigContractor : IRouteContractor
 
     public IServiceProvider ServiceProvider { get; internal set; }
 
-    public MemoryRouteConfigContractor(ServerOptions serverOptions, Func<IServiceProvider, ListenOptions[]> listenOptions, SocketTransportOptions socketTransportOptions)
+    public CustomizeRouteConfigContractor(ServerOptions serverOptions, Func<IServiceProvider, ListenOptions[]> listenOptions, SocketTransportOptions socketTransportOptions)
     {
         this.serverOptions = serverOptions;
         this.listenOptionsFactory = listenOptions;
@@ -49,5 +49,10 @@ internal class MemoryRouteConfigContractor : IRouteContractor
     public Task StopAsync(CancellationToken cancellationToken)
     {
         return Task.CompletedTask;
+    }
+
+    public IProxyConfig GetProxyConfig()
+    {
+        return null;
     }
 }
