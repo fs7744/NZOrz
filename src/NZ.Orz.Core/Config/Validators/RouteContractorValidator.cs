@@ -1,4 +1,6 @@
-﻿using NZ.Orz.Sockets;
+﻿using NZ.Orz.Config.Abstractions;
+using NZ.Orz.Sockets;
+using System.Net;
 
 namespace NZ.Orz.Config.Validators;
 
@@ -9,23 +11,25 @@ public class RouteContractorValidator : IRouteContractorValidator
     private readonly IEnumerable<IClusterConfigValidator> clusterConfigValidators;
     private readonly IEnumerable<IRouteConfigValidator> routeConfigValidators;
     private readonly IEnumerable<IListenOptionsValidator> listenOptionsValidator;
+    private readonly IEnumerable<IEndPointConvertor> endPointConvertors;
 
     public RouteContractorValidator(IEnumerable<IServerOptionsValidator> serverOptionsValidators,
         IEnumerable<ISocketTransportOptionsValidator> socketTransportOptionsValidators,
         IEnumerable<IClusterConfigValidator> clusterConfigValidators,
         IEnumerable<IRouteConfigValidator> routeConfigValidators,
-        IEnumerable<IListenOptionsValidator> listenOptionsValidator)
+        IEnumerable<IListenOptionsValidator> listenOptionsValidator,
+        IEnumerable<IEndPointConvertor> endPointConvertors)
     {
         this.serverOptionsValidators = serverOptionsValidators;
         this.socketTransportOptionsValidators = socketTransportOptionsValidators;
         this.clusterConfigValidators = clusterConfigValidators;
         this.routeConfigValidators = routeConfigValidators;
         this.listenOptionsValidator = listenOptionsValidator;
+        this.endPointConvertors = endPointConvertors;
     }
 
-    public async ValueTask<IList<ListenOptions>> ValidateAndGenerateListenOptionsAsync(IProxyConfig config, ServerOptions serverOptions, SocketTransportOptions options)
+    public async ValueTask<IList<ListenOptions>> ValidateAndGenerateListenOptionsAsync(IProxyConfig config, ServerOptions serverOptions, SocketTransportOptions options, IList<Exception> errors)
     {
-        var errors = new List<Exception>();
         if (options != null)
         {
             foreach (var validator in socketTransportOptionsValidators)
@@ -52,7 +56,7 @@ public class RouteContractorValidator : IRouteContractorValidator
                 await validator.ValidateAsync(route, errors);
             }
         }
-        var r = Generate(config, serverOptions).ToList();
+        var r = Generate(config, serverOptions, errors).ToList();
         foreach (var listenOptions in r)
         {
             foreach (var validator in listenOptionsValidator)
@@ -63,7 +67,7 @@ public class RouteContractorValidator : IRouteContractorValidator
         return r;
     }
 
-    private IEnumerable<ListenOptions> Generate(IProxyConfig config, ServerOptions serverOptions)
+    private IEnumerable<ListenOptions> Generate(IProxyConfig config, ServerOptions serverOptions, IList<Exception> errors)
     {
         if (config != null && config.Routes != null)
         {
@@ -75,12 +79,23 @@ public class RouteContractorValidator : IRouteContractorValidator
                     {
                         Key = item.RouteId,
                         Protocols = item.Protocols.HasFlag(GatewayProtocols.TCP) ? GatewayProtocols.TCP : GatewayProtocols.UDP,
-                        //todo :    EndPoints = item.Match.Hosts
+                        EndPoints = item.Match.Hosts.Select(i => ConvertEndPoint(i, errors)).Where(i => i != null).ToArray()
                     };
                 }
             }
         }
 
         //todo : http ListenOptions
+    }
+
+    private EndPoint ConvertEndPoint(string address, IList<Exception> errors)
+    {
+        foreach (var item in endPointConvertors)
+        {
+            if (item.TryConvert(address, out var endPoint))
+                return endPoint;
+        }
+        errors.Add(new ArgumentException($"'{address}' can not convert to EndPoint."));
+        return null;
     }
 }

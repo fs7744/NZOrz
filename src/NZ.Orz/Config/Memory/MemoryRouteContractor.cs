@@ -51,7 +51,9 @@ public sealed class MemoryRouteContractor : IRouteContractor
 
     public async Task LoadAsync(CancellationToken cancellationToken)
     {
-        listenOptions = await ServiceProvider.GetRequiredService<IRouteContractorValidator>().ValidateAndGenerateListenOptionsAsync(proxyConfig, serverOptions, socketTransportOptions);
+        var errors = new List<Exception>();
+        listenOptions = await ServiceProvider.GetRequiredService<IRouteContractorValidator>().ValidateAndGenerateListenOptionsAsync(proxyConfig, serverOptions, socketTransportOptions, errors);
+        throw new AggregateException(errors);
     }
 
     public Task StopAsync(CancellationToken cancellationToken)
