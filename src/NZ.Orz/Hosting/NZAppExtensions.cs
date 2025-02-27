@@ -13,7 +13,12 @@ public static class NZAppExtensions
     {
         var builder = new MemoryReverseProxyConfigBuilder();
         action?.Invoke(builder);
-        app.ApplicationBuilder.Services.AddSingleton<IRouteContractor>(builder.Build());
+        var r = builder.Build();
+        app.ApplicationBuilder.Services.AddSingleton<IRouteContractor>(i =>
+        {
+            r.ServiceProvider = i;
+            return r;
+        });
         return app;
     }
 }

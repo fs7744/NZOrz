@@ -23,7 +23,7 @@ public class MemoryReverseProxyConfigBuilder
 
     public List<MemoryClusterConfig> Clusters { get; internal set; } = new List<MemoryClusterConfig>();
 
-    internal IRouteContractor Build()
+    internal MemoryRouteContractor Build()
     {
         return new MemoryRouteContractor(this);
     }

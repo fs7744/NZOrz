@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using NZ.Orz.Config;
+using NZ.Orz.Config.Validators;
 using NZ.Orz.Connections;
 using NZ.Orz.Hosting;
 using NZ.Orz.Metrics;
@@ -23,13 +25,15 @@ public static partial class NZApp
 
     internal static HostApplicationBuilder UseOrzDefaults(this HostApplicationBuilder builder)
     {
-        builder.Services.TryAddSingleton<IMeterFactory, DummyMeterFactory>();
-        builder.Services.TryAddSingleton<IServer, OrzServer>();
-        builder.Services.TryAddSingleton<OrzTrace>();
-        builder.Services.TryAddSingleton<OrzMetrics>();
-        builder.Services.AddSingleton<IConnectionListenerFactory, SocketTransportFactory>();
-        builder.Services.AddSingleton<IConnectionListenerFactory, UdpTransportFactory>();
-        builder.Services.AddSingleton<IConnectionFactory, SocketConnectionFactory>();
+        var services = builder.Services;
+        services.TryAddSingleton<IMeterFactory, DummyMeterFactory>();
+        services.TryAddSingleton<IServer, OrzServer>();
+        services.TryAddSingleton<OrzTrace>();
+        services.TryAddSingleton<OrzMetrics>();
+        services.AddSingleton<IConnectionListenerFactory, SocketTransportFactory>();
+        services.AddSingleton<IConnectionListenerFactory, UdpTransportFactory>();
+        services.AddSingleton<IConnectionFactory, SocketConnectionFactory>();
+        services.AddSingleton<IRouteContractorValidator, RouteContractorValidator>();
 
         return builder;
     }
