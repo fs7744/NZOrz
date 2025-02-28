@@ -14,7 +14,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Folder Include="ReverseProxy\" />
+	  <Folder Include="ReverseProxy\L4\" />
 	</ItemGroup>
 
 </Project>

@@ -1,6 +1,10 @@
-﻿using NZ.Orz.Config.Abstractions;
+﻿using Microsoft.Extensions.DependencyInjection;
+using NZ.Orz.Config.Abstractions;
+using NZ.Orz.Connections;
 using NZ.Orz.Sockets;
+using System.Linq;
 using System.Net;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace NZ.Orz.Config.Validators;
 
@@ -12,13 +16,15 @@ public class RouteContractorValidator : IRouteContractorValidator
     private readonly IEnumerable<IRouteConfigValidator> routeConfigValidators;
     private readonly IEnumerable<IListenOptionsValidator> listenOptionsValidator;
     private readonly IEnumerable<IEndPointConvertor> endPointConvertors;
+    private readonly ConnectionDelegate middleware;
 
     public RouteContractorValidator(IEnumerable<IServerOptionsValidator> serverOptionsValidators,
         IEnumerable<ISocketTransportOptionsValidator> socketTransportOptionsValidators,
         IEnumerable<IClusterConfigValidator> clusterConfigValidators,
         IEnumerable<IRouteConfigValidator> routeConfigValidators,
         IEnumerable<IListenOptionsValidator> listenOptionsValidator,
-        IEnumerable<IEndPointConvertor> endPointConvertors)
+        IEnumerable<IEndPointConvertor> endPointConvertors,
+        IEnumerable<IOrderMiddleware> middlewares)
     {
         this.serverOptionsValidators = serverOptionsValidators;
         this.socketTransportOptionsValidators = socketTransportOptionsValidators;
@@ -26,6 +32,22 @@ public class RouteContractorValidator : IRouteContractorValidator
         this.routeConfigValidators = routeConfigValidators;
         this.listenOptionsValidator = listenOptionsValidator;
         this.endPointConvertors = endPointConvertors;
+        this.middleware = BuildMiddleware(middlewares);
+    }
+
+    private ConnectionDelegate BuildMiddleware(IEnumerable<IOrderMiddleware> middlewares)
+    {
+        ConnectionDelegate app = context =>
+        {
+            context.Abort();
+            return Task.CompletedTask;
+        };
+        foreach (var component in middlewares.OrderBy(i => i.Order).Reverse()
+            .Select<IOrderMiddleware, Func<ConnectionDelegate, ConnectionDelegate>>(p => (ConnectionDelegate next) => (ConnectionContext c) => p.Invoke(c, next)))
+        {
+            app = component(app);
+        }
+        return app;
     }
 
     public async ValueTask<IList<ListenOptions>> ValidateAndGenerateListenOptionsAsync(IProxyConfig config, ServerOptions serverOptions, SocketTransportOptions options, IList<Exception> errors)
@@ -79,7 +101,8 @@ public class RouteContractorValidator : IRouteContractorValidator
                     {
                         Key = item.RouteId,
                         Protocols = item.Protocols.HasFlag(GatewayProtocols.TCP) ? GatewayProtocols.TCP : GatewayProtocols.UDP,
-                        EndPoints = item.Match.Hosts.Select(i => ConvertEndPoint(i, errors)).Where(i => i != null).ToArray()
+                        EndPoints = item.Match.Hosts.Select(i => ConvertEndPoint(i, errors)).Where(i => i != null).ToArray(),
+                        ConnectionDelegate = middleware
                     };
                 }
             }
