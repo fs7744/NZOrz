@@ -53,7 +53,10 @@ public sealed class MemoryRouteContractor : IRouteContractor
     {
         var errors = new List<Exception>();
         listenOptions = await ServiceProvider.GetRequiredService<IRouteContractorValidator>().ValidateAndGenerateListenOptionsAsync(proxyConfig, serverOptions, socketTransportOptions, errors);
-        throw new AggregateException(errors);
+        if (errors.Any())
+        {
+            throw new AggregateException(errors);
+        }
     }
 
     public Task StopAsync(CancellationToken cancellationToken)

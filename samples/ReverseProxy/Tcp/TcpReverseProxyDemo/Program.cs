@@ -11,7 +11,7 @@ var app = NZApp.CreateBuilder(args)
             Protocols = GatewayProtocols.TCP,
             Match = new MemoryRouteMatch()
             {
-                Hosts = new List<string>() { "localhost:5244" }
+                Hosts = new List<string>() { "localhost:5000" }
             },
             ClusterId = "apidemo"
         });

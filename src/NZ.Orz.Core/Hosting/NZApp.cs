@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using NZ.Orz.Config;
+using NZ.Orz.Config.Abstractions;
 using NZ.Orz.Config.Validators;
 using NZ.Orz.Connections;
 using NZ.Orz.Hosting;
@@ -34,6 +35,7 @@ public static partial class NZApp
         services.AddSingleton<IConnectionListenerFactory, UdpTransportFactory>();
         services.AddSingleton<IConnectionFactory, SocketConnectionFactory>();
         services.AddSingleton<IRouteContractorValidator, RouteContractorValidator>();
+        services.AddSingleton<IEndPointConvertor, CommonEndPointConvertor>();
 
         return builder;
     }
