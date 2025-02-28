@@ -8,6 +8,7 @@ NZOrz ( NeZha Orz ) is network proxy written in c# language, because vic lazy, s
 - [X] UDP server core
 - [X] TCP proxy core
 - [ ] LoadBalancingPolicy
+- [ ] dns
 - [ ] HealthCheck
 - [ ] Configuration and reload config and rebind
 - [ ] UDP proxy core
