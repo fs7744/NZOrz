@@ -19,7 +19,7 @@ public class CommonEndPointConvertor : IEndPointConvertor
             return true;
         }
         else if (address.StartsWith("localhost:", StringComparison.OrdinalIgnoreCase)
-            && int.TryParse(address.Substring(10), out var port)
+            && int.TryParse(address.AsSpan(10), out var port)
             && port >= IPEndPoint.MinPort && port <= IPEndPoint.MaxPort)
         {
             endPoint = new IPEndPoint(IPAddress.IPv6Loopback, port);
