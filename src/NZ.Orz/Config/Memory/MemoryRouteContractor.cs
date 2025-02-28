@@ -13,12 +13,12 @@ public sealed class MemoryRouteContractor : IRouteContractor
 
     public MemoryRouteContractor(MemoryReverseProxyConfigBuilder builder)
     {
+        serverOptions = builder.ServerOptions;
         proxyConfig = new ProxyConfigSnapshot()
         {
             Clusters = builder.Clusters.Select(i => i.Build()).ToList(),
-            Routes = builder.Routes.Select(i => i.Build()).ToList(),
+            Routes = builder.Routes.Select(i => i.Build(serverOptions)).ToList(),
         };
-        serverOptions = builder.ServerOptions;
         socketTransportOptions = builder.SocketTransportOptions;
     }
 

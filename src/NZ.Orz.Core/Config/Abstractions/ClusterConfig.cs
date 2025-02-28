@@ -9,7 +9,9 @@ public sealed record ClusterConfig
 
     public HealthCheckConfig? HealthCheck { get; init; }
 
-    public IReadOnlyDictionary<string, DestinationConfig>? Destinations { get; init; }
+    public IReadOnlyList<DestinationConfig>? Destinations { get; init; }
+
+    public IReadOnlyList<DestinationState> DestinationStates { get; internal set; }
 
     public bool Equals(ClusterConfig? other)
     {

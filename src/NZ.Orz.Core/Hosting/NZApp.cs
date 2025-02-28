@@ -8,6 +8,7 @@ using NZ.Orz.Connections;
 using NZ.Orz.Hosting;
 using NZ.Orz.Metrics;
 using NZ.Orz.ReverseProxy.L4;
+using NZ.Orz.ReverseProxy.LoadBalancing;
 using NZ.Orz.Servers;
 using NZ.Orz.Sockets;
 using NZ.Orz.Sockets.Client;
@@ -39,6 +40,8 @@ public static partial class NZApp
         services.AddSingleton<IEndPointConvertor, CommonEndPointConvertor>();
         services.AddSingleton<IL4Router, L4Router>();
         services.AddSingleton<IOrderMiddleware, L4ProxyMiddleware>();
+        services.AddSingleton<LoadBalancingPolicy>();
+        services.AddSingleton<IClusterConfigValidator, ClusterConfigValidator>();
 
         return builder;
     }

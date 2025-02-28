@@ -15,7 +15,7 @@ public sealed record RouteConfig
     /// <summary>
     /// tcp : read / write timeout not connection timeout, udp revice response timeout, http ...
     /// </summary>
-    public TimeSpan? Timeout { get; init; }
+    public TimeSpan Timeout { get; init; }
 
     public int RetryCount { get; init; }
     public ClusterConfig ClusterConfig { get; internal set; }
@@ -42,8 +42,15 @@ public sealed record RouteConfig
             Order,
             RouteId?.GetHashCode(StringComparison.OrdinalIgnoreCase),
             ClusterId?.GetHashCode(StringComparison.OrdinalIgnoreCase),
-            Timeout?.GetHashCode(),
+            Timeout.GetHashCode(),
             RetryCount,
             Match);
+    }
+
+    internal CancellationTokenSource CreateTimeoutTokenSource()
+    {
+        CancellationTokenSource cts = new CancellationTokenSource();
+        cts.CancelAfter(Timeout);
+        return cts;
     }
 }

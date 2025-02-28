@@ -6,23 +6,23 @@ namespace NZ.Orz.Config.Validators;
 
 public class CommonEndPointConvertor : IEndPointConvertor
 {
-    public bool TryConvert(string address, out EndPoint endPoint)
+    public bool TryConvert(string address, out IEnumerable<EndPoint> endPoint)
     {
         if (IPEndPoint.TryParse(address, out var ip))
         {
-            endPoint = ip;
+            endPoint = [ip];
             return true;
         }
         else if (File.Exists(address))
         {
-            endPoint = new UnixDomainSocketEndPoint(address);
+            endPoint = [new UnixDomainSocketEndPoint(address)];
             return true;
         }
         else if (address.StartsWith("localhost:", StringComparison.OrdinalIgnoreCase)
             && int.TryParse(address.AsSpan(10), out var port)
             && port >= IPEndPoint.MinPort && port <= IPEndPoint.MaxPort)
         {
-            endPoint = new IPEndPoint(IPAddress.Loopback, port);
+            endPoint = [new IPEndPoint(IPAddress.Loopback, port), new IPEndPoint(IPAddress.IPv6Loopback, port)];
             return true;
         }
 

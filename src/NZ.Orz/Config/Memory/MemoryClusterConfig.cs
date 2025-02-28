@@ -7,7 +7,7 @@ public sealed record MemoryClusterConfig
 
     public HealthCheckConfig? HealthCheck { get; init; }
 
-    public Dictionary<string, DestinationConfig>? Destinations { get; init; }
+    public List<DestinationConfig>? Destinations { get; init; }
 
     internal ClusterConfig Build()
     {

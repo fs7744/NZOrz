@@ -1,4 +1,5 @@
-﻿using NZ.Orz.Connections.Exceptions;
+﻿using NZ.Orz.Config;
+using NZ.Orz.Connections.Exceptions;
 using NZ.Orz.Features;
 using System.Net;
 
@@ -15,6 +16,9 @@ public abstract class BaseConnectionContext : IAsyncDisposable
     public virtual EndPoint? LocalEndPoint { get; set; }
 
     public virtual EndPoint? RemoteEndPoint { get; set; }
+
+    public RouteConfig? Route { get; set; }
+    public DestinationState? SelectedDestination { get; set; }
 
     public abstract void Abort();
 

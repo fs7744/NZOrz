@@ -8,6 +8,8 @@ namespace NZ.Orz.Sockets;
 
 public class SocketTransportOptions
 {
+    public TimeSpan ConnectionTimeout { get; set; } = TimeSpan.FromSeconds(1);
+
     public int UdpMaxSize { get; set; } = 4096;
 
     public bool NoDelay { get; set; } = true;

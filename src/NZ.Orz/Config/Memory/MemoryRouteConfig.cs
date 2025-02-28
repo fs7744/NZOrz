@@ -17,8 +17,8 @@ public sealed record MemoryRouteConfig
     /// </summary>
     public TimeSpan? Timeout { get; init; }
 
-    internal RouteConfig Build()
+    internal RouteConfig Build(ServerOptions serverOptions)
     {
-        return new RouteConfig { Protocols = Protocols, RouteId = RouteId, Match = Match?.Build(), Order = Order.GetValueOrDefault(), ClusterId = ClusterId, Timeout = Timeout };
+        return new RouteConfig { Protocols = Protocols, RouteId = RouteId, Match = Match?.Build(), Order = Order.GetValueOrDefault(), ClusterId = ClusterId, Timeout = Timeout.GetValueOrDefault(serverOptions.DefaultProxyTimeout) };
     }
 }

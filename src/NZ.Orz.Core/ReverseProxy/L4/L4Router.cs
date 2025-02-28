@@ -1,6 +1,7 @@
 ﻿using NZ.Orz.Config;
 using NZ.Orz.Connections;
 using NZ.Orz.Routing;
+using NZ.Orz.Sockets;
 
 namespace NZ.Orz.ReverseProxy.L4;
 
@@ -10,6 +11,12 @@ public class L4Router : IL4Router
 
     public ValueTask<RouteConfig> MatchAsync(ConnectionContext context)
     {
-        return RouteTable == null ? ValueTask.FromResult<RouteConfig>(null) : RouteTable.FirstAsync(context.LocalEndPoint.ToString());
+        if (RouteTable == null) return ValueTask.FromResult<RouteConfig>(null);
+        return RouteTable.MatchAsync(context.LocalEndPoint.ToString(), context is UdpConnectionContext ? GatewayProtocols.UDP : GatewayProtocols.TCP, Match);
+    }
+
+    private static bool Match(RouteConfig config, GatewayProtocols protocols)
+    {
+        return config.Protocols.HasFlag(protocols);
     }
 }

@@ -147,7 +147,7 @@ public class RouteContractorValidator : IRouteContractorValidator
                     {
                         Key = item.RouteId,
                         Protocols = item.Protocols.HasFlag(GatewayProtocols.TCP) ? GatewayProtocols.TCP : GatewayProtocols.UDP,
-                        EndPoints = item.Match.Hosts.Select(i => ConvertEndPoint(i, errors)).Where(i => i != null).ToArray(),
+                        EndPoints = item.Match.Hosts.SelectMany(i => ConvertEndPoint(i, errors)).Where(i => i != null).ToArray(),
                         ConnectionDelegate = middleware
                     };
                 }
@@ -157,7 +157,7 @@ public class RouteContractorValidator : IRouteContractorValidator
         //todo : http ListenOptions
     }
 
-    private EndPoint ConvertEndPoint(string address, IList<Exception> errors)
+    private IEnumerable<EndPoint> ConvertEndPoint(string address, IList<Exception> errors)
     {
         foreach (var item in endPointConvertors)
         {

@@ -10,7 +10,14 @@ public abstract class ConnectionContext : BaseConnectionContext, IAsyncDisposabl
 
     public override void Abort(ConnectionAbortedException abortReason)
     {
-        Parameters.GetFeature<IConnectionLifetimeFeature>()?.Abort();
+        if (this is IConnectionLifetimeFeature feature)
+        {
+            feature.Abort();
+        }
+        else
+        {
+            Parameters.GetFeature<IConnectionLifetimeFeature>()?.Abort();
+        }
     }
 
     public override void Abort() => Abort(new ConnectionAbortedException("The connection was aborted by the application via ConnectionContext.Abort()."));
