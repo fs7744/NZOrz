@@ -11,8 +11,8 @@
     <PackageReference Include="BenchmarkDotNet" Version="0.14.0" />
     <PackageReference Include="DotNext" Version="5.18.0" />
     <PackageReference Include="DotNext.Threading" Version="5.18.1" />
-    <PackageReference Include="Microsoft.Extensions.Features" Version="9.0.1" />
-    <PackageReference Include="Microsoft.Extensions.ObjectPool.DependencyInjection" Version="9.1.0" />
+    <PackageReference Include="Microsoft.Extensions.Features" Version="9.0.2" />
+    <PackageReference Include="Microsoft.Extensions.ObjectPool.DependencyInjection" Version="9.2.0" />
   </ItemGroup>
 
   <ItemGroup>

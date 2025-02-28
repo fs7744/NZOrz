@@ -8,7 +8,7 @@ public sealed record RouteConfig
 
     public RouteMatch Match { get; init; } = default!;
 
-    public int? Order { get; init; }
+    public int Order { get; init; }
 
     public string? ClusterId { get; init; }
 
@@ -16,6 +16,9 @@ public sealed record RouteConfig
     /// tcp : read / write timeout not connection timeout, udp revice response timeout, http ...
     /// </summary>
     public TimeSpan? Timeout { get; init; }
+
+    public int RetryCount { get; init; }
+    public ClusterConfig ClusterConfig { get; internal set; }
 
     public bool Equals(RouteConfig? other)
     {
@@ -29,6 +32,7 @@ public sealed record RouteConfig
             && string.Equals(RouteId, other.RouteId, StringComparison.OrdinalIgnoreCase)
             && string.Equals(ClusterId, other.ClusterId, StringComparison.OrdinalIgnoreCase)
             && Timeout == other.Timeout
+            && RetryCount == other.RetryCount
             && Match == other.Match;
     }
 
@@ -39,6 +43,7 @@ public sealed record RouteConfig
             RouteId?.GetHashCode(StringComparison.OrdinalIgnoreCase),
             ClusterId?.GetHashCode(StringComparison.OrdinalIgnoreCase),
             Timeout?.GetHashCode(),
+            RetryCount,
             Match);
     }
 }

@@ -1,10 +1,9 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using NZ.Orz.Config.Abstractions;
+﻿using NZ.Orz.Config.Abstractions;
 using NZ.Orz.Connections;
+using NZ.Orz.ReverseProxy.L4;
+using NZ.Orz.Routing;
 using NZ.Orz.Sockets;
-using System.Linq;
 using System.Net;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace NZ.Orz.Config.Validators;
 
@@ -16,6 +15,7 @@ public class RouteContractorValidator : IRouteContractorValidator
     private readonly IEnumerable<IRouteConfigValidator> routeConfigValidators;
     private readonly IEnumerable<IListenOptionsValidator> listenOptionsValidator;
     private readonly IEnumerable<IEndPointConvertor> endPointConvertors;
+    private readonly IL4Router l4;
     private readonly ConnectionDelegate middleware;
 
     public RouteContractorValidator(IEnumerable<IServerOptionsValidator> serverOptionsValidators,
@@ -24,7 +24,8 @@ public class RouteContractorValidator : IRouteContractorValidator
         IEnumerable<IRouteConfigValidator> routeConfigValidators,
         IEnumerable<IListenOptionsValidator> listenOptionsValidator,
         IEnumerable<IEndPointConvertor> endPointConvertors,
-        IEnumerable<IOrderMiddleware> middlewares)
+        IEnumerable<IOrderMiddleware> middlewares,
+        IL4Router l4)
     {
         this.serverOptionsValidators = serverOptionsValidators;
         this.socketTransportOptionsValidators = socketTransportOptionsValidators;
@@ -32,6 +33,7 @@ public class RouteContractorValidator : IRouteContractorValidator
         this.routeConfigValidators = routeConfigValidators;
         this.listenOptionsValidator = listenOptionsValidator;
         this.endPointConvertors = endPointConvertors;
+        this.l4 = l4;
         this.middleware = BuildMiddleware(middlewares);
     }
 
@@ -42,7 +44,7 @@ public class RouteContractorValidator : IRouteContractorValidator
             context.Abort();
             return Task.CompletedTask;
         };
-        foreach (var component in middlewares.OrderBy(i => i.Order).Reverse()
+        foreach (var component in middlewares.OrderBy(i => i.Order)
             .Select<IOrderMiddleware, Func<ConnectionDelegate, ConnectionDelegate>>(p => (ConnectionDelegate next) => (ConnectionContext c) => p.Invoke(c, next)))
         {
             app = component(app);
@@ -86,7 +88,51 @@ public class RouteContractorValidator : IRouteContractorValidator
                 await validator.ValidateAsync(listenOptions, errors);
             }
         }
+        if (errors.Count == 0)
+        {
+            if (r != null && r.Count > 0)
+            {
+                var old = l4.RouteTable;
+                l4.RouteTable = BuildL4RouteTable(config, serverOptions);
+                if (old != null)
+                    await old.DisposeAsync();
+            }
+        }
         return r;
+    }
+
+    private RouteTable<RouteConfig> BuildL4RouteTable(IProxyConfig config, ServerOptions serverOptions)
+    {
+        var builder = new RouteTableBuilder<RouteConfig>();
+        var clusters = config.Clusters.DistinctBy(i => i.ClusterId, StringComparer.OrdinalIgnoreCase).ToDictionary(i => i.ClusterId, StringComparer.OrdinalIgnoreCase);
+        foreach (var route in config.Routes.Where(i => i.Protocols.HasFlag(GatewayProtocols.TCP) || i.Protocols.HasFlag(GatewayProtocols.UDP)))
+        {
+            if (clusters.TryGetValue(route.ClusterId, out var clusterConfig))
+            {
+                route.ClusterConfig = clusterConfig;
+            }
+            foreach (var host in route.Match.Hosts)
+            {
+                if (host.StartsWith("localhost:"))
+                {
+                    Set(builder, route, $"127.0.0.1:{host.AsSpan(10)}");
+                }
+                Set(builder, route, host);
+            }
+        }
+        return builder.Build();
+
+        static void Set(RouteTableBuilder<RouteConfig> builder, RouteConfig? route, string host)
+        {
+            if (host.EndsWith("*"))
+            {
+                builder.Add(host[..^1], route, RouteType.Prefix, route.Order);
+            }
+            else
+            {
+                builder.Add(host, route, RouteType.Exact, route.Order);
+            }
+        }
     }
 
     private IEnumerable<ListenOptions> Generate(IProxyConfig config, ServerOptions serverOptions, IList<Exception> errors)

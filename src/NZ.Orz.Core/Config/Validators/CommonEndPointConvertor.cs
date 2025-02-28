@@ -22,7 +22,7 @@ public class CommonEndPointConvertor : IEndPointConvertor
             && int.TryParse(address.AsSpan(10), out var port)
             && port >= IPEndPoint.MinPort && port <= IPEndPoint.MaxPort)
         {
-            endPoint = new IPEndPoint(IPAddress.IPv6Loopback, port);
+            endPoint = new IPEndPoint(IPAddress.Loopback, port);
             return true;
         }
 

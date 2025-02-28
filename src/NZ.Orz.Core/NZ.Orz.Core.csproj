@@ -13,8 +13,4 @@
 		<PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.2" />
 	</ItemGroup>
 
-	<ItemGroup>
-	  <Folder Include="ReverseProxy\L4\" />
-	</ItemGroup>
-
 </Project>

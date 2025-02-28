@@ -19,6 +19,6 @@ public sealed record MemoryRouteConfig
 
     internal RouteConfig Build()
     {
-        return new RouteConfig { Protocols = Protocols, RouteId = RouteId, Match = Match?.Build(), Order = Order, ClusterId = ClusterId, Timeout = Timeout };
+        return new RouteConfig { Protocols = Protocols, RouteId = RouteId, Match = Match?.Build(), Order = Order.GetValueOrDefault(), ClusterId = ClusterId, Timeout = Timeout };
     }
 }
