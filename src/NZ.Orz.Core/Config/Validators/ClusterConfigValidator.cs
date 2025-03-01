@@ -1,13 +1,24 @@
-﻿using System.Net;
+﻿using NZ.Orz.ServiceDiscovery;
+using System;
+using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 
 namespace NZ.Orz.Config.Validators;
 
 public class ClusterConfigValidator : IClusterConfigValidator
 {
-    public async ValueTask ValidateAsync(ClusterConfig cluster, IList<Exception> errors)
+    private readonly IEnumerable<IDestinationResolver> resolvers;
+
+    public ClusterConfigValidator(IEnumerable<IDestinationResolver> resolvers)
+    {
+        this.resolvers = resolvers;
+    }
+
+    public async ValueTask ValidateAsync(ClusterConfig cluster, IList<Exception> errors, CancellationToken cancellationToken)
     {
         var destinationStates = new List<DestinationState>();
+        List<DestinationConfig> destinationConfigs = new List<DestinationConfig>();
         foreach (var d in cluster.Destinations)
         {
             var address = d.Address;
@@ -28,12 +39,46 @@ public class ClusterConfigValidator : IClusterConfigValidator
             }
             else
             {
-                errors.Add(new NotSupportedException($"Not supported destination EndPoint {address}"));
+                destinationConfigs.Add(d);
             }
         }
-        if (destinationStates.Count > 0)
+
+        if (destinationConfigs.Count > 0)
         {
-            cluster.DestinationStates = destinationStates;
+            List<IDestinationResolverState> states = new List<IDestinationResolverState>();
+            if (resolvers.Any())
+            {
+                foreach (var resolver in resolvers)
+                {
+                    try
+                    {
+                        var r = await resolver.ResolveDestinationsAsync(destinationConfigs, cancellationToken);
+                        states.Add(r);
+                    }
+                    catch (Exception ex)
+                    {
+                        errors.Add(new InvalidOperationException($"Error resolving destinations for cluster {cluster.ClusterId}", ex));
+                    }
+                }
+            }
+            else
+            {
+                errors.Add(new InvalidOperationException($"No DestinationResolver for cluster {cluster.ClusterId}"));
+            }
+
+            if (destinationStates.Count > 0)
+            {
+                states.Add(new StaticDestinationResolverState(destinationStates));
+            }
+
+            cluster.DestinationStates = new UnionDestinationResolverState(states);
+        }
+        else
+        {
+            if (destinationStates.Count > 0)
+            {
+                cluster.DestinationStates = destinationStates;
+            }
         }
     }
 }

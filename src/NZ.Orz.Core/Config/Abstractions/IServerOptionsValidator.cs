@@ -2,5 +2,5 @@
 
 public interface IServerOptionsValidator
 {
-    public ValueTask ValidateAsync(ServerOptions options, IList<Exception> errors);
+    public ValueTask ValidateAsync(ServerOptions options, IList<Exception> errors, CancellationToken cancellationToken);
 }

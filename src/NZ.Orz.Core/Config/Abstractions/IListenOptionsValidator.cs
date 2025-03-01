@@ -2,5 +2,5 @@
 
 public interface IListenOptionsValidator
 {
-    public ValueTask ValidateAsync(ListenOptions options, IList<Exception> errors);
+    public ValueTask ValidateAsync(ListenOptions options, IList<Exception> errors, CancellationToken cancellationToken);
 }

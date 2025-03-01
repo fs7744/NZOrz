@@ -52,24 +52,24 @@ public class RouteContractorValidator : IRouteContractorValidator
         return app;
     }
 
-    public async ValueTask<IList<ListenOptions>> ValidateAndGenerateListenOptionsAsync(IProxyConfig config, ServerOptions serverOptions, SocketTransportOptions options, IList<Exception> errors)
+    public async ValueTask<IList<ListenOptions>> ValidateAndGenerateListenOptionsAsync(IProxyConfig config, ServerOptions serverOptions, SocketTransportOptions options, IList<Exception> errors, CancellationToken cancellationToken)
     {
         if (options != null)
         {
             foreach (var validator in socketTransportOptionsValidators)
             {
-                await validator.ValidateAsync(options, errors);
+                await validator.ValidateAsync(options, errors, cancellationToken);
             }
         }
         foreach (var validator in serverOptionsValidators)
         {
-            await validator.ValidateAsync(serverOptions, errors);
+            await validator.ValidateAsync(serverOptions, errors, cancellationToken);
         }
         foreach (var cluster in config.Clusters)
         {
             foreach (var validator in clusterConfigValidators)
             {
-                await validator.ValidateAsync(cluster, errors);
+                await validator.ValidateAsync(cluster, errors, cancellationToken);
             }
         }
 
@@ -77,7 +77,7 @@ public class RouteContractorValidator : IRouteContractorValidator
         {
             foreach (var validator in routeConfigValidators)
             {
-                await validator.ValidateAsync(route, errors);
+                await validator.ValidateAsync(route, errors, cancellationToken);
             }
         }
         var r = Generate(config, serverOptions, errors).ToList();
@@ -85,7 +85,7 @@ public class RouteContractorValidator : IRouteContractorValidator
         {
             foreach (var validator in listenOptionsValidator)
             {
-                await validator.ValidateAsync(listenOptions, errors);
+                await validator.ValidateAsync(listenOptions, errors, cancellationToken);
             }
         }
         if (errors.Count == 0)

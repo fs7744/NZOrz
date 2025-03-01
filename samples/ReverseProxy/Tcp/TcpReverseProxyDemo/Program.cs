@@ -19,7 +19,11 @@ var app = NZApp.CreateBuilder(args)
         b.Clusters.Add(new MemoryClusterConfig()
         {
             ClusterId = "apidemo",
-            Destinations = new List<DestinationConfig> { new DestinationConfig() { Address = "localhost:5144" } }
+            Destinations = new List<DestinationConfig>
+            {
+                new DestinationConfig() { Address = "localhost:5144" },
+                new DestinationConfig() { Address = "google.com:998" }, new DestinationConfig() { Address = "google.com" } , new DestinationConfig() { Address = "http://google.com" }, new DestinationConfig() { Address = "https://google.com" }
+            }
         });
     })
     .Build();

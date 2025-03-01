@@ -2,5 +2,5 @@
 
 public interface IClusterConfigValidator
 {
-    public ValueTask ValidateAsync(ClusterConfig cluster, IList<Exception> errors);
+    public ValueTask ValidateAsync(ClusterConfig cluster, IList<Exception> errors, CancellationToken cancellationToken);
 }

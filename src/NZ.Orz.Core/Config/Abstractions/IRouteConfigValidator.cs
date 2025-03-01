@@ -2,5 +2,5 @@
 
 public interface IRouteConfigValidator
 {
-    public ValueTask ValidateAsync(RouteConfig route, IList<Exception> errors);
+    public ValueTask ValidateAsync(RouteConfig route, IList<Exception> errors, CancellationToken cancellationToken);
 }
