@@ -68,7 +68,7 @@ public class ClusterConfigValidator : IClusterConfigValidator
 
             if (destinationStates.Count > 0)
             {
-                states.Add(new StaticDestinationResolverState(destinationStates));
+                states.Insert(0, new StaticDestinationResolverState(destinationStates));
             }
 
             cluster.DestinationStates = new UnionDestinationResolverState(states);

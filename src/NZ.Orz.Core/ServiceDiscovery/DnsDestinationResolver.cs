@@ -1,25 +1,69 @@
 ﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Primitives;
 using NZ.Orz.Config;
+using NZ.Orz.Infrastructure;
+using System.Net;
 
 namespace NZ.Orz.ServiceDiscovery;
 
-public class DnsDestinationResolver : IDestinationResolver
+public class DnsDestinationResolver : DestinationResolverBase
 {
-    private readonly IRouteContractor contractor;
     private readonly ILogger<DnsDestinationResolver> logger;
+    private ServerOptions options;
 
     public DnsDestinationResolver(IRouteContractor contractor, ILogger<DnsDestinationResolver> logger)
     {
-        this.contractor = contractor;
+        options = contractor.GetServerOptions();
         this.logger = logger;
     }
 
-    public async Task<IDestinationResolverState> ResolveDestinationsAsync(List<DestinationConfig> destinationConfigs, CancellationToken cancellationToken)
+    public override async Task ResolveAsync(FuncDestinationResolverState state, CancellationToken cancellationToken)
     {
-        cancellationToken.ThrowIfCancellationRequested();
-        var options = contractor.GetServerOptions();
-        var r = new DnsDestinationResolverState(options, destinationConfigs, logger);
-        await r.LoadAsync(cancellationToken);
-        return r;
+        List<DestinationState> destinations = new List<DestinationState>();
+        foreach (var item in state.Configs)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var (hostName, port) = AddressParser.Parse(item.Address);
+            try
+            {
+                var addresses = options.DnsAddressFamily switch
+                {
+                    { } addressFamily => await Dns.GetHostAddressesAsync(hostName, addressFamily, cancellationToken).ConfigureAwait(false),
+                    null => await Dns.GetHostAddressesAsync(hostName, cancellationToken).ConfigureAwait(false)
+                };
+                destinations.AddRange(addresses.Select(i => new DestinationState() { EndPoint = new IPEndPoint(i, port) }));
+            }
+            catch (Exception exception)
+            {
+                throw new InvalidOperationException($"Failed to resolve host '{hostName}'. See {nameof(Exception.InnerException)} for details.", exception);
+            }
+        }
+
+        if (options.DnsRefreshPeriod.HasValue && options.DnsRefreshPeriod > TimeSpan.Zero)
+        {
+            var cts = state.CancellationTokenSource;
+            if (cts != null && !cts.IsCancellationRequested)
+            {
+                cts.Cancel();
+            }
+            state.CancellationTokenSource = cts = new CancellationTokenSource(options.DnsRefreshPeriod.Value);
+            new CancellationChangeToken(cts.Token).RegisterChangeCallback(o =>
+            {
+                if (o is FuncDestinationResolverState s)
+                {
+                    try
+                    {
+                        ResolveAsync(s, new CancellationTokenSource(options.DnsRefreshPeriod.Value).Token).ConfigureAwait(false).GetAwaiter().GetResult();
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, ex.Message);
+                    }
+                }
+            }, this);
+        }
+
+        state.Destinations = destinations;
     }
 }

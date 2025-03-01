@@ -8,6 +8,6 @@ public class ServerOptions
 
     public TimeSpan DefaultProxyTimeout { get; init; } = TimeSpan.FromSeconds(60);
 
-    public TimeSpan? DnsRefreshPeriod { get; set; } = TimeSpan.FromSeconds(5);
+    public TimeSpan? DnsRefreshPeriod { get; set; } = TimeSpan.FromMinutes(5);
     public AddressFamily? DnsAddressFamily { get; set; }
 }
