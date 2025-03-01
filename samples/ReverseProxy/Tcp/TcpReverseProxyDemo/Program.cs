@@ -11,7 +11,7 @@ var app = NZApp.CreateBuilder(args)
             Protocols = GatewayProtocols.TCP,
             Match = new MemoryRouteMatch()
             {
-                Hosts = new List<string>() { "127.0.0.1:5000", "[::1]:5000" }
+                Hosts = new List<string>() { "*:5000" }
             },
             ClusterId = "apidemo"
         });
@@ -21,7 +21,7 @@ var app = NZApp.CreateBuilder(args)
             ClusterId = "apidemo",
             Destinations = new List<DestinationConfig>
             {
-                new DestinationConfig() { Address = "localhost:5144" },
+                new DestinationConfig() { Address = "[::1]:5144" },
                 new DestinationConfig() { Address = "google.com:998" }, new DestinationConfig() { Address = "google.com" } , new DestinationConfig() { Address = "http://google.com" }, new DestinationConfig() { Address = "https://google.com" }
             }
         });

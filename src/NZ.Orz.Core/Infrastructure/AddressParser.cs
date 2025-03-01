@@ -18,7 +18,7 @@ public static class AddressParser
             var i = address.IndexOf(':');
             if (i != -1 && int.TryParse(address.AsSpan(i + 1), out var p))
             {
-                hostName = address.Substring(0, i);
+                hostName = address[..i];
                 port = p;
             }
             else

@@ -1,4 +1,5 @@
-﻿using NZ.Orz.Config.Abstractions;
+﻿using DotNext;
+using NZ.Orz.Config.Abstractions;
 using NZ.Orz.Connections;
 using NZ.Orz.ReverseProxy.L4;
 using NZ.Orz.Routing;
@@ -116,6 +117,7 @@ public class RouteContractorValidator : IRouteContractorValidator
                 if (host.StartsWith("localhost:"))
                 {
                     Set(builder, route, $"127.0.0.1:{host.AsSpan(10)}");
+                    Set(builder, route, $"[::1]:{host.AsSpan(10)}");
                 }
                 Set(builder, route, host);
             }
@@ -124,13 +126,13 @@ public class RouteContractorValidator : IRouteContractorValidator
 
         static void Set(RouteTableBuilder<RouteConfig> builder, RouteConfig? route, string host)
         {
-            if (host.EndsWith("*"))
+            if (host.StartsWith("*"))
             {
-                builder.Add(host[..^1], route, RouteType.Prefix, route.Order);
+                builder.Add(host[1..].Reverse(), route, RouteType.Prefix, route.Order);
             }
             else
             {
-                builder.Add(host, route, RouteType.Exact, route.Order);
+                builder.Add(host.Reverse(), route, RouteType.Exact, route.Order);
             }
         }
     }

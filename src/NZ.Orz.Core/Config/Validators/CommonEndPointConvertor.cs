@@ -25,6 +25,13 @@ public class CommonEndPointConvertor : IEndPointConvertor
             endPoint = [new IPEndPoint(IPAddress.Loopback, port), new IPEndPoint(IPAddress.IPv6Loopback, port)];
             return true;
         }
+        else if (address.StartsWith("*:")
+            && int.TryParse(address.AsSpan(2), out port)
+            && port >= IPEndPoint.MinPort && port <= IPEndPoint.MaxPort)
+        {
+            endPoint = [new IPEndPoint(IPAddress.Any, port), new IPEndPoint(IPAddress.IPv6Any, port)];
+            return true;
+        }
 
         endPoint = null;
         return false;
