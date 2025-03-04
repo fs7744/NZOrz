@@ -87,7 +87,7 @@ public class L4ProxyMiddleware : IOrderMiddleware
     {
         try
         {
-            var selectedDestination = context.SelectedDestination = loadBalancing.PickDestination(route);
+            var selectedDestination = context.SelectedDestination = loadBalancing.PickDestination(context, route);
             if (selectedDestination == null)
             {
                 return null;

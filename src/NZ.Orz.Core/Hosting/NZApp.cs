@@ -45,6 +45,8 @@ public static partial class NZApp
         services.AddSingleton<IClusterConfigValidator, ClusterConfigValidator>();
         services.AddSingleton<IDestinationResolver, DnsDestinationResolver>();
 
+        services.AddSingleton<ILoadBalancingPolicy, RandomLoadBalancingPolicy>();
+
         return builder;
     }
 }

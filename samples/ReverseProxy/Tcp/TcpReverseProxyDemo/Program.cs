@@ -18,6 +18,7 @@ var app = NZApp.CreateBuilder(args)
 
         b.Clusters.Add(new MemoryClusterConfig()
         {
+            LoadBalancingPolicy = "Random",
             ClusterId = "apidemo",
             Destinations = new List<DestinationConfig>
             {
