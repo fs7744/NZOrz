@@ -20,7 +20,7 @@ var app = NZApp.CreateBuilder(args)
         b.Clusters.Add(new MemoryClusterConfig()
         {
             HealthCheck = new HealthCheckConfig() { Passive = new PassiveHealthCheckConfig() { MinimalTotalCountThreshold = 1 } },
-            LoadBalancingPolicy = "Random",
+            LoadBalancingPolicy = "RoundRobin",
             ClusterId = "apidemo",
             Destinations = new List<DestinationConfig>
             {

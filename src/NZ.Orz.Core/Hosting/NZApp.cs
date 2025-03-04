@@ -47,6 +47,7 @@ public static partial class NZApp
         services.AddSingleton<IDestinationResolver, DnsDestinationResolver>();
 
         services.AddSingleton<ILoadBalancingPolicy, RandomLoadBalancingPolicy>();
+        services.AddSingleton<ILoadBalancingPolicy, RoundRobinLoadBalancingPolicy>();
 
         services.AddSingleton<IHealthReporter, PassiveHealthReporter>();
         services.AddSingleton<IHealthUpdater, HealthyAndUnknownDestinationsUpdater>();
