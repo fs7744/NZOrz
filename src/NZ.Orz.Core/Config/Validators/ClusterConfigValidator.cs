@@ -22,6 +22,8 @@ public class ClusterConfigValidator : IClusterConfigValidator
         this.healthUpdater = healthUpdater;
     }
 
+    public int Order => int.MinValue;
+
     public async ValueTask ValidateAsync(ClusterConfig cluster, IList<Exception> errors, CancellationToken cancellationToken)
     {
         if (policies.TryGetValue(cluster.LoadBalancingPolicy ?? LoadBalancingPolicy.Random, out var policy))

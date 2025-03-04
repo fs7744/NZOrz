@@ -1,5 +1,4 @@
 ﻿using DotNext;
-using NZ.Orz.Config.Abstractions;
 using NZ.Orz.Connections;
 using NZ.Orz.ReverseProxy.L4;
 using NZ.Orz.Routing;
@@ -19,6 +18,8 @@ public class RouteContractorValidator : IRouteContractorValidator
     private readonly IL4Router l4;
     private readonly ConnectionDelegate middleware;
 
+    public int Order => 0;
+
     public RouteContractorValidator(IEnumerable<IServerOptionsValidator> serverOptionsValidators,
         IEnumerable<ISocketTransportOptionsValidator> socketTransportOptionsValidators,
         IEnumerable<IClusterConfigValidator> clusterConfigValidators,
@@ -28,12 +29,12 @@ public class RouteContractorValidator : IRouteContractorValidator
         IEnumerable<IOrderMiddleware> middlewares,
         IL4Router l4)
     {
-        this.serverOptionsValidators = serverOptionsValidators;
-        this.socketTransportOptionsValidators = socketTransportOptionsValidators;
-        this.clusterConfigValidators = clusterConfigValidators;
-        this.routeConfigValidators = routeConfigValidators;
-        this.listenOptionsValidator = listenOptionsValidator;
-        this.endPointConvertors = endPointConvertors;
+        this.serverOptionsValidators = serverOptionsValidators.OrderByDescending(i => i.Order).ToArray();
+        this.socketTransportOptionsValidators = socketTransportOptionsValidators.OrderByDescending(i => i.Order).ToArray();
+        this.clusterConfigValidators = clusterConfigValidators.OrderByDescending(i => i.Order).ToArray(); ;
+        this.routeConfigValidators = routeConfigValidators.OrderByDescending(i => i.Order).ToArray();
+        this.listenOptionsValidator = listenOptionsValidator.OrderByDescending(i => i.Order).ToArray();
+        this.endPointConvertors = endPointConvertors.OrderByDescending(i => i.Order).ToArray();
         this.l4 = l4;
         this.middleware = BuildMiddleware(middlewares);
     }

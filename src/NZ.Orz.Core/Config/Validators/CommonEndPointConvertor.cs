@@ -1,11 +1,12 @@
-﻿using NZ.Orz.Config.Abstractions;
-using System.Net;
+﻿using System.Net;
 using System.Net.Sockets;
 
 namespace NZ.Orz.Config.Validators;
 
 public class CommonEndPointConvertor : IEndPointConvertor
 {
+    public int Order => 0;
+
     public bool TryConvert(string address, out IEnumerable<EndPoint> endPoint)
     {
         if (IPEndPoint.TryParse(address, out var ip))
