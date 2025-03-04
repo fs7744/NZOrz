@@ -17,6 +17,8 @@ public class DnsDestinationResolver : DestinationResolverBase
         this.logger = logger;
     }
 
+    public override int Order => 0;
+
     public override async Task ResolveAsync(FuncDestinationResolverState state, CancellationToken cancellationToken)
     {
         List<DestinationState> destinations = new List<DestinationState>();

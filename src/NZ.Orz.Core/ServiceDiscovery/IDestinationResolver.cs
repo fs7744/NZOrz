@@ -4,5 +4,7 @@ namespace NZ.Orz.ServiceDiscovery;
 
 public interface IDestinationResolver
 {
+    int Order { get; }
+
     Task<IDestinationResolverState> ResolveDestinationsAsync(List<DestinationConfig> destinationConfigs, CancellationToken cancellationToken);
 }

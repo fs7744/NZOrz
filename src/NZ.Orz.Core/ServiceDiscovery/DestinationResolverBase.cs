@@ -4,6 +4,8 @@ namespace NZ.Orz.ServiceDiscovery;
 
 public abstract class DestinationResolverBase : IDestinationResolver
 {
+    public abstract int Order { get; }
+
     public async Task<IDestinationResolverState> ResolveDestinationsAsync(List<DestinationConfig> destinationConfigs, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();

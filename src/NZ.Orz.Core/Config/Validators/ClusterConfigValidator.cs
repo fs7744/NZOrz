@@ -1,8 +1,6 @@
 ﻿using NZ.Orz.ServiceDiscovery;
-using System;
 using System.Net;
 using System.Net.Sockets;
-using System.Threading;
 
 namespace NZ.Orz.Config.Validators;
 
@@ -12,7 +10,7 @@ public class ClusterConfigValidator : IClusterConfigValidator
 
     public ClusterConfigValidator(IEnumerable<IDestinationResolver> resolvers)
     {
-        this.resolvers = resolvers;
+        this.resolvers = resolvers.OrderByDescending(i => i.Order).ToArray();
     }
 
     public async ValueTask ValidateAsync(ClusterConfig cluster, IList<Exception> errors, CancellationToken cancellationToken)
@@ -53,7 +51,10 @@ public class ClusterConfigValidator : IClusterConfigValidator
                     try
                     {
                         var r = await resolver.ResolveDestinationsAsync(destinationConfigs, cancellationToken);
-                        states.Add(r);
+                        if (r != null)
+                        {
+                            states.Add(r);
+                        }
                     }
                     catch (Exception ex)
                     {
