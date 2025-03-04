@@ -1,4 +1,6 @@
-﻿using NZ.Orz.ServiceDiscovery;
+﻿using NZ.Orz.ReverseProxy.LoadBalancing;
+using NZ.Orz.ServiceDiscovery;
+using System.Collections.Frozen;
 using System.Net;
 using System.Net.Sockets;
 
@@ -7,14 +9,26 @@ namespace NZ.Orz.Config.Validators;
 public class ClusterConfigValidator : IClusterConfigValidator
 {
     private readonly IEnumerable<IDestinationResolver> resolvers;
+    private readonly FrozenDictionary<string, ILoadBalancingPolicy> policies;
 
-    public ClusterConfigValidator(IEnumerable<IDestinationResolver> resolvers)
+    public ClusterConfigValidator(IEnumerable<IDestinationResolver> resolvers, IEnumerable<ILoadBalancingPolicy> policies)
     {
         this.resolvers = resolvers.OrderByDescending(i => i.Order).ToArray();
+        this.policies = policies.ToFrozenDictionary(i => i.Name, StringComparer.OrdinalIgnoreCase);
     }
 
     public async ValueTask ValidateAsync(ClusterConfig cluster, IList<Exception> errors, CancellationToken cancellationToken)
     {
+        if (policies.TryGetValue(cluster.LoadBalancingPolicy ?? LoadBalancingPolicy.Random, out var policy))
+        {
+            cluster.LoadBalancingPolicyInstance = policy;
+        }
+        else
+        {
+            errors.Add(new NotSupportedException($"Not supported LoadBalancingPolicy : {cluster.LoadBalancingPolicy}"));
+            return;
+        }
+
         var destinationStates = new List<DestinationState>();
         List<DestinationConfig> destinationConfigs = new List<DestinationConfig>();
         foreach (var d in cluster.Destinations)

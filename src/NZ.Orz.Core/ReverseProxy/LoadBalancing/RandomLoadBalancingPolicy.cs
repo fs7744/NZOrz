@@ -7,9 +7,8 @@ public sealed class RandomLoadBalancingPolicy : ILoadBalancingPolicy
 {
     public string Name => LoadBalancingPolicy.Random;
 
-    public DestinationState? PickDestination(ConnectionContext context, ClusterConfig cluster)
+    public DestinationState? PickDestination(ConnectionContext context, IReadOnlyList<DestinationState> availableDestinations)
     {
-        var d = cluster.DestinationStates;
-        return d[Random.Shared.Next(d.Count)];
+        return availableDestinations[Random.Shared.Next(availableDestinations.Count)];
     }
 }

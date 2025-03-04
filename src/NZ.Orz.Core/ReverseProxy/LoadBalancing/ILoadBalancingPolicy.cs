@@ -7,5 +7,5 @@ public interface ILoadBalancingPolicy
 {
     string Name { get; }
 
-    DestinationState? PickDestination(ConnectionContext context, ClusterConfig cluster);
+    DestinationState? PickDestination(ConnectionContext context, IReadOnlyList<DestinationState> availableDestinations);
 }
