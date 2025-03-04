@@ -12,11 +12,6 @@ public sealed class RoundRobinLoadBalancingPolicy : ILoadBalancingPolicy
 
     public DestinationState? PickDestination(ConnectionContext context, IReadOnlyList<DestinationState> availableDestinations)
     {
-        if (availableDestinations.Count == 0)
-        {
-            return null;
-        }
-
         var counter = _counters.GetOrCreateValue(context.Route);
 
         // Increment returns the new value and we want the first return value to be 0.
