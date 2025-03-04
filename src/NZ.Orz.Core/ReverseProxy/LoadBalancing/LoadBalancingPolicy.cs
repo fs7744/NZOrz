@@ -15,11 +15,11 @@ public sealed class LoadBalancingPolicy
     {
         if (route == null) return null;
         var clusterConfig = route.ClusterConfig;
-        if (clusterConfig == null || clusterConfig.DestinationStates == null) return null;
-        var states = clusterConfig.DestinationStates;
+        if (clusterConfig == null || clusterConfig.AvailableDestinations == null) return null;
+        var states = clusterConfig.AvailableDestinations;
         if (states.Count == 0) return null;
         if (states.Count == 1) return states[0];
 
-        return clusterConfig.LoadBalancingPolicyInstance.PickDestination(context, clusterConfig.DestinationStates);
+        return clusterConfig.LoadBalancingPolicyInstance.PickDestination(context, states);
     }
 }

@@ -5,6 +5,7 @@ using NZ.Orz.Config;
 using NZ.Orz.Config.Abstractions;
 using NZ.Orz.Config.Validators;
 using NZ.Orz.Connections;
+using NZ.Orz.Health;
 using NZ.Orz.Hosting;
 using NZ.Orz.Metrics;
 using NZ.Orz.ReverseProxy.L4;
@@ -30,6 +31,7 @@ public static partial class NZApp
     internal static HostApplicationBuilder UseOrzDefaults(this HostApplicationBuilder builder)
     {
         var services = builder.Services;
+        services.TryAddSingleton(TimeProvider.System);
         services.TryAddSingleton<IMeterFactory, DummyMeterFactory>();
         services.TryAddSingleton<IServer, OrzServer>();
         services.TryAddSingleton<OrzTrace>();
@@ -46,6 +48,9 @@ public static partial class NZApp
         services.AddSingleton<IDestinationResolver, DnsDestinationResolver>();
 
         services.AddSingleton<ILoadBalancingPolicy, RandomLoadBalancingPolicy>();
+
+        services.AddSingleton<IHealthReporter, PassiveHealthReporter>();
+        services.AddSingleton<IHealthUpdater, HealthyAndUnknownDestinationsUpdater>();
 
         return builder;
     }

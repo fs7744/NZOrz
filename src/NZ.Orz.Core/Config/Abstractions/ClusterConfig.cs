@@ -1,8 +1,9 @@
-﻿using NZ.Orz.Infrastructure;
+﻿using NZ.Orz.Health;
+using NZ.Orz.Infrastructure;
 using NZ.Orz.ReverseProxy.LoadBalancing;
 
 namespace NZ.Orz.Config;
-public sealed record ClusterConfig
+public sealed record class ClusterConfig : IDisposable
 {
     public string ClusterId { get; init; } = default!;
 
@@ -11,9 +12,17 @@ public sealed record ClusterConfig
     public HealthCheckConfig? HealthCheck { get; init; }
 
     public IReadOnlyList<DestinationConfig>? Destinations { get; init; }
-
     public IReadOnlyList<DestinationState> DestinationStates { get; internal set; }
+
     public ILoadBalancingPolicy LoadBalancingPolicyInstance { get; internal set; }
+    public List<DestinationState> AvailableDestinations { get; internal set; }
+    public IHealthReporter HealthReporter { get; internal set; }
+
+    public void Dispose()
+    {
+        DestinationStates = null;
+        LoadBalancingPolicyInstance = null;
+    }
 
     public bool Equals(ClusterConfig? other)
     {

@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using NZ.Orz.Config;
+using NZ.Orz.Health;
 using NZ.Orz.Infrastructure;
 using System.Net;
 
@@ -9,12 +10,14 @@ namespace NZ.Orz.ServiceDiscovery;
 public class DnsDestinationResolver : DestinationResolverBase
 {
     private readonly ILogger<DnsDestinationResolver> logger;
+    private readonly IHealthUpdater healthUpdater;
     private ServerOptions options;
 
-    public DnsDestinationResolver(IRouteContractor contractor, ILogger<DnsDestinationResolver> logger)
+    public DnsDestinationResolver(IRouteContractor contractor, ILogger<DnsDestinationResolver> logger, IHealthUpdater healthUpdater)
     {
         options = contractor.GetServerOptions();
         this.logger = logger;
+        this.healthUpdater = healthUpdater;
     }
 
     public override int Order => 0;
@@ -34,7 +37,7 @@ public class DnsDestinationResolver : DestinationResolverBase
                     { } addressFamily => await Dns.GetHostAddressesAsync(hostName, addressFamily, cancellationToken).ConfigureAwait(false),
                     null => await Dns.GetHostAddressesAsync(hostName, cancellationToken).ConfigureAwait(false)
                 };
-                destinations.AddRange(addresses.Select(i => new DestinationState() { EndPoint = new IPEndPoint(i, port) }));
+                destinations.AddRange(addresses.Select(i => new DestinationState() { EndPoint = new IPEndPoint(i, port), ClusterConfig = state.Cluster }));
             }
             catch (Exception exception)
             {
@@ -67,5 +70,6 @@ public class DnsDestinationResolver : DestinationResolverBase
         }
 
         state.Destinations = destinations;
+        healthUpdater.UpdateAvailableDestinations(state.Cluster);
     }
 }

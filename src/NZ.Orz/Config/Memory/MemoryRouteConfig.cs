@@ -12,6 +12,8 @@ public sealed record MemoryRouteConfig
 
     public string? ClusterId { get; init; }
 
+    public int? RetryCount { get; init; }
+
     /// <summary>
     /// tcp : read / write timeout not connection timeout, udp revice response timeout, http ...
     /// </summary>
@@ -19,6 +21,15 @@ public sealed record MemoryRouteConfig
 
     internal RouteConfig Build(ServerOptions serverOptions)
     {
-        return new RouteConfig { Protocols = Protocols, RouteId = RouteId, Match = Match?.Build(), Order = Order.GetValueOrDefault(), ClusterId = ClusterId, Timeout = Timeout.GetValueOrDefault(serverOptions.DefaultProxyTimeout) };
+        return new RouteConfig
+        {
+            Protocols = Protocols,
+            RouteId = RouteId,
+            Match = Match?.Build(),
+            Order = Order.GetValueOrDefault(),
+            ClusterId = ClusterId,
+            Timeout = Timeout.GetValueOrDefault(serverOptions.DefaultProxyTimeout),
+            RetryCount = RetryCount.GetValueOrDefault()
+        };
     }
 }

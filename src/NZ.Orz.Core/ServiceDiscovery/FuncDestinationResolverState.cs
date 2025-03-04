@@ -6,12 +6,14 @@ namespace NZ.Orz.ServiceDiscovery;
 public class FuncDestinationResolverState : IDestinationResolverState
 {
     public List<DestinationConfig> Configs { get; private set; }
+    public ClusterConfig Cluster { get; private set; }
     private Func<FuncDestinationResolverState, CancellationToken, Task> resolveAsync;
     public CancellationTokenSource CancellationTokenSource { get; set; }
     public IReadOnlyList<DestinationState> Destinations { get; set; }
 
-    public FuncDestinationResolverState(List<DestinationConfig> destinationConfigs, Func<FuncDestinationResolverState, CancellationToken, Task> resolveAsync)
+    public FuncDestinationResolverState(ClusterConfig cluster, List<DestinationConfig> destinationConfigs, Func<FuncDestinationResolverState, CancellationToken, Task> resolveAsync)
     {
+        this.Cluster = cluster;
         this.Configs = destinationConfigs;
         this.resolveAsync = resolveAsync;
     }

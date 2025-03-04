@@ -6,10 +6,10 @@ public abstract class DestinationResolverBase : IDestinationResolver
 {
     public abstract int Order { get; }
 
-    public async Task<IDestinationResolverState> ResolveDestinationsAsync(List<DestinationConfig> destinationConfigs, CancellationToken cancellationToken)
+    public async Task<IDestinationResolverState> ResolveDestinationsAsync(ClusterConfig cluster, List<DestinationConfig> destinationConfigs, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var r = new FuncDestinationResolverState(destinationConfigs, ResolveAsync);
+        var r = new FuncDestinationResolverState(cluster, destinationConfigs, ResolveAsync);
         await r.ResolveAsync(cancellationToken);
         return r;
     }

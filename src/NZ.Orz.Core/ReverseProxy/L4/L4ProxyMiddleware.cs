@@ -85,19 +85,23 @@ public class L4ProxyMiddleware : IOrderMiddleware
 
     private async Task<ConnectionContext> DoConnectionAsync(ConnectionContext context, RouteConfig route, int retryCount)
     {
+        DestinationState selectedDestination = null;
         try
         {
-            var selectedDestination = context.SelectedDestination = loadBalancing.PickDestination(context, route);
+            selectedDestination = context.SelectedDestination = loadBalancing.PickDestination(context, route);
             if (selectedDestination == null)
             {
                 return null;
             }
             CancellationTokenSource cts = new CancellationTokenSource();
             cts.CancelAfter(options.ConnectionTimeout);
-            return await connectionFactory.ConnectAsync(selectedDestination.EndPoint, cts.Token);
+            var c = await connectionFactory.ConnectAsync(selectedDestination.EndPoint, cts.Token);
+            selectedDestination.ReportSuccessed();
+            return c;
         }
         catch
         {
+            selectedDestination?.ReportFailed();
             retryCount--;
             if (retryCount <= 0)
             {

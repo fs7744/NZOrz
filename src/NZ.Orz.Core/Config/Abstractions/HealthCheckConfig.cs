@@ -1,4 +1,6 @@
-﻿namespace NZ.Orz.Config;
+﻿using NZ.Orz.Health;
+
+namespace NZ.Orz.Config;
 
 public sealed record HealthCheckConfig
 {

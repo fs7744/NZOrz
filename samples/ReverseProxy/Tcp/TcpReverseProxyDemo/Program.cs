@@ -13,17 +13,20 @@ var app = NZApp.CreateBuilder(args)
             {
                 Hosts = new List<string>() { "*:5000" }
             },
-            ClusterId = "apidemo"
+            ClusterId = "apidemo",
+            RetryCount = 1
         });
 
         b.Clusters.Add(new MemoryClusterConfig()
         {
+            HealthCheck = new HealthCheckConfig() { Passive = new PassiveHealthCheckConfig() { MinimalTotalCountThreshold = 1 } },
             LoadBalancingPolicy = "Random",
             ClusterId = "apidemo",
             Destinations = new List<DestinationConfig>
             {
                 new DestinationConfig() { Address = "[::1]:5144" },
-                new DestinationConfig() { Address = "google.com:998" }, new DestinationConfig() { Address = "google.com" } , new DestinationConfig() { Address = "http://google.com" }, new DestinationConfig() { Address = "https://google.com" }
+                new DestinationConfig() { Address = "[::1]:5146" },
+                //new DestinationConfig() { Address = "google.com:998" }, new DestinationConfig() { Address = "google.com" } , new DestinationConfig() { Address = "http://google.com" }, new DestinationConfig() { Address = "https://google.com" }
             }
         });
     })
