@@ -19,7 +19,6 @@ public abstract class BaseConnectionContext : IAsyncDisposable
 
     public RouteConfig? Route { get; set; }
     public DestinationState? SelectedDestination { get; set; }
-    public IList<DestinationState>? AvailableDestinations { get; set; }
 
     public abstract void Abort();
 
