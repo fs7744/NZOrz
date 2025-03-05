@@ -13,6 +13,7 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
     private IDisposable? subscription;
     private ServerOptions serverOptions;
     private SocketTransportOptions socketTransportOptions;
+    private readonly CancellationTokenSource cts;
 
     public ConfigurationRouteContractor(IConfiguration configuration)
     {
@@ -36,7 +37,8 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
 
     public IChangeToken? GetReloadToken()
     {
-        throw new NotImplementedException();
+        //todo
+        return null;
     }
 
     public ServerOptions GetServerOptions()
@@ -106,7 +108,30 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
     {
         lock (lockObj)
         {
+            var c = new ProxyConfigSnapshot();
+
+            c.Routes = configuration.GetSection(nameof(ProxyConfigSnapshot.Routes)).GetChildren().Select(CreateRoute).ToList();
         }
+    }
+
+    private RouteConfig CreateRoute(IConfigurationSection section)
+    {
+        var serverOptions = GetServerOptions();
+        return new RouteConfig()
+        {
+            RouteId = section.Key,
+            Order = section.ReadInt32(nameof(RouteConfig.Order)).GetValueOrDefault(),
+            ClusterId = section[nameof(RouteConfig.ClusterId)],
+            RetryCount = section.ReadInt32(nameof(RouteConfig.RetryCount)).GetValueOrDefault(),
+            Timeout = section.ReadTimeSpan(nameof(RouteConfig.Timeout)).GetValueOrDefault(serverOptions.DefaultProxyTimeout),
+            Protocols = section.ReadEnum<GatewayProtocols>(nameof(RouteConfig.Protocols)).GetValueOrDefault(GatewayProtocols.TCP),
+            Match = CreateRouteMatch(section.GetSection(nameof(RouteConfig.Match)))
+        };
+    }
+
+    private RouteMatch CreateRouteMatch(IConfigurationSection section)
+    {
+        throw new NotImplementedException();
     }
 
     public Task StopAsync(CancellationToken cancellationToken)

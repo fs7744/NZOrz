@@ -4,9 +4,9 @@ namespace NZ.Orz.Config;
 
 public sealed record ProxyConfigSnapshot : IProxyConfig
 {
-    public IReadOnlyList<RouteConfig> Routes { get; init; }
+    public IReadOnlyList<RouteConfig> Routes { get; set; }
 
-    public IReadOnlyList<ClusterConfig> Clusters { get; init; }
+    public IReadOnlyList<ClusterConfig> Clusters { get; set; }
 
-    public IChangeToken ChangeToken => null;
+    public IChangeToken ChangeToken { get; set; }
 }
