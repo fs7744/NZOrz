@@ -51,6 +51,8 @@ public static partial class NZApp
 
         services.AddSingleton<IHealthReporter, PassiveHealthReporter>();
         services.AddSingleton<IHealthUpdater, HealthyAndUnknownDestinationsUpdater>();
+        services.AddSingleton<IActiveHealthCheckMonitor, ActiveHealthCheckMonitor>();
+        services.AddSingleton<IActiveHealthChecker, TcpConnectionActiveHealthChecker>();
 
         return builder;
     }

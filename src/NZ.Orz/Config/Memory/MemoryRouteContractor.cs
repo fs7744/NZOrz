@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Primitives;
+using NZ.Orz.Health;
 using NZ.Orz.Sockets;
 
 namespace NZ.Orz.Config.Memory;
@@ -57,6 +58,7 @@ public sealed class MemoryRouteContractor : IRouteContractor
         {
             throw new AggregateException(errors);
         }
+        _ = ServiceProvider.GetRequiredService<IActiveHealthCheckMonitor>().CheckHealthAsync(proxyConfig.Clusters);
     }
 
     public Task StopAsync(CancellationToken cancellationToken)

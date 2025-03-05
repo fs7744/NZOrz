@@ -26,13 +26,17 @@ var app = NZApp.CreateBuilder(args)
 
         b.Clusters.Add(new MemoryClusterConfig()
         {
-            HealthCheck = new HealthCheckConfig() { Passive = new PassiveHealthCheckConfig() { MinimalTotalCountThreshold = 10 } },
+            HealthCheck = new HealthCheckConfig()
+            {
+                Active = new ActiveHealthCheckConfig() { Policy = "Tcp" }
+                //Passive = new PassiveHealthCheckConfig() { MinimalTotalCountThreshold = 10 }
+            },
             LoadBalancingPolicy = "PowerOfTwoChoices",
             ClusterId = "apidemo",
             Destinations = new List<DestinationConfig>
             {
-                //new DestinationConfig() { Address = "[::1]:5144" },
-                //new DestinationConfig() { Address = "[::1]:5146" },
+                new DestinationConfig() { Address = "[::1]:5144" },
+                new DestinationConfig() { Address = "[::1]:5146" },
                 new DestinationConfig() { Address = "google.com:998" }, new DestinationConfig() { Address = "google.com" } , new DestinationConfig() { Address = "http://google.com" }, new DestinationConfig() { Address = "https://google.com" }
             }
         });

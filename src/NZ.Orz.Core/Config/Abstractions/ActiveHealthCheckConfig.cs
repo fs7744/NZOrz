@@ -2,13 +2,11 @@
 
 public sealed record ActiveHealthCheckConfig
 {
-    public bool? Enabled { get; init; }
+    public TimeSpan Interval { get; init; } = TimeSpan.FromSeconds(15);
 
-    public TimeSpan? Interval { get; init; }
+    public TimeSpan Timeout { get; init; } = TimeSpan.FromSeconds(10);
 
-    public TimeSpan? Timeout { get; init; }
-
-    public string? Policy { get; init; }
+    public string? Policy { get; init; } = "Tcp";
 
     /// <summary>
     /// HTTP health check endpoint path.
@@ -27,8 +25,7 @@ public sealed record ActiveHealthCheckConfig
             return false;
         }
 
-        return Enabled == other.Enabled
-            && Interval == other.Interval
+        return Interval == other.Interval
             && Timeout == other.Timeout
             && string.Equals(Policy, other.Policy, StringComparison.OrdinalIgnoreCase)
             && string.Equals(Path, other.Path, StringComparison.Ordinal)
@@ -37,8 +34,7 @@ public sealed record ActiveHealthCheckConfig
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(Enabled,
-            Interval,
+        return HashCode.Combine(Interval,
             Timeout,
             Policy?.GetHashCode(StringComparison.OrdinalIgnoreCase),
             Path?.GetHashCode(StringComparison.Ordinal),
