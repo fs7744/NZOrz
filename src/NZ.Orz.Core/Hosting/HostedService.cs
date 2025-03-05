@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using NZ.Orz.Config;
 using NZ.Orz.Servers;
 
@@ -7,12 +8,13 @@ namespace NZ.Orz.Hosting;
 internal class HostedService : IHostedService, IAsyncDisposable
 {
     private readonly IRouteContractor contractor;
-    private readonly IServer server;
+    private readonly IServiceProvider serviceProvider;
+    private IServer server;
 
-    public HostedService(IRouteContractor contractor, IServer server)
+    public HostedService(IRouteContractor contractor, IServiceProvider serviceProvider)
     {
         this.contractor = contractor;
-        this.server = server;
+        this.serviceProvider = serviceProvider;
     }
 
     public async ValueTask DisposeAsync()
@@ -23,6 +25,7 @@ internal class HostedService : IHostedService, IAsyncDisposable
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         await contractor.LoadAsync(cancellationToken);
+        server = serviceProvider.GetRequiredService<IServer>();
         await server.StartAsync(cancellationToken);
     }
 
