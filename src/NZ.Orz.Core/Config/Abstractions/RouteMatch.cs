@@ -1,5 +1,4 @@
 ﻿using NZ.Orz.Infrastructure;
-using System.Reflection.PortableExecutable;
 
 namespace NZ.Orz.Config;
 
