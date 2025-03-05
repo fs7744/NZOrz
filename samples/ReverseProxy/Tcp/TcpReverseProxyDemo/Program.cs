@@ -1,9 +1,15 @@
-﻿using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using NZ.Orz;
 using NZ.Orz.Config;
 using NZ.Orz.Config.Memory;
+using NZ.Orz.ReverseProxy.L4;
 
 var app = NZApp.CreateBuilder(args)
+    .ConfigServices(services =>
+    {
+        services.AddSingleton<ITcpMiddleware, EchoMiddleware>();
+    })
     .UseMemoryConfig(b =>
     {
         b.Routes.Add(new MemoryRouteConfig()
@@ -24,9 +30,9 @@ var app = NZApp.CreateBuilder(args)
             ClusterId = "apidemo",
             Destinations = new List<DestinationConfig>
             {
-                new DestinationConfig() { Address = "[::1]:5144" },
-                new DestinationConfig() { Address = "[::1]:5146" },
-                //new DestinationConfig() { Address = "google.com:998" }, new DestinationConfig() { Address = "google.com" } , new DestinationConfig() { Address = "http://google.com" }, new DestinationConfig() { Address = "https://google.com" }
+                //new DestinationConfig() { Address = "[::1]:5144" },
+                //new DestinationConfig() { Address = "[::1]:5146" },
+                new DestinationConfig() { Address = "google.com:998" }, new DestinationConfig() { Address = "google.com" } , new DestinationConfig() { Address = "http://google.com" }, new DestinationConfig() { Address = "https://google.com" }
             }
         });
     })

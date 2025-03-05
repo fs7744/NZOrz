@@ -1,10 +1,13 @@
-﻿using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace NZ.Orz;
 
 public interface IOrzApp
 {
     public HostApplicationBuilder ApplicationBuilder { get; }
+
+    public IServiceCollection Services { get => ApplicationBuilder.Services; }
 
     IHost Build();
 }

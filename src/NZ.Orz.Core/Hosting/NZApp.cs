@@ -21,15 +21,13 @@ public static partial class NZApp
 {
     public static IOrzApp CreateBuilder(string[] args = null)
     {
-        var builder = new OrzApp(Host.CreateApplicationBuilder(args));
-        builder.ApplicationBuilder.UseOrzDefaults();
-        builder.ApplicationBuilder.Services.AddSingleton<IHostedService, HostedService>();
-        return builder;
+        return Host.CreateApplicationBuilder(args).UseReverseProxy();
     }
 
     internal static HostApplicationBuilder UseOrzDefaults(this HostApplicationBuilder builder)
     {
         var services = builder.Services;
+        services.AddSingleton<IHostedService, HostedService>();
         services.TryAddSingleton(TimeProvider.System);
         services.TryAddSingleton<IMeterFactory, DummyMeterFactory>();
         services.TryAddSingleton<IServer, OrzServer>();

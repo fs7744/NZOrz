@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using NZ.Orz.Config;
 
 namespace NZ.Orz;
 
@@ -10,6 +9,12 @@ public static class HostingExtensions
     {
         builder.UseOrzDefaults();
         IOrzApp app = new OrzApp(builder);
+        return app;
+    }
+
+    public static IOrzApp ConfigServices(this IOrzApp app, Action<IServiceCollection> action)
+    {
+        action(app.Services);
         return app;
     }
 }
