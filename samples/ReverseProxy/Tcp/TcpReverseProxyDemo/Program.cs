@@ -12,6 +12,7 @@ var app = NZApp.CreateBuilder(args)
     })
     .UseMemoryConfig(b =>
     {
+        b.ServerOptions.DnsRefreshPeriod = TimeSpan.FromSeconds(10);
         b.Routes.Add(new MemoryRouteConfig()
         {
             Protocols = GatewayProtocols.TCP,

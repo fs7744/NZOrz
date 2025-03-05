@@ -66,10 +66,32 @@ public class DnsDestinationResolver : DestinationResolverBase
                         logger.LogError(ex, ex.Message);
                     }
                 }
-            }, this);
+            }, state);
         }
+        if (HasChange(state.Destinations, destinations))
+        {
+            state.Destinations = destinations;
+            healthUpdater.UpdateAvailableDestinations(state.Cluster);
+        }
+    }
 
-        state.Destinations = destinations;
-        healthUpdater.UpdateAvailableDestinations(state.Cluster);
+    private bool HasChange(IReadOnlyList<DestinationState> destinations1, List<DestinationState> destinations2)
+    {
+        if (destinations1 == null || destinations1.Count != destinations2.Count) return true;
+        foreach (var dest in destinations1)
+        {
+            if (destinations2.Any(i => i.EndPoint.GetHashCode() == dest.EndPoint.GetHashCode()))
+                continue;
+            else
+                return true;
+        }
+        foreach (var dest in destinations2)
+        {
+            if (destinations1.Any(i => i.EndPoint.GetHashCode() == dest.EndPoint.GetHashCode()))
+                continue;
+            else
+                return true;
+        }
+        return false;
     }
 }
