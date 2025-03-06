@@ -13,6 +13,7 @@ NZOrz ( NeZha Orz ) is network proxy written in c# language, because vic lazy, s
 - [X] TCP Connected Active HealthCheck
 - [X] Configuration 
 - [ ] reload config and rebind
+- [ ] Config Validators
 - [ ] UDP proxy core
 - [ ] HTTP1 server core
 - [ ] HTTP2 server core
