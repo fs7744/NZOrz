@@ -5,7 +5,10 @@ using NZ.Orz.Connections;
 using NZ.Orz.Features;
 using NZ.Orz.Infrastructure;
 using NZ.Orz.Metrics;
+using NZ.Orz.ReverseProxy.L4;
+using NZ.Orz.Routing;
 using System.IO.Pipelines;
+using DotNext;
 
 namespace NZ.Orz.Servers;
 
@@ -20,6 +23,7 @@ public class OrzServer : IServer
     private readonly IRouteContractor contractor;
     private readonly OrzMetrics metrics;
     private readonly OrzTrace trace;
+    private readonly IL4Router l4;
     private readonly TransportManager _transportManager;
     public IFeatureCollection Features { get; }
     private ServiceContext ServiceContext { get; }
@@ -28,12 +32,14 @@ public class OrzServer : IServer
         IEnumerable<IConnectionListenerFactory> transportFactories,
         IEnumerable<IMultiplexedConnectionListenerFactory> multiplexedFactories,
         OrzMetrics metrics,
-        OrzTrace trace)
+        OrzTrace trace,
+        IL4Router l4)
     {
         this.contractor = contractor;
         var serverOptions = contractor.GetServerOptions();
         this.metrics = metrics;
         this.trace = trace;
+        this.l4 = l4;
         Features = new FeatureCollection();
         var connectionManager = new ConnectionManager(
             trace,
@@ -71,7 +77,7 @@ public class OrzServer : IServer
             _hasStarted = true;
 
             ServiceContext.Heartbeat?.Start();
-
+            await ReloadRouteAsync(contractor.GetProxyConfig());
             await BindAsync(cancellationToken).ConfigureAwait(false);
         }
         catch
@@ -146,8 +152,14 @@ public class OrzServer : IServer
             }
 
             reloadToken = contractor.GetReloadToken();
+
             // todo
-            //var (endpointsToStop, endpointsToStart) = contractor.Reload();
+            var changedProxyConfig = await contractor.ReloadAsync();
+            if (changedProxyConfig != null)
+            {
+                if (changedProxyConfig.L4Changed)
+                    await ReloadRouteAsync(changedProxyConfig.ProxyConfig);
+            }
 
             //trace.LogDebug("Config reload token fired. Checking for changes...");
 
@@ -214,6 +226,14 @@ public class OrzServer : IServer
         }
     }
 
+    private async Task ReloadRouteAsync(IProxyConfig proxyConfig)
+    {
+        var old = l4.RouteTable;
+        l4.RouteTable = BuildL4RouteTable(proxyConfig, contractor.GetServerOptions());
+        if (old != null)
+            await old.DisposeAsync();
+    }
+
     public async Task StopAsync(CancellationToken cancellationToken)
     {
         if (Interlocked.Exchange(ref _stopping, 1) == 1)
@@ -250,5 +270,40 @@ public class OrzServer : IServer
     public void Dispose()
     {
         StopAsync(new CancellationToken(canceled: true)).GetAwaiter().GetResult();
+    }
+
+    private RouteTable<RouteConfig> BuildL4RouteTable(IProxyConfig config, ServerOptions serverOptions)
+    {
+        var builder = new RouteTableBuilder<RouteConfig>();
+        var clusters = config.Clusters.DistinctBy(i => i.ClusterId, StringComparer.OrdinalIgnoreCase).ToDictionary(i => i.ClusterId, StringComparer.OrdinalIgnoreCase);
+        foreach (var route in config.Routes.Where(i => i.Protocols.HasFlag(GatewayProtocols.TCP) || i.Protocols.HasFlag(GatewayProtocols.UDP)))
+        {
+            if (clusters.TryGetValue(route.ClusterId, out var clusterConfig))
+            {
+                route.ClusterConfig = clusterConfig;
+            }
+            foreach (var host in route.Match.Hosts)
+            {
+                if (host.StartsWith("localhost:"))
+                {
+                    Set(builder, route, $"127.0.0.1:{host.AsSpan(10)}");
+                    Set(builder, route, $"[::1]:{host.AsSpan(10)}");
+                }
+                Set(builder, route, host);
+            }
+        }
+        return builder.Build();
+
+        static void Set(RouteTableBuilder<RouteConfig> builder, RouteConfig? route, string host)
+        {
+            if (host.StartsWith("*"))
+            {
+                builder.Add(host[1..].Reverse(), route, RouteType.Prefix, route.Order);
+            }
+            else
+            {
+                builder.Add(host.Reverse(), route, RouteType.Exact, route.Order);
+            }
+        }
     }
 }

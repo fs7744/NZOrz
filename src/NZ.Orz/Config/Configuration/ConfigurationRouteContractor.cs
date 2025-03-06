@@ -4,7 +4,6 @@ using Microsoft.Extensions.Primitives;
 using NZ.Orz.Health;
 using NZ.Orz.Sockets;
 using System.Net.Sockets;
-using System.Threading;
 
 namespace NZ.Orz.Config.Configuration;
 
@@ -249,5 +248,10 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
     {
         Dispose();
         return Task.CompletedTask;
+    }
+
+    public Task<ChangedProxyConfig> ReloadAsync()
+    {
+        throw new NotImplementedException();
     }
 }

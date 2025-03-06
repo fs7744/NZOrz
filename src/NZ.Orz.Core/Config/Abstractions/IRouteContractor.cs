@@ -18,4 +18,6 @@ public interface IRouteContractor
     Task LoadAsync(CancellationToken cancellationToken);
 
     Task StopAsync(CancellationToken cancellationToken);
+
+    Task<ChangedProxyConfig> ReloadAsync();
 }

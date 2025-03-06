@@ -55,4 +55,9 @@ internal class CustomizeRouteConfigContractor : IRouteContractor
     {
         return null;
     }
+
+    public Task<ChangedProxyConfig> ReloadAsync()
+    {
+        throw new NotImplementedException();
+    }
 }
