@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Primitives;
-using NZ.Orz.Health;
 using NZ.Orz.Sockets;
 using System.Net.Sockets;
 
@@ -10,7 +9,7 @@ namespace NZ.Orz.Config.Configuration;
 public class ConfigurationRouteContractor : IRouteContractor, IDisposable
 {
     public static string Section = "ReverseProxy";
-    private readonly Lock lockObj = new();
+    private readonly SemaphoreSlim configChangedSemaphore = new SemaphoreSlim(initialCount: 1);
     private readonly IConfiguration configuration;
     private IDisposable? subscription;
     private ServerOptions serverOptions;
@@ -105,12 +104,17 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
 
     private async Task UpdateSnapshotAsync(CancellationToken cancellationToken)
     {
+        await configChangedSemaphore.WaitAsync();
         ProxyConfigSnapshot c;
         try
         {
             c = new ProxyConfigSnapshot();
             c.Routes = configuration.GetSection(nameof(ProxyConfigSnapshot.Routes)).GetChildren().Select(CreateRoute).ToList();
             c.Clusters = configuration.GetSection(nameof(ProxyConfigSnapshot.Clusters)).GetChildren().Select(CreateCluster).ToList();
+            var oldToken = cts;
+            cts = new CancellationTokenSource();
+            changeToken = new CancellationChangeToken(cts.Token);
+            await OnConfigChanged(oldToken, proxyConfig, c, listenOptions, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -122,11 +126,10 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
 
             return;
         }
-
-        var oldToken = cts;
-        cts = new CancellationTokenSource();
-        changeToken = new CancellationChangeToken(cts.Token);
-        await OnConfigChanged(oldToken, proxyConfig, c, listenOptions, cancellationToken);
+        finally
+        {
+            configChangedSemaphore.Release();
+        }
     }
 
     private async Task OnConfigChanged(CancellationTokenSource oldToken, ProxyConfigSnapshot oldConf, ProxyConfigSnapshot newConf, IList<ListenOptions> listenOptions, CancellationToken cancellationToken)
@@ -141,7 +144,6 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
         // todo merge old and new
         proxyConfig = newConf;
         this.listenOptions = newListenOptions;
-        _ = serviceProvider.GetRequiredService<IActiveHealthCheckMonitor>().CheckHealthAsync(proxyConfig.Clusters);
         try
         {
             oldToken?.Cancel(throwOnFirstException: false);

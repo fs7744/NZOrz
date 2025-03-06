@@ -8,4 +8,5 @@ public class ChangedProxyConfig
 
     public bool L4Changed { get; set; }
     public IProxyConfig ProxyConfig { get; set; }
+    public IEnumerable<ClusterConfig> NewClusters { get; internal set; }
 }

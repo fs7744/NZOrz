@@ -9,6 +9,8 @@ using NZ.Orz.ReverseProxy.L4;
 using NZ.Orz.Routing;
 using System.IO.Pipelines;
 using DotNext;
+using Microsoft.Extensions.DependencyInjection;
+using NZ.Orz.Health;
 
 namespace NZ.Orz.Servers;
 
@@ -24,6 +26,7 @@ public class OrzServer : IServer
     private readonly OrzMetrics metrics;
     private readonly OrzTrace trace;
     private readonly IL4Router l4;
+    private readonly IActiveHealthCheckMonitor monitor;
     private readonly TransportManager _transportManager;
     public IFeatureCollection Features { get; }
     private ServiceContext ServiceContext { get; }
@@ -33,13 +36,15 @@ public class OrzServer : IServer
         IEnumerable<IMultiplexedConnectionListenerFactory> multiplexedFactories,
         OrzMetrics metrics,
         OrzTrace trace,
-        IL4Router l4)
+        IL4Router l4,
+        IActiveHealthCheckMonitor monitor)
     {
         this.contractor = contractor;
         var serverOptions = contractor.GetServerOptions();
         this.metrics = metrics;
         this.trace = trace;
         this.l4 = l4;
+        this.monitor = monitor;
         Features = new FeatureCollection();
         var connectionManager = new ConnectionManager(
             trace,
@@ -77,7 +82,9 @@ public class OrzServer : IServer
             _hasStarted = true;
 
             ServiceContext.Heartbeat?.Start();
-            await ReloadRouteAsync(contractor.GetProxyConfig());
+            var proxyConfig = contractor.GetProxyConfig();
+            await ReloadRouteAsync(proxyConfig);
+            _ = monitor.CheckHealthAsync(proxyConfig.Clusters);
             await BindAsync(cancellationToken).ConfigureAwait(false);
         }
         catch
@@ -159,6 +166,8 @@ public class OrzServer : IServer
             {
                 if (changedProxyConfig.L4Changed)
                     await ReloadRouteAsync(changedProxyConfig.ProxyConfig);
+                if (changedProxyConfig.NewClusters != null)
+                    _ = monitor.CheckHealthAsync(changedProxyConfig.NewClusters);
             }
 
             //trace.LogDebug("Config reload token fired. Checking for changes...");
