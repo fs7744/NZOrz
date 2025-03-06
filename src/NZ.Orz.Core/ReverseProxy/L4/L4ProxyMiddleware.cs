@@ -117,7 +117,7 @@ public class L4ProxyMiddleware : IOrderMiddleware
         {
             selectedDestination?.ReportFailed();
             retryCount--;
-            if (retryCount <= 0)
+            if (retryCount < 0)
             {
                 throw;
             }
