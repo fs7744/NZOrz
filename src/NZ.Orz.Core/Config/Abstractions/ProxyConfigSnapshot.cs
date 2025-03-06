@@ -4,7 +4,7 @@ namespace NZ.Orz.Config;
 
 public sealed record ProxyConfigSnapshot : IProxyConfig
 {
-    public IReadOnlyList<RouteConfig> Routes { get; set; }
+    public IList<RouteConfig> Routes { get; set; }
 
-    public IReadOnlyList<ClusterConfig> Clusters { get; set; }
+    public IList<ClusterConfig> Clusters { get; set; }
 }

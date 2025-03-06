@@ -104,7 +104,6 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
 
     private async Task UpdateSnapshotAsync(CancellationToken cancellationToken)
     {
-        Console.WriteLine(DateTime.Now);
         await configChangedSemaphore.WaitAsync();
         ProxyConfigSnapshot c;
         try

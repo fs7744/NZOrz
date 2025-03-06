@@ -1,9 +1,13 @@
 ﻿using DotNext;
+using DotNext.Collections.Generic;
 using Microsoft.Extensions.Options;
 using NZ.Orz.Connections;
 using NZ.Orz.ReverseProxy.L4;
 using NZ.Orz.Routing;
 using NZ.Orz.Sockets;
+using System.Collections.Frozen;
+using System.Diagnostics.Metrics;
+using System.Linq;
 using System.Net;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
@@ -56,27 +60,43 @@ public class RouteContractorValidator : IRouteContractorValidator
     public async ValueTask<IList<ListenOptions>> ValidateAndGenerateListenOptionsAsync(IProxyConfig config, ServerOptions serverOptions, SocketTransportOptions options, IList<Exception> errors, CancellationToken cancellationToken)
     {
         //todo remove error config and log
-        foreach (var cluster in config.Clusters)
+        var ec = errors.Count;
+        foreach (var cluster in config.Clusters.ToList())
         {
             foreach (var validator in clusterConfigValidators)
             {
+                ec = errors.Count;
                 await validator.ValidateAsync(cluster, errors, cancellationToken);
+                if (errors.Count > ec)
+                {
+                    config.Clusters.Remove(cluster);
+                }
             }
         }
 
-        foreach (var route in config.Routes)
+        foreach (var route in config.Routes.ToList())
         {
             foreach (var validator in routeConfigValidators)
             {
+                ec = errors.Count;
                 await validator.ValidateAsync(route, errors, cancellationToken);
+                if (errors.Count > ec)
+                {
+                    config.Routes.Remove(route);
+                }
             }
         }
         var r = Generate(config, serverOptions, errors).ToList();
-        foreach (var listenOptions in r)
+        foreach (var listenOptions in r.ToList())
         {
             foreach (var validator in listenOptionsValidator)
             {
+                ec = errors.Count;
                 await validator.ValidateAsync(listenOptions, errors, cancellationToken);
+                if (errors.Count > ec)
+                {
+                    r.Remove(listenOptions);
+                }
             }
         }
         return r;
