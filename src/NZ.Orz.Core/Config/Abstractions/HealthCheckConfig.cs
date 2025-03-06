@@ -8,8 +8,6 @@ public sealed record HealthCheckConfig
 
     public ActiveHealthCheckConfig? Active { get; init; }
 
-    public string? AvailableDestinationsPolicy { get; init; }
-
     public bool Equals(HealthCheckConfig? other)
     {
         if (other is null)
@@ -18,15 +16,13 @@ public sealed record HealthCheckConfig
         }
 
         return Passive == other.Passive
-            && Active == other.Active
-            && string.Equals(AvailableDestinationsPolicy, other.AvailableDestinationsPolicy, StringComparison.OrdinalIgnoreCase);
+            && Active == other.Active;
     }
 
     public override int GetHashCode()
     {
         return HashCode.Combine(
             Passive,
-            Active,
-            AvailableDestinationsPolicy?.GetHashCode(StringComparison.OrdinalIgnoreCase));
+            Active);
     }
 }
