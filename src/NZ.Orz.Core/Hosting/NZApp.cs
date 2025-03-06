@@ -28,11 +28,11 @@ public static partial class NZApp
     {
         var services = builder.Services;
         services.AddSingleton<IHostedService, HostedService>();
-        services.TryAddSingleton(TimeProvider.System);
-        services.TryAddSingleton<IMeterFactory, DummyMeterFactory>();
-        services.TryAddSingleton<IServer, OrzServer>();
-        services.TryAddSingleton<OrzTrace>();
-        services.TryAddSingleton<OrzMetrics>();
+        services.AddSingleton(TimeProvider.System);
+        services.AddSingleton<IMeterFactory, DummyMeterFactory>();
+        services.AddSingleton<IServer, OrzServer>();
+        services.AddSingleton<OrzTrace>();
+        services.AddSingleton<OrzMetrics>();
         services.AddSingleton<IConnectionListenerFactory, SocketTransportFactory>();
         services.AddSingleton<IConnectionListenerFactory, UdpTransportFactory>();
         services.AddSingleton<IConnectionFactory, SocketConnectionFactory>();

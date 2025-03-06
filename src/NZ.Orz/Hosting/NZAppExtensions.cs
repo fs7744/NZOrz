@@ -1,6 +1,5 @@
-﻿using Microsoft.Extensions.Configuration.Json;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using NZ.Orz.Config;
 using NZ.Orz.Config.Configuration;
 
@@ -11,12 +10,11 @@ public static class NZAppExtensions
     public static IOrzApp UseJsonConfig(this IOrzApp app, string file = "appsettings.json", string section = "ReverseProxy")
     {
         ConfigurationRouteContractor.Section = section ?? "ReverseProxy";
-        if (File.Exists(file))
+        if (!"appsettings.json".Equals(file, StringComparison.OrdinalIgnoreCase))
         {
-            var appSettingsJson = File.ReadAllBytes(file);
-            app.ApplicationBuilder.Configuration.Add<JsonStreamConfigurationSource>(s => s.Stream = new MemoryStream(appSettingsJson));
+            app.ApplicationBuilder.Configuration.AddJsonFile(file, false, true);
         }
-        app.ApplicationBuilder.Services.AddSingleton<IRouteContractor, ConfigurationRouteContractor>();
+        app.ApplicationBuilder.Services.TryAddSingleton<IRouteContractor, ConfigurationRouteContractor>();
         return app;
     }
 }

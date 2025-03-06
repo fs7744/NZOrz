@@ -8,7 +8,7 @@ var app = NZApp.CreateBuilder(args)
     {
         services.AddSingleton<ITcpMiddleware, EchoMiddleware>();
     })
-    .UseJsonConfig("appsettings.json")
+    .UseJsonConfig()
     .Build();
 
 await app.RunAsync();

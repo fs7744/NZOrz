@@ -104,6 +104,7 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
 
     private async Task UpdateSnapshotAsync(CancellationToken cancellationToken)
     {
+        Console.WriteLine(DateTime.Now);
         await configChangedSemaphore.WaitAsync();
         ProxyConfigSnapshot c;
         try
@@ -111,10 +112,6 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
             c = new ProxyConfigSnapshot();
             c.Routes = configuration.GetSection(nameof(ProxyConfigSnapshot.Routes)).GetChildren().Select(CreateRoute).ToList();
             c.Clusters = configuration.GetSection(nameof(ProxyConfigSnapshot.Clusters)).GetChildren().Select(CreateCluster).ToList();
-            var oldToken = cts;
-            cts = new CancellationTokenSource();
-            changeToken = new CancellationChangeToken(cts.Token);
-            await OnConfigChanged(oldToken, proxyConfig, c, listenOptions, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -129,6 +126,17 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
         finally
         {
             configChangedSemaphore.Release();
+        }
+
+        try
+        {
+            var oldToken = cts;
+            cts = new CancellationTokenSource();
+            changeToken = new CancellationChangeToken(cts.Token);
+            await OnConfigChanged(oldToken, proxyConfig, c, listenOptions, cancellationToken);
+        }
+        catch (Exception ex)
+        {// todo log
         }
     }
 
