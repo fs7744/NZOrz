@@ -4,6 +4,7 @@ using Microsoft.Extensions.Primitives;
 using NZ.Orz.Health;
 using NZ.Orz.Sockets;
 using System.Net.Sockets;
+using System.Threading;
 
 namespace NZ.Orz.Config.Configuration;
 
@@ -17,7 +18,8 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
     private SocketTransportOptions socketTransportOptions;
     private IList<ListenOptions> listenOptions;
     private ProxyConfigSnapshot proxyConfig;
-    private readonly CancellationTokenSource cts;
+    private CancellationTokenSource cts;
+    private IChangeToken changeToken;
     private readonly IServiceProvider serviceProvider;
 
     public ConfigurationRouteContractor(IConfiguration configuration, IServiceProvider serviceProvider)
@@ -43,8 +45,7 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
 
     public IChangeToken? GetReloadToken()
     {
-        //todo
-        return null;
+        return changeToken;
     }
 
     public ServerOptions GetServerOptions()
@@ -57,11 +58,11 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
         return socketTransportOptions;
     }
 
-    private void UpdateAllSnapshot()
+    private async Task LoadSystemConfigAsync(CancellationToken cancellationToken)
     {
         serverOptions = CreateServerOptions(configuration.GetSection(nameof(ServerOptions)));
         socketTransportOptions = CreateSocketTransportOptions(configuration.GetSection(nameof(SocketTransportOptions)));
-        UpdateSnapshot();
+        await serviceProvider.GetRequiredService<IRouteContractorValidator>().ValidateSystemConfigAsync(serverOptions, socketTransportOptions, cancellationToken);
     }
 
     private SocketTransportOptions CreateSocketTransportOptions(IConfigurationSection section)
@@ -103,15 +104,52 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
         limits.MaxConcurrentUpgradedConnections = section.ReadInt64(nameof(ServerLimits.MaxConcurrentUpgradedConnections));
     }
 
-    private void UpdateSnapshot()
+    private async Task UpdateSnapshotAsync(CancellationToken cancellationToken)
     {
-        lock (lockObj)
+        ProxyConfigSnapshot c;
+        try
         {
-            var c = new ProxyConfigSnapshot();
-
+            c = new ProxyConfigSnapshot();
             c.Routes = configuration.GetSection(nameof(ProxyConfigSnapshot.Routes)).GetChildren().Select(CreateRoute).ToList();
             c.Clusters = configuration.GetSection(nameof(ProxyConfigSnapshot.Clusters)).GetChildren().Select(CreateCluster).ToList();
-            proxyConfig = c;
+        }
+        catch (Exception ex)
+        {
+            // todo log
+            if (proxyConfig is null)
+            {
+                throw;
+            }
+
+            return;
+        }
+
+        var oldToken = cts;
+        cts = new CancellationTokenSource();
+        changeToken = new CancellationChangeToken(cts.Token);
+        await OnConfigChanged(oldToken, proxyConfig, c, listenOptions, cancellationToken);
+    }
+
+    private async Task OnConfigChanged(CancellationTokenSource oldToken, ProxyConfigSnapshot oldConf, ProxyConfigSnapshot newConf, IList<ListenOptions> listenOptions, CancellationToken cancellationToken)
+    {
+        var errors = new List<Exception>();
+        var newListenOptions = await serviceProvider.GetRequiredService<IRouteContractorValidator>().ValidateAndGenerateListenOptionsAsync(newConf, serverOptions, socketTransportOptions, errors, cancellationToken);
+        // todo
+        if (errors.Any())
+        {
+            throw new AggregateException(errors);
+        }
+        // todo merge old and new
+        proxyConfig = newConf;
+        this.listenOptions = newListenOptions;
+        _ = serviceProvider.GetRequiredService<IActiveHealthCheckMonitor>().CheckHealthAsync(proxyConfig.Clusters);
+        try
+        {
+            oldToken?.Cancel(throwOnFirstException: false);
+        }
+        catch (Exception ex)
+        {
+            //todo
         }
     }
 
@@ -197,16 +235,14 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
 
     public async Task LoadAsync(CancellationToken cancellationToken)
     {
-        subscription = ChangeToken.OnChange(configuration.GetReloadToken, UpdateSnapshot);
-        UpdateAllSnapshot();
-        var errors = new List<Exception>();
-        listenOptions = await serviceProvider.GetRequiredService<IRouteContractorValidator>().ValidateAndGenerateListenOptionsAsync(proxyConfig, serverOptions, socketTransportOptions, errors, cancellationToken);
-        // todo
-        if (errors.Any())
-        {
-            throw new AggregateException(errors);
-        }
-        _ = serviceProvider.GetRequiredService<IActiveHealthCheckMonitor>().CheckHealthAsync(proxyConfig.Clusters);
+        subscription = ChangeToken.OnChange(configuration.GetReloadToken, UpdateSnapshotSync);
+        await LoadSystemConfigAsync(cancellationToken);
+        await UpdateSnapshotAsync(cancellationToken);
+    }
+
+    private void UpdateSnapshotSync()
+    {
+        UpdateSnapshotAsync(CancellationToken.None).ConfigureAwait(false).GetAwaiter().GetResult();
     }
 
     public Task StopAsync(CancellationToken cancellationToken)

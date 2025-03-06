@@ -6,5 +6,5 @@ public interface ISocketTransportOptionsValidator
 {
     int Order { get; }
 
-    public ValueTask ValidateAsync(SocketTransportOptions options, IList<Exception> errors, CancellationToken cancellationToken);
+    public ValueTask ValidateAsync(SocketTransportOptions options, CancellationToken cancellationToken);
 }

@@ -1,9 +1,11 @@
 ﻿using DotNext;
+using Microsoft.Extensions.Options;
 using NZ.Orz.Connections;
 using NZ.Orz.ReverseProxy.L4;
 using NZ.Orz.Routing;
 using NZ.Orz.Sockets;
 using System.Net;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace NZ.Orz.Config.Validators;
 
@@ -56,17 +58,6 @@ public class RouteContractorValidator : IRouteContractorValidator
 
     public async ValueTask<IList<ListenOptions>> ValidateAndGenerateListenOptionsAsync(IProxyConfig config, ServerOptions serverOptions, SocketTransportOptions options, IList<Exception> errors, CancellationToken cancellationToken)
     {
-        if (options != null)
-        {
-            foreach (var validator in socketTransportOptionsValidators)
-            {
-                await validator.ValidateAsync(options, errors, cancellationToken);
-            }
-        }
-        foreach (var validator in serverOptionsValidators)
-        {
-            await validator.ValidateAsync(serverOptions, errors, cancellationToken);
-        }
         foreach (var cluster in config.Clusters)
         {
             foreach (var validator in clusterConfigValidators)
@@ -169,5 +160,20 @@ public class RouteContractorValidator : IRouteContractorValidator
         }
         errors.Add(new ArgumentException($"'{address}' can not convert to EndPoint."));
         return null;
+    }
+
+    public async Task ValidateSystemConfigAsync(ServerOptions serverOptions, SocketTransportOptions socketTransportOptions, CancellationToken cancellationToken)
+    {
+        if (socketTransportOptions != null)
+        {
+            foreach (var validator in socketTransportOptionsValidators)
+            {
+                await validator.ValidateAsync(socketTransportOptions, cancellationToken);
+            }
+        }
+        foreach (var validator in serverOptionsValidators)
+        {
+            await validator.ValidateAsync(serverOptions, cancellationToken);
+        }
     }
 }
