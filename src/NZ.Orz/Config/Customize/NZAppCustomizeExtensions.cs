@@ -18,7 +18,7 @@ public static class NZAppCustomizeExtensions
             Services = builder.Services
         };
         action(b);
-        var r = new CustomizeRouteConfigContractor(b.ServerOptions, i => b.EndPoints.Select(e =>
+        var r = new CustomizeRouteConfigContractor(b.ServerOptions, i => b.EndPoints.SelectMany(e =>
         {
             e.ServiceProvider = i;
             return e.Build();

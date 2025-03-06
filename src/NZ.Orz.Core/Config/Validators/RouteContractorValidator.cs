@@ -57,11 +57,12 @@ public class RouteContractorValidator : IRouteContractorValidator
         return app;
     }
 
-    public async ValueTask<IList<ListenOptions>> ValidateAndGenerateListenOptionsAsync(IProxyConfig config, ServerOptions serverOptions, SocketTransportOptions options, IList<Exception> errors, CancellationToken cancellationToken)
+    public async ValueTask<IList<ListenOptions>> ValidateAndGenerateListenOptionsAsync(ProxyConfigSnapshot config, ServerOptions serverOptions, SocketTransportOptions options, IList<Exception> errors, CancellationToken cancellationToken)
     {
         //todo remove error config and log
         var ec = errors.Count;
-        foreach (var cluster in config.Clusters.ToList())
+        var clusters = config.Clusters.ToList();
+        foreach (var cluster in config.Clusters)
         {
             foreach (var validator in clusterConfigValidators)
             {
@@ -69,11 +70,13 @@ public class RouteContractorValidator : IRouteContractorValidator
                 await validator.ValidateAsync(cluster, errors, cancellationToken);
                 if (errors.Count > ec)
                 {
-                    config.Clusters.Remove(cluster);
+                    clusters.Remove(cluster);
                 }
             }
         }
+        config.Clusters = clusters;
 
+        var routes = config.Routes.ToList();
         foreach (var route in config.Routes.ToList())
         {
             foreach (var validator in routeConfigValidators)
@@ -82,10 +85,12 @@ public class RouteContractorValidator : IRouteContractorValidator
                 await validator.ValidateAsync(route, errors, cancellationToken);
                 if (errors.Count > ec)
                 {
-                    config.Routes.Remove(route);
+                    routes.Remove(route);
                 }
             }
         }
+        config.Routes = routes;
+
         var r = Generate(config, serverOptions, errors).ToList();
         foreach (var listenOptions in r.ToList())
         {
@@ -110,13 +115,16 @@ public class RouteContractorValidator : IRouteContractorValidator
             {
                 if (item.Protocols.HasFlag(GatewayProtocols.TCP) || item.Protocols.HasFlag(GatewayProtocols.UDP))
                 {
-                    yield return new ListenOptions()
+                    foreach (var e in item.Match.Hosts.SelectMany(i => ConvertEndPoint(i, errors)).Where(i => i != null).ToArray())
                     {
-                        Key = item.RouteId,
-                        Protocols = item.Protocols.HasFlag(GatewayProtocols.TCP) ? GatewayProtocols.TCP : GatewayProtocols.UDP,
-                        EndPoints = item.Match.Hosts.SelectMany(i => ConvertEndPoint(i, errors)).Where(i => i != null).ToArray(),
-                        ConnectionDelegate = middleware
-                    };
+                        yield return new ListenOptions()
+                        {
+                            Key = item.RouteId,
+                            Protocols = item.Protocols.HasFlag(GatewayProtocols.TCP) ? GatewayProtocols.TCP : GatewayProtocols.UDP,
+                            EndPoint = e,
+                            ConnectionDelegate = middleware
+                        };
+                    }
                 }
             }
         }

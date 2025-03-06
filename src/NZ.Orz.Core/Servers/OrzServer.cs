@@ -11,6 +11,7 @@ using System.IO.Pipelines;
 using DotNext;
 using Microsoft.Extensions.DependencyInjection;
 using NZ.Orz.Health;
+using System.Net;
 
 namespace NZ.Orz.Servers;
 
@@ -98,19 +99,16 @@ public class OrzServer : IServer
     {
         // todo support tcp / udp / http 1 2 3
 
-        foreach (var endPoint in options.EndPoints)
+        var protocols = options.Protocols;
+        if (protocols.HasFlag(GatewayProtocols.TCP) || protocols.HasFlag(GatewayProtocols.UDP))
         {
-            var protocols = options.Protocols;
-            if (protocols.HasFlag(GatewayProtocols.TCP) || protocols.HasFlag(GatewayProtocols.UDP))
-            {
-                await _transportManager.BindAsync(endPoint, options.Protocols, options.ConnectionDelegate, options, cancellationToken);
-            }
-
-            //if (options.Protocols.HasFlag(GatewayProtocols.UDP))
-            //{
-            //    await _transportManager.BindAsync(endPoint, options.Protocols, options.MultiplexedConnectionDelegate, options, cancellationToken);
-            //}
+            await _transportManager.BindAsync(options.EndPoint, options.Protocols, options.ConnectionDelegate, options, cancellationToken);
         }
+
+        //if (options.Protocols.HasFlag(GatewayProtocols.UDP))
+        //{
+        //    await _transportManager.BindAsync(endPoint, options.Protocols, options.MultiplexedConnectionDelegate, options, cancellationToken);
+        //}
     }
 
     private async Task BindAsync(CancellationToken cancellationToken)

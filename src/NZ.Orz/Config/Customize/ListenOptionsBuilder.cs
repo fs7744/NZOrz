@@ -30,7 +30,7 @@ public class ListenOptionsBuilder
         return this;
     }
 
-    internal ListenOptions Build()
+    internal IEnumerable<ListenOptions> Build()
     {
         ConnectionDelegate app = context =>
         {
@@ -52,7 +52,7 @@ public class ListenOptionsBuilder
             mapp = component(mapp);
         }
 
-        return new ListenOptions() { Key = key, EndPoints = EndPoints, ConnectionDelegate = app, MultiplexedConnectionDelegate = mapp, Protocols = Protocols };
+        return EndPoints.Select(i => new ListenOptions() { Key = key, EndPoint = i, ConnectionDelegate = app, MultiplexedConnectionDelegate = mapp, Protocols = Protocols });
     }
 
     public ListenOptionsBuilder UseMiddleware(Func<ConnectionDelegate, ConnectionDelegate> middleware)

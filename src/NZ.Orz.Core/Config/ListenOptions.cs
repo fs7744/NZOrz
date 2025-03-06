@@ -9,7 +9,7 @@ public class ListenOptions
 
     public GatewayProtocols Protocols { get; set; }
 
-    public IReadOnlyCollection<EndPoint> EndPoints { get; set; }
+    public EndPoint EndPoint { get; set; }
 
     public ConnectionDelegate ConnectionDelegate { get; set; }
     public MultiplexedConnectionDelegate MultiplexedConnectionDelegate { get; set; }

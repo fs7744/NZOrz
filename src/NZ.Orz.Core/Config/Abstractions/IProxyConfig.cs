@@ -6,7 +6,7 @@ public interface IProxyConfig
 
     //string RevisionId => _revisionIdsTable.GetValue(this, static _ => Guid.NewGuid().ToString());
 
-    IList<RouteConfig> Routes { get; }
+    IReadOnlyList<RouteConfig> Routes { get; }
 
-    IList<ClusterConfig> Clusters { get; }
+    IReadOnlyList<ClusterConfig> Clusters { get; }
 }
