@@ -259,7 +259,7 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
 
     private PassiveHealthCheckConfig CreatePassiveHealthCheckConfig(IConfigurationSection section)
     {
-        if (!section.Exists()) return null;
+        if (!section.Exists() || !section.ReadBool("Enable").GetValueOrDefault()) return null;
         var s = new PassiveHealthCheckConfig();
         s.DetectionWindowSize = section.ReadTimeSpan(nameof(PassiveHealthCheckConfig.DetectionWindowSize)).GetValueOrDefault(s.DetectionWindowSize);
         s.MinimalTotalCountThreshold = section.ReadInt32(nameof(PassiveHealthCheckConfig.MinimalTotalCountThreshold)).GetValueOrDefault(s.MinimalTotalCountThreshold);
@@ -270,7 +270,7 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
 
     private ActiveHealthCheckConfig CreateActiveHealthCheckConfig(IConfigurationSection section)
     {
-        if (!section.Exists()) return null;
+        if (!section.Exists() || !section.ReadBool("Enable").GetValueOrDefault()) return null;
         var s = new ActiveHealthCheckConfig();
         s.Interval = section.ReadTimeSpan(nameof(ActiveHealthCheckConfig.Interval)).GetValueOrDefault(s.Interval);
         s.Timeout = section.ReadTimeSpan(nameof(ActiveHealthCheckConfig.Timeout)).GetValueOrDefault(s.Timeout);

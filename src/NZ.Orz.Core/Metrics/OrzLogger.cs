@@ -241,6 +241,11 @@ public partial class OrzLogger : ILogger
         GeneralLog.ProxyTimeout(_proxylogger, routeId, time);
     }
 
+    public void ConnectUpstreamTimeout(string routeId)
+    {
+        GeneralLog.ConnectUpstreamTimeout(_proxylogger, routeId);
+    }
+
     private static partial class GeneralLog
     {
         [LoggerMessage(15, LogLevel.Warning, @"Not found available upstream for cluster ""{ClusterId}"".", EventName = "NotFoundAvailableUpstream")]
@@ -284,6 +289,9 @@ public partial class OrzLogger : ILogger
 
         [LoggerMessage(28, LogLevel.Information, @"Proxy timeout ({time}) for route {routeId}.", EventName = "ProxyTimeout")]
         public static partial void ProxyTimeout(ILogger logger, string routeId, TimeSpan time);
+
+        [LoggerMessage(29, LogLevel.Information, @"Connect upstream timeout for route {routeId}.", EventName = "ConnectUpstreamTimeout")]
+        public static partial void ConnectUpstreamTimeout(ILogger logger, string routeId);
     }
 
     #endregion ReverseProxy

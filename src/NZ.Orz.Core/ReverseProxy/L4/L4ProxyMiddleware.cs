@@ -77,31 +77,22 @@ public class L4ProxyMiddleware : IOrderMiddleware
             {
                 context.SelectedDestination?.ConcurrencyCounter.Increment();
                 var cts = route.CreateTimeoutTokenSource();
-                if (hasMiddlewareTcp)
-                {
-                    var task = await Task.WhenAny(
+                var task = hasMiddlewareTcp ?
+                        await Task.WhenAny(
                         context.Transport.Input.CopyToAsync(new MiddlewarePipeWriter(upstream.Transport.Output, context, reqTcp), cts.Token)
-                        , upstream.Transport.Input.CopyToAsync(new MiddlewarePipeWriter(context.Transport.Output, context, respTcp), cts.Token));
-                    if (task.IsCanceled)
-                    {
-                        logger.ProxyTimeout(route.RouteId, route.Timeout);
-                    }
-                }
-                else
-                {
-                    var task = await Task.WhenAny(
+                        , upstream.Transport.Input.CopyToAsync(new MiddlewarePipeWriter(context.Transport.Output, context, respTcp), cts.Token))
+                        : await Task.WhenAny(
                         context.Transport.Input.CopyToAsync(upstream.Transport.Output, cts.Token)
                         , upstream.Transport.Input.CopyToAsync(context.Transport.Output, cts.Token));
-                    if (task.IsCanceled)
-                    {
-                        logger.ProxyTimeout(route.RouteId, route.Timeout);
-                    }
+                if (task.IsCanceled)
+                {
+                    logger.ProxyTimeout(route.RouteId, route.Timeout);
                 }
             }
         }
         catch (OperationCanceledException)
         {
-            logger.ProxyTimeout(route.RouteId, route.Timeout);
+            logger.ConnectUpstreamTimeout(route.RouteId);
         }
         catch (Exception ex)
         {
