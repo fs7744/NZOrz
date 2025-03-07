@@ -5,7 +5,7 @@ namespace NZ.Orz.Config;
 
 public interface IRouteContractor
 {
-    IEnumerable<ListenOptions> GetListenOptions();
+    List<ListenOptions> GetListenOptions();
 
     IChangeToken? GetReloadToken();
 

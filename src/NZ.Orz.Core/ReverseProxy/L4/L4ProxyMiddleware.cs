@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using NZ.Orz.Config;
+﻿using NZ.Orz.Config;
 using NZ.Orz.Connections;
 using NZ.Orz.Metrics;
 using NZ.Orz.ReverseProxy.LoadBalancing;
@@ -11,14 +10,14 @@ public class L4ProxyMiddleware : IOrderMiddleware
 {
     private readonly IConnectionFactory connectionFactory;
     private readonly IL4Router router;
-    private readonly OrzTrace logger;
+    private readonly OrzLogger logger;
     private readonly LoadBalancingPolicy loadBalancing;
     private readonly SocketTransportOptions? options;
     private readonly TcpConnectionDelegate reqTcp;
     private readonly TcpConnectionDelegate respTcp;
     private readonly bool hasMiddlewareTcp;
 
-    public L4ProxyMiddleware(IConnectionFactory connectionFactory, IL4Router router, OrzTrace logger, LoadBalancingPolicy loadBalancing, IRouteContractor contractor,
+    public L4ProxyMiddleware(IConnectionFactory connectionFactory, IL4Router router, OrzLogger logger, LoadBalancingPolicy loadBalancing, IRouteContractor contractor,
         IEnumerable<ITcpMiddleware> tcpMiddlewares)
     {
         this.connectionFactory = connectionFactory;
@@ -45,40 +44,11 @@ public class L4ProxyMiddleware : IOrderMiddleware
                 context.Route = route;
                 if (context is UdpConnectionContext)
                 {
-                    // todo
+                    // todo udp
                 }
                 else
                 {
-                    var upstream = await TryConnectionAsync(context, route);
-                    if (upstream is null)
-                    {
-                        logger.NotFoundAvailableUpstream(route.ClusterId);
-                    }
-                    else
-                    {
-                        try
-                        {
-                            context.SelectedDestination?.ConcurrencyCounter.Increment();
-                            var cts = route.CreateTimeoutTokenSource();
-                            if (hasMiddlewareTcp)
-                            {
-                                var task1 = context.Transport.Input.CopyToAsync(new MiddlewarePipeWriter(upstream.Transport.Output, context, reqTcp), cts.Token);
-                                var task2 = upstream.Transport.Input.CopyToAsync(new MiddlewarePipeWriter(context.Transport.Output, context, respTcp), cts.Token);
-                                await Task.WhenAny(task1, task2);
-                            }
-                            else
-                            {
-                                var task1 = context.Transport.Input.CopyToAsync(upstream.Transport.Output, cts.Token);
-                                var task2 = upstream.Transport.Input.CopyToAsync(context.Transport.Output, cts.Token);
-                                await Task.WhenAny(task1, task2);
-                            }
-                        }
-                        finally
-                        {
-                            context.SelectedDestination?.ConcurrencyCounter.Decrement();
-                            upstream.Abort();
-                        }
-                    }
+                    await TcpProxyAsync(context, route);
                 }
             }
         }
@@ -90,6 +60,59 @@ public class L4ProxyMiddleware : IOrderMiddleware
         {
             await next(context);
         }
+    }
+
+    private async Task TcpProxyAsync(ConnectionContext context, RouteConfig route)
+    {
+        logger.ProxyTcpBegin(route.RouteId);
+        ConnectionContext upstream = null;
+        try
+        {
+            upstream = await TryConnectionAsync(context, route);
+            if (upstream is null)
+            {
+                logger.NotFoundAvailableUpstream(route.ClusterId);
+            }
+            else
+            {
+                context.SelectedDestination?.ConcurrencyCounter.Increment();
+                var cts = route.CreateTimeoutTokenSource();
+                if (hasMiddlewareTcp)
+                {
+                    var task = await Task.WhenAny(
+                        context.Transport.Input.CopyToAsync(new MiddlewarePipeWriter(upstream.Transport.Output, context, reqTcp), cts.Token)
+                        , upstream.Transport.Input.CopyToAsync(new MiddlewarePipeWriter(context.Transport.Output, context, respTcp), cts.Token));
+                    if (task.IsCanceled)
+                    {
+                        logger.ProxyTimeout(route.RouteId, route.Timeout);
+                    }
+                }
+                else
+                {
+                    var task = await Task.WhenAny(
+                        context.Transport.Input.CopyToAsync(upstream.Transport.Output, cts.Token)
+                        , upstream.Transport.Input.CopyToAsync(context.Transport.Output, cts.Token));
+                    if (task.IsCanceled)
+                    {
+                        logger.ProxyTimeout(route.RouteId, route.Timeout);
+                    }
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            logger.ProxyTimeout(route.RouteId, route.Timeout);
+        }
+        catch (Exception ex)
+        {
+            logger.UnexpectedException(nameof(TcpProxyAsync), ex);
+        }
+        finally
+        {
+            context.SelectedDestination?.ConcurrencyCounter.Decrement();
+            upstream?.Abort();
+        }
+        logger.ProxyTcpEnd(route.RouteId);
     }
 
     private async Task<ConnectionContext> TryConnectionAsync(ConnectionContext context, RouteConfig route)
@@ -114,7 +137,7 @@ public class L4ProxyMiddleware : IOrderMiddleware
             selectedDestination.ReportSuccessed();
             return c;
         }
-        catch
+        catch (Exception ex)
         {
             selectedDestination?.ReportFailed();
             retryCount--;

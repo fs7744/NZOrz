@@ -1,19 +1,22 @@
 ﻿using NZ.Orz.Config;
 using NZ.Orz.Connections;
+using NZ.Orz.Metrics;
 using System.Runtime.CompilerServices;
 
 namespace NZ.Orz.Health;
 
-public class TcpConnectionActiveHealthChecker : IActiveHealthChecker
+public class ConnectionActiveHealthChecker : IActiveHealthChecker
 {
     private readonly ConditionalWeakTable<DestinationState, ActiveHistory> histories = new ConditionalWeakTable<DestinationState, ActiveHistory>();
     private readonly IConnectionFactory connectionFactory;
+    private readonly OrzLogger logger;
 
-    public string Name => "Tcp";
+    public string Name => "Connect";
 
-    public TcpConnectionActiveHealthChecker(IConnectionFactory connectionFactory)
+    public ConnectionActiveHealthChecker(IConnectionFactory connectionFactory, OrzLogger logger)
     {
         this.connectionFactory = connectionFactory;
+        this.logger = logger;
     }
 
     public async Task CheckAsync(ActiveHealthCheckConfig config, DestinationState state, CancellationToken cancellationToken)
@@ -29,7 +32,7 @@ public class TcpConnectionActiveHealthChecker : IActiveHealthChecker
         {
             SetStatus(config, state, true);
             state.Health = DestinationHealth.Unhealthy;
-            //todo
+            logger.SocketConnectionCheckFailed(state.EndPoint, ex);
         }
     }
 

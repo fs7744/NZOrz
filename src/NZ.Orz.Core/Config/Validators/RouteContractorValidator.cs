@@ -1,6 +1,7 @@
 ﻿using DotNext;
 using DotNext.Collections.Generic;
 using NZ.Orz.Connections;
+using NZ.Orz.Metrics;
 using NZ.Orz.Sockets;
 using System.Net;
 
@@ -15,6 +16,7 @@ public class RouteContractorValidator : IRouteContractorValidator
     private readonly IEnumerable<IListenOptionsValidator> listenOptionsValidator;
     private readonly IEnumerable<IEndPointConvertor> endPointConvertors;
     private readonly ConnectionDelegate middleware;
+    private readonly OrzLogger logger;
 
     public int Order => 0;
 
@@ -24,7 +26,7 @@ public class RouteContractorValidator : IRouteContractorValidator
         IEnumerable<IRouteConfigValidator> routeConfigValidators,
         IEnumerable<IListenOptionsValidator> listenOptionsValidator,
         IEnumerable<IEndPointConvertor> endPointConvertors,
-        IEnumerable<IOrderMiddleware> middlewares)
+        IEnumerable<IOrderMiddleware> middlewares, OrzLogger logger)
     {
         this.serverOptionsValidators = serverOptionsValidators.OrderByDescending(i => i.Order).ToArray();
         this.socketTransportOptionsValidators = socketTransportOptionsValidators.OrderByDescending(i => i.Order).ToArray();
@@ -33,6 +35,7 @@ public class RouteContractorValidator : IRouteContractorValidator
         this.listenOptionsValidator = listenOptionsValidator.OrderByDescending(i => i.Order).ToArray();
         this.endPointConvertors = endPointConvertors.OrderByDescending(i => i.Order).ToArray();
         this.middleware = BuildMiddleware(middlewares);
+        this.logger = logger;
     }
 
     private ConnectionDelegate BuildMiddleware(IEnumerable<IOrderMiddleware> middlewares)
@@ -52,7 +55,6 @@ public class RouteContractorValidator : IRouteContractorValidator
 
     public async ValueTask<List<ListenOptions>> ValidateAndGenerateListenOptionsAsync(ProxyConfigSnapshot config, ServerOptions serverOptions, SocketTransportOptions options, IList<Exception> errors, CancellationToken cancellationToken)
     {
-        //todo remove error config and log
         var ec = errors.Count;
         var clusters = config.Clusters.ToDictionary(i => i.Key, i => i.Value, StringComparer.OrdinalIgnoreCase);
         foreach (var cluster in config.Clusters.Values)
@@ -64,6 +66,7 @@ public class RouteContractorValidator : IRouteContractorValidator
                 if (errors.Count > ec)
                 {
                     clusters.Remove(cluster.ClusterId);
+                    logger.RemoveErrorCluster(cluster.ClusterId);
                 }
             }
         }
@@ -79,6 +82,7 @@ public class RouteContractorValidator : IRouteContractorValidator
                 if (errors.Count > ec)
                 {
                     routes.Remove(route);
+                    logger.RemoveErrorRoute(route.RouteId);
                 }
             }
         }
@@ -94,6 +98,7 @@ public class RouteContractorValidator : IRouteContractorValidator
                 if (errors.Count > ec)
                 {
                     r.Remove(listenOptions);
+                    logger.RemoveErrorListenOptions(listenOptions);
                 }
             }
         }

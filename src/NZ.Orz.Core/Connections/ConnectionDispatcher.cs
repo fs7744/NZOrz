@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using NZ.Orz.Metrics;
+﻿using NZ.Orz.Metrics;
 using NZ.Orz.Servers;
 
 namespace NZ.Orz.Connections;
@@ -18,7 +17,7 @@ internal sealed class ConnectionDispatcher<T> where T : BaseConnectionContext
         _transportConnectionManager = transportConnectionManager;
     }
 
-    private OrzTrace Log => _serviceContext.Log;
+    private OrzLogger Log => _serviceContext.Log;
     private OrzMetrics Metrics => _serviceContext.Metrics;
 
     public Task StartAcceptingConnections(IConnectionListener<T> listener)

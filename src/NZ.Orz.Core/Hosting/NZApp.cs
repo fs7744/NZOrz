@@ -30,7 +30,7 @@ public static partial class NZApp
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<IMeterFactory, DummyMeterFactory>();
         services.AddSingleton<IServer, OrzServer>();
-        services.AddSingleton<OrzTrace>();
+        services.AddSingleton<OrzLogger>();
         services.AddSingleton<OrzMetrics>();
         services.AddSingleton<IConnectionListenerFactory, SocketTransportFactory>();
         services.AddSingleton<IConnectionListenerFactory, UdpTransportFactory>();
@@ -51,7 +51,7 @@ public static partial class NZApp
         services.AddSingleton<IHealthReporter, PassiveHealthReporter>();
         services.AddSingleton<IHealthUpdater, HealthyAndUnknownDestinationsUpdater>();
         services.AddSingleton<IActiveHealthCheckMonitor, ActiveHealthCheckMonitor>();
-        services.AddSingleton<IActiveHealthChecker, TcpConnectionActiveHealthChecker>();
+        services.AddSingleton<IActiveHealthChecker, ConnectionActiveHealthChecker>();
 
         return builder;
     }

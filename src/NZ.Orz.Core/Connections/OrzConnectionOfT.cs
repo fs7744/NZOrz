@@ -1,8 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
-using NZ.Orz.Connections.Features;
+﻿using NZ.Orz.Connections.Features;
 using NZ.Orz.Metrics;
 using NZ.Orz.Servers;
-using NZ.Orz.Sockets.Internal;
 using System.Diagnostics;
 
 namespace NZ.Orz.Connections;
@@ -17,7 +15,7 @@ internal sealed class OrzConnection<T> : OrzConnection, IThreadPoolWorkItem wher
                              TransportConnectionManager transportConnectionManager,
                              Func<T, Task> connectionDelegate,
                              T connectionContext,
-                             OrzTrace logger,
+                             OrzLogger logger,
                              ConnectionMetricsContext connectionMetricsContext)
         : base(id, serviceContext, transportConnectionManager, logger, connectionMetricsContext)
     {

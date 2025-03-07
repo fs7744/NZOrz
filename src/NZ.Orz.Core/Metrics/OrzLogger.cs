@@ -1,19 +1,17 @@
 ﻿using Microsoft.Extensions.Logging;
 using NZ.Orz.Config;
-using NZ.Orz.Sockets.Internal;
-using System;
 using System.Net;
 
 namespace NZ.Orz.Metrics;
 
-public partial class OrzTrace : ILogger
+public partial class OrzLogger : ILogger
 {
     private readonly ILogger _generalLogger;
     private readonly ILogger _connectionsLogger;
     private readonly ILogger _socketlogger;
     private readonly ILogger _proxylogger;
 
-    public OrzTrace(ILoggerFactory loggerFactory)
+    public OrzLogger(ILoggerFactory loggerFactory)
     {
         _generalLogger = loggerFactory.CreateLogger("NZ.Orz.Server");
         _connectionsLogger = loggerFactory.CreateLogger("NZ.Orz.Server.Connections");
@@ -198,6 +196,51 @@ public partial class OrzTrace : ILogger
         GeneralLog.BindListenOptionsError(_proxylogger, endPoint, ex);
     }
 
+    public void RemoveErrorCluster(string clusterId)
+    {
+        GeneralLog.RemoveErrorCluster(_proxylogger, clusterId);
+    }
+
+    public void RemoveErrorRoute(string routeId)
+    {
+        GeneralLog.RemoveErrorRoute(_proxylogger, routeId);
+    }
+
+    public void RemoveErrorListenOptions(ListenOptions endPoint)
+    {
+        GeneralLog.RemoveErrorListenOptions(_proxylogger, endPoint);
+    }
+
+    public void SocketConnectionCheckFailed(EndPoint endPoint, Exception ex)
+    {
+        GeneralLog.SocketConnectionCheckFailed(_proxylogger, endPoint, ex.Message);
+    }
+
+    public void NotFoundActiveHealthCheckPolicy(string policy)
+    {
+        GeneralLog.NotFoundActiveHealthCheckPolicy(_proxylogger, policy);
+    }
+
+    public void ConfigError(string msg)
+    {
+        GeneralLog.ConfigError(_proxylogger, msg);
+    }
+
+    public void ProxyTcpBegin(string routeId)
+    {
+        GeneralLog.ProxyTcpBegin(_proxylogger, routeId);
+    }
+
+    public void ProxyTcpEnd(string routeId)
+    {
+        GeneralLog.ProxyTcpEnd(_proxylogger, routeId);
+    }
+
+    public void ProxyTimeout(string routeId, TimeSpan time)
+    {
+        GeneralLog.ProxyTimeout(_proxylogger, routeId, time);
+    }
+
     private static partial class GeneralLog
     {
         [LoggerMessage(15, LogLevel.Warning, @"Not found available upstream for cluster ""{ClusterId}"".", EventName = "NotFoundAvailableUpstream")]
@@ -214,6 +257,33 @@ public partial class OrzTrace : ILogger
 
         [LoggerMessage(19, LogLevel.Critical, @"Unable to bind to {Endpoint} on config reload.", EventName = "BindListenOptionsError")]
         public static partial void BindListenOptionsError(ILogger logger, ListenOptions endpoint, Exception ex);
+
+        [LoggerMessage(20, LogLevel.Warning, @"Ingore error cluster config {clusterId}.", EventName = "RemoveErrorCluster")]
+        public static partial void RemoveErrorCluster(ILogger logger, string clusterId);
+
+        [LoggerMessage(21, LogLevel.Warning, @"Ingore error route config {routeId}.", EventName = "RemoveErrorRoute")]
+        public static partial void RemoveErrorRoute(ILogger logger, string routeId);
+
+        [LoggerMessage(22, LogLevel.Warning, @"Ingore error listen options config {endPoint}.", EventName = "RemoveErrorListenOptions")]
+        public static partial void RemoveErrorListenOptions(ILogger logger, ListenOptions endPoint);
+
+        [LoggerMessage(23, LogLevel.Warning, @"Active health failed, can not connect socket {endPoint} {ex}.", EventName = "SocketConnectionCheckFailed")]
+        public static partial void SocketConnectionCheckFailed(ILogger logger, EndPoint endPoint, string ex);
+
+        [LoggerMessage(24, LogLevel.Warning, @"Not found active health check policy {policy}.", EventName = "NotFoundActiveHealthCheckPolicy")]
+        public static partial void NotFoundActiveHealthCheckPolicy(ILogger logger, string policy);
+
+        [LoggerMessage(25, LogLevel.Warning, @"Config error: {msg}.", EventName = "ConfigError")]
+        public static partial void ConfigError(ILogger logger, string msg);
+
+        [LoggerMessage(26, LogLevel.Information, @"Begin proxy tcp for route {routeId}.", EventName = "ProxyTcpBegin")]
+        public static partial void ProxyTcpBegin(ILogger logger, string routeId);
+
+        [LoggerMessage(27, LogLevel.Information, @"End proxy tcp for route {routeId}.", EventName = "ProxyTcpEnd")]
+        public static partial void ProxyTcpEnd(ILogger logger, string routeId);
+
+        [LoggerMessage(28, LogLevel.Information, @"Proxy timeout ({time}) for route {routeId}.", EventName = "ProxyTimeout")]
+        public static partial void ProxyTimeout(ILogger logger, string routeId, TimeSpan time);
     }
 
     #endregion ReverseProxy

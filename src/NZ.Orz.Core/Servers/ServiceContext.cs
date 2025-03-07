@@ -8,7 +8,7 @@ namespace NZ.Orz.Servers;
 
 public class ServiceContext
 {
-    public OrzTrace Log { get; set; } = default!;
+    public OrzLogger Log { get; set; } = default!;
 
     public PipeScheduler Scheduler { get; set; } = default!;
 

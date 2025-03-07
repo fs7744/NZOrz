@@ -24,7 +24,7 @@ internal class TransportManager
         _serviceContext = serviceContext;
     }
 
-    private OrzTrace Trace => _serviceContext.Log;
+    private OrzLogger Trace => _serviceContext.Log;
 
     public async Task<EndPoint> BindAsync(EndPoint endPoint, GatewayProtocols protocols, ConnectionDelegate connectionDelegate, ListenOptions? endpointConfig, CancellationToken cancellationToken)
     {

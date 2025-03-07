@@ -1,9 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
-using NZ.Orz.Config;
+﻿using NZ.Orz.Config;
 using NZ.Orz.Connections;
 using NZ.Orz.Connections.Exceptions;
 using NZ.Orz.Metrics;
-using NZ.Orz.Sockets.Internal;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
@@ -13,7 +11,7 @@ namespace NZ.Orz.Sockets;
 internal sealed class SocketConnectionListener : IConnectionListener
 {
     private readonly SocketConnectionContextFactory _factory;
-    private readonly OrzTrace _logger;
+    private readonly OrzLogger _logger;
     private Socket? _listenSocket;
     private readonly SocketTransportOptions _options;
     private readonly GatewayProtocols protocols;
@@ -24,7 +22,7 @@ internal sealed class SocketConnectionListener : IConnectionListener
         EndPoint endpoint,
         GatewayProtocols protocols,
         IRouteContractor contractor,
-        OrzTrace logger)
+        OrzLogger logger)
     {
         EndPoint = endpoint;
         this.protocols = protocols;

@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using NZ.Orz.Buffers;
+﻿using NZ.Orz.Buffers;
 using NZ.Orz.Connections;
 using NZ.Orz.Connections.Exceptions;
 using NZ.Orz.Connections.Features;
@@ -17,7 +16,7 @@ internal sealed partial class SocketConnection : TransportConnection, IConnectio
     private static readonly int MinAllocBufferSize = PinnedBlockMemoryPool.BlockSize / 2;
 
     private readonly Socket _socket;
-    private readonly OrzTrace _logger;
+    private readonly OrzLogger _logger;
     private readonly SocketReceiver _receiver;
     private SocketSender? _sender;
     private readonly SocketSenderPool _socketSenderPool;
@@ -36,7 +35,7 @@ internal sealed partial class SocketConnection : TransportConnection, IConnectio
     internal SocketConnection(Socket socket,
                               MemoryPool<byte> memoryPool,
                               PipeScheduler socketScheduler,
-                              OrzTrace logger,
+                              OrzLogger logger,
                               SocketSenderPool socketSenderPool,
                               PipeOptions inputOptions,
                               PipeOptions outputOptions,

@@ -2,11 +2,11 @@
 
 public sealed record ActiveHealthCheckConfig
 {
-    public TimeSpan Interval { get; set; } = TimeSpan.FromSeconds(15);
+    public TimeSpan Interval { get; set; } = TimeSpan.FromSeconds(60);
 
     public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(10);
 
-    public string? Policy { get; set; } = "Tcp";
+    public string? Policy { get; set; } = "Connect";
 
     public int Passes { get; set; } = 1;
 

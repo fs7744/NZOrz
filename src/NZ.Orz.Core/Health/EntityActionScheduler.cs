@@ -10,7 +10,6 @@ internal sealed class EntityActionScheduler<T> : IDisposable where T : notnull
     private readonly Func<T, Task> _action;
     private readonly bool _runOnce;
     private readonly TimeProvider _timeProvider;
-
     private const int NotStarted = 0;
     private const int Started = 1;
     private const int Disposed = 2;
@@ -222,8 +221,9 @@ internal sealed class EntityActionScheduler<T> : IDisposable where T : notnull
             }
             catch (Exception ex)
             {
-                // We are running on the ThreadPool, don't propagate exceptions
-                Debug.Fail(ex.ToString()); // TODO: Log
+#if DEBUG
+                Debug.Fail(ex.ToString());
+#endif
                 if (scheduler._entries.TryRemove(pair))
                 {
                     entry.Dispose();

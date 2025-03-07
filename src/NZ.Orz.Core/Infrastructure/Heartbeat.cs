@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using NZ.Orz.Metrics;
+﻿using NZ.Orz.Metrics;
 
 namespace NZ.Orz.Infrastructure;
 
@@ -14,12 +13,12 @@ public class Heartbeat : IDisposable
 
     private readonly IHeartbeatHandler[] _callbacks;
     private readonly TimeProvider _timeProvider;
-    private readonly OrzTrace _trace;
+    private readonly OrzLogger _trace;
     private readonly TimeSpan _interval;
     private readonly Thread _timerThread;
     private readonly ManualResetEventSlim _stopEvent;
 
-    public Heartbeat(IHeartbeatHandler[] callbacks, TimeProvider timeProvider, OrzTrace trace, TimeSpan interval)
+    public Heartbeat(IHeartbeatHandler[] callbacks, TimeProvider timeProvider, OrzLogger trace, TimeSpan interval)
     {
         _callbacks = callbacks;
         _timeProvider = timeProvider;

@@ -1,5 +1,4 @@
 ﻿using DotNext;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using NZ.Orz.Config;
 using NZ.Orz.Connections;
@@ -24,7 +23,7 @@ public class OrzServer : IServer
     private readonly IRouteContractor contractor;
     private readonly ServerOptions serverOptions;
     private readonly OrzMetrics metrics;
-    private readonly OrzTrace trace;
+    private readonly OrzLogger trace;
     private readonly IL4Router l4;
     private readonly IActiveHealthCheckMonitor monitor;
     private readonly TransportManager _transportManager;
@@ -35,7 +34,7 @@ public class OrzServer : IServer
         IEnumerable<IConnectionListenerFactory> transportFactories,
         IEnumerable<IMultiplexedConnectionListenerFactory> multiplexedFactories,
         OrzMetrics metrics,
-        OrzTrace trace,
+        OrzLogger trace,
         IL4Router l4,
         IActiveHealthCheckMonitor monitor)
     {
@@ -123,9 +122,19 @@ public class OrzServer : IServer
             }
 
             IChangeToken? reloadToken = contractor.GetReloadToken();
-            foreach (var listenOptions in contractor.GetListenOptions())
+
+            var toStart = contractor.GetListenOptions();
+            trace.StartEndpointsInfo(toStart);
+            foreach (var listenOptions in toStart)
             {
-                await OnBind(listenOptions, cancellationToken).ConfigureAwait(false);
+                try
+                {
+                    await OnBind(listenOptions, cancellationToken).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    trace.BindListenOptionsError(listenOptions, ex);
+                }
             }
             _configChangedRegistration = reloadToken?.RegisterChangeCallback(TriggerRebind, this);
         }

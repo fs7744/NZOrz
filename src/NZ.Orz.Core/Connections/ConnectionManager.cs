@@ -11,14 +11,14 @@ public sealed class ConnectionManager : IHeartbeatHandler
     private long _lastConnectionId = long.MinValue;
 
     private readonly ConcurrentDictionary<long, ConnectionReference> _connectionReferences = new ConcurrentDictionary<long, ConnectionReference>();
-    private readonly OrzTrace _trace;
+    private readonly OrzLogger _trace;
 
-    public ConnectionManager(OrzTrace trace, long? upgradedConnectionLimit)
+    public ConnectionManager(OrzLogger trace, long? upgradedConnectionLimit)
         : this(trace, GetCounter(upgradedConnectionLimit))
     {
     }
 
-    public ConnectionManager(OrzTrace trace, ResourceCounter upgradedConnections)
+    public ConnectionManager(OrzLogger trace, ResourceCounter upgradedConnections)
     {
         UpgradedConnectionCount = upgradedConnections;
         _trace = trace;

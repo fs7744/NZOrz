@@ -22,7 +22,7 @@ public abstract class OrzConnection : IConnectionHeartbeatFeature, IConnectionCo
     public OrzConnection(long id,
                              ServiceContext serviceContext,
                              TransportConnectionManager transportConnectionManager,
-                             OrzTrace logger,
+                             OrzLogger logger,
                              ConnectionMetricsContext connectionMetricsContext)
     {
         _id = id;
@@ -33,7 +33,7 @@ public abstract class OrzConnection : IConnectionHeartbeatFeature, IConnectionCo
         ConnectionClosedRequested = _connectionClosingCts.Token;
     }
 
-    protected OrzTrace Logger { get; }
+    protected OrzLogger Logger { get; }
 
     public ConnectionMetricsContext MetricsContext { get; set; }
     public CancellationToken ConnectionClosedRequested { get; set; }

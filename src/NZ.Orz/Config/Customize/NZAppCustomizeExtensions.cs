@@ -22,7 +22,7 @@ public static class NZAppCustomizeExtensions
         {
             e.ServiceProvider = i;
             return e.Build();
-        }).ToArray(), b.SocketTransportOptions);
+        }).ToList(), b.SocketTransportOptions);
         builder.Services.AddSingleton<IRouteContractor>(i =>
         {
             r.ServiceProvider = i;

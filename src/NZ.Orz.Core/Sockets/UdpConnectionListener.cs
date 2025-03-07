@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using NZ.Orz.Buffers;
+﻿using NZ.Orz.Buffers;
 using NZ.Orz.Config;
 using NZ.Orz.Connections;
 using NZ.Orz.Connections.Exceptions;
@@ -15,14 +14,14 @@ internal sealed class UdpConnectionListener : IConnectionListener
 {
     private EndPoint? udpEndPoint;
     private readonly GatewayProtocols protocols;
-    private OrzTrace _logger;
+    private OrzLogger _logger;
     private SocketTransportOptions? _options;
     private MemoryPool<byte> udpBufferPool;
 
     //private readonly UdpAwaitableEventArgs _receiver;
     private Socket? _listenSocket;
 
-    public UdpConnectionListener(EndPoint? udpEndPoint, GatewayProtocols protocols, IRouteContractor contractor, OrzTrace logger)
+    public UdpConnectionListener(EndPoint? udpEndPoint, GatewayProtocols protocols, IRouteContractor contractor, OrzLogger logger)
     {
         this.udpEndPoint = udpEndPoint;
         this.protocols = protocols;

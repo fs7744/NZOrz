@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using NZ.Orz.Config;
+﻿using NZ.Orz.Config;
 using NZ.Orz.Connections;
 using NZ.Orz.Metrics;
 using NZ.Orz.Sockets.Internal;
@@ -14,12 +13,12 @@ public class SocketConnectionFactory : IConnectionFactory, IAsyncDisposable
 {
     private readonly SocketTransportOptions _options;
     private readonly MemoryPool<byte> _memoryPool;
-    private readonly OrzTrace _trace;
+    private readonly OrzLogger _trace;
     private readonly PipeOptions _inputOptions;
     private readonly PipeOptions _outputOptions;
     private readonly SocketSenderPool _socketSenderPool;
 
-    public SocketConnectionFactory(IRouteContractor contractor, OrzTrace logger)
+    public SocketConnectionFactory(IRouteContractor contractor, OrzLogger logger)
     {
         ArgumentNullException.ThrowIfNull(contractor);
         ArgumentNullException.ThrowIfNull(logger);

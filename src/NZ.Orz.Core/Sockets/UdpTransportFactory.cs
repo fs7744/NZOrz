@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using NZ.Orz.Config;
+﻿using NZ.Orz.Config;
 using NZ.Orz.Connections;
 using NZ.Orz.Metrics;
 using System.Net;
@@ -9,11 +8,11 @@ namespace NZ.Orz.Sockets;
 public sealed class UdpTransportFactory : IConnectionListenerFactory, IConnectionListenerFactorySelector
 {
     private readonly IRouteContractor contractor;
-    private readonly OrzTrace _logger;
+    private readonly OrzLogger _logger;
 
     public UdpTransportFactory(
         IRouteContractor contractor,
-        OrzTrace logger)
+        OrzLogger logger)
     {
         ArgumentNullException.ThrowIfNull(contractor);
         ArgumentNullException.ThrowIfNull(logger);

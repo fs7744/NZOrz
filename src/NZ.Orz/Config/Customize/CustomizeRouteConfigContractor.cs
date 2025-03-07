@@ -6,20 +6,20 @@ namespace NZ.Orz.Config.Customize;
 internal class CustomizeRouteConfigContractor : IRouteContractor
 {
     private readonly ServerOptions serverOptions;
-    private ListenOptions[] listenOptions;
-    private Func<IServiceProvider, ListenOptions[]> listenOptionsFactory;
+    private List<ListenOptions> listenOptions;
+    private Func<IServiceProvider, List<ListenOptions>> listenOptionsFactory;
     private readonly SocketTransportOptions socketTransportOptions;
 
     public IServiceProvider ServiceProvider { get; internal set; }
 
-    public CustomizeRouteConfigContractor(ServerOptions serverOptions, Func<IServiceProvider, ListenOptions[]> listenOptions, SocketTransportOptions socketTransportOptions)
+    public CustomizeRouteConfigContractor(ServerOptions serverOptions, Func<IServiceProvider, List<ListenOptions>> listenOptions, SocketTransportOptions socketTransportOptions)
     {
         this.serverOptions = serverOptions;
         this.listenOptionsFactory = listenOptions;
         this.socketTransportOptions = socketTransportOptions;
     }
 
-    public IEnumerable<ListenOptions> GetListenOptions()
+    public List<ListenOptions> GetListenOptions()
     {
         return listenOptions;
     }

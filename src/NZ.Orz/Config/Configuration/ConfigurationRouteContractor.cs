@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Primitives;
+using NZ.Orz.Metrics;
 using NZ.Orz.Sockets;
 using System.Collections.Frozen;
 using System.Net.Sockets;
@@ -21,11 +22,13 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
     private IChangeToken changeToken;
     private ChangedProxyConfig changedProxyConfig;
     private readonly IServiceProvider serviceProvider;
+    private readonly OrzLogger logger;
 
-    public ConfigurationRouteContractor(IConfiguration configuration, IServiceProvider serviceProvider)
+    public ConfigurationRouteContractor(IConfiguration configuration, IServiceProvider serviceProvider, OrzLogger logger)
     {
         this.configuration = configuration.GetRequiredSection(Section);
         this.serviceProvider = serviceProvider;
+        this.logger = logger;
     }
 
     public void Dispose()
@@ -33,7 +36,7 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
         subscription?.Dispose();
     }
 
-    public IEnumerable<ListenOptions> GetListenOptions()
+    public List<ListenOptions> GetListenOptions()
     {
         return listenOptions;
     }
@@ -117,7 +120,7 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
         }
         catch (Exception ex)
         {
-            // todo log
+            logger.ConfigError(ex.Message);
             if (proxyConfig is null)
             {
                 throw;
@@ -138,7 +141,8 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
             await OnConfigChanged(oldToken, proxyConfig as ProxyConfigSnapshot, c, listenOptions, cancellationToken);
         }
         catch (Exception ex)
-        {// todo log
+        {
+            logger.UnexpectedException("Config changed", ex);
         }
     }
 
@@ -146,10 +150,9 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
     {
         var errors = new List<Exception>();
         var newListenOptions = await serviceProvider.GetRequiredService<IRouteContractorValidator>().ValidateAndGenerateListenOptionsAsync(newConf, serverOptions, socketTransportOptions, errors, cancellationToken);
-        // todo
-        if (errors.Any())
+        foreach (var e in errors)
         {
-            throw new AggregateException(errors);
+            logger.ConfigError(e.Message);
         }
         changedProxyConfig = MergeConfig(newConf, oldConf, listenOptions, newListenOptions);
         if (changedProxyConfig != null)
@@ -161,15 +164,7 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
             proxyConfig = newConf;
         }
         this.listenOptions = newListenOptions;
-
-        try
-        {
-            oldToken?.Cancel(throwOnFirstException: false);
-        }
-        catch (Exception ex)
-        {
-            //todo
-        }
+        oldToken?.Cancel(throwOnFirstException: false);
     }
 
     private ChangedProxyConfig MergeConfig(ProxyConfigSnapshot newConf, ProxyConfigSnapshot oldConf, List<ListenOptions> oldListenOptions, List<ListenOptions> newListenOptions)

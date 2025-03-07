@@ -10,11 +10,11 @@ namespace NZ.Orz.ServiceDiscovery;
 
 public class DnsDestinationResolver : DestinationResolverBase
 {
-    private readonly OrzTrace logger;
+    private readonly OrzLogger logger;
     private readonly IHealthUpdater healthUpdater;
     private ServerOptions options;
 
-    public DnsDestinationResolver(IRouteContractor contractor, OrzTrace logger, IHealthUpdater healthUpdater)
+    public DnsDestinationResolver(IRouteContractor contractor, OrzLogger logger, IHealthUpdater healthUpdater)
     {
         options = contractor.GetServerOptions();
         this.logger = logger;

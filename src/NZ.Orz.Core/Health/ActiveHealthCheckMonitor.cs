@@ -1,4 +1,5 @@
 ﻿using NZ.Orz.Config;
+using NZ.Orz.Metrics;
 using System.Collections.Frozen;
 
 namespace NZ.Orz.Health;
@@ -7,12 +8,14 @@ public class ActiveHealthCheckMonitor : IActiveHealthCheckMonitor, IDisposable
 {
     private readonly FrozenDictionary<string, IActiveHealthChecker> checkers;
     private readonly IHealthUpdater healthUpdater;
+    private readonly OrzLogger logger;
 
-    public ActiveHealthCheckMonitor(TimeProvider timeProvider, IEnumerable<IActiveHealthChecker> checkers, IHealthUpdater healthUpdater)
+    public ActiveHealthCheckMonitor(TimeProvider timeProvider, IEnumerable<IActiveHealthChecker> checkers, IHealthUpdater healthUpdater, OrzLogger logger)
     {
         Scheduler = new EntityActionScheduler<WeakReference<ClusterConfig>>(ProbeCluster, autoStart: false, runOnce: false, timeProvider);
         this.checkers = checkers.ToFrozenDictionary(i => i.Name, StringComparer.OrdinalIgnoreCase);
         this.healthUpdater = healthUpdater;
+        this.logger = logger;
     }
 
     private async Task ProbeCluster(WeakReference<ClusterConfig> reference)
@@ -26,7 +29,7 @@ public class ActiveHealthCheckMonitor : IActiveHealthCheckMonitor, IDisposable
         var config = cluster.HealthCheck.Active;
         if (!checkers.TryGetValue(config.Policy, out var checker))
         {
-            //todo log
+            logger.NotFoundActiveHealthCheckPolicy(config.Policy);
             Scheduler.UnscheduleEntity(reference);
             return;
         }
@@ -40,7 +43,7 @@ public class ActiveHealthCheckMonitor : IActiveHealthCheckMonitor, IDisposable
         }
         catch (Exception ex)
         {
-            //todo log
+            logger.UnexpectedException(nameof(ActiveHealthCheckMonitor), ex);
         }
     }
 
@@ -67,7 +70,7 @@ public class ActiveHealthCheckMonitor : IActiveHealthCheckMonitor, IDisposable
             }
             catch (Exception ex)
             {
-                //todo Log.ExplicitActiveCheckOfAllClustersHealthFailed(_logger, ex);
+                logger.UnexpectedException(nameof(ActiveHealthCheckMonitor), ex);
             }
 
             Scheduler.Start();
