@@ -168,6 +168,7 @@ public class OrzServer : IServer
                 var toStop = changedProxyConfig.EndpointsToStop;
                 if (toStop != null && toStop.Count > 0)
                 {
+                    trace.StopEndpointsInfo(toStop);
                     using var cts = CancellationTokenSource.CreateLinkedTokenSource(_stopCts.Token);
                     cts.CancelAfter(serverOptions.ShutdownTimeout);
                     await _transportManager.StopEndpointsAsync(toStop, cts.Token).ConfigureAwait(false);
@@ -176,6 +177,7 @@ public class OrzServer : IServer
                 var toStart = changedProxyConfig.EndpointsToStart;
                 if (toStart != null && toStart.Count > 0)
                 {
+                    trace.StartEndpointsInfo(toStart);
                     foreach (var listenOptions in toStart)
                     {
                         try
@@ -184,7 +186,7 @@ public class OrzServer : IServer
                         }
                         catch (Exception ex)
                         {
-                            // todo
+                            trace.BindListenOptionsError(listenOptions, ex);
                         }
                     }
                 }

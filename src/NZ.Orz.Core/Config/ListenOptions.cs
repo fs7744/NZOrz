@@ -26,4 +26,9 @@ public class ListenOptions
     {
         return HashCode.Combine(Key?.GetHashCode(StringComparison.OrdinalIgnoreCase), Protocols, EndPoint.GetHashCode());
     }
+
+    public override string ToString()
+    {
+        return $"[Protocols: {Protocols},Route: {Key},EndPoint: {EndPoint}]";
+    }
 }

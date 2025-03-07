@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using NZ.Orz.Config;
 using NZ.Orz.Sockets.Internal;
 using System;
 using System.Net;
@@ -76,7 +77,7 @@ public partial class OrzTrace : ILogger
 
     private static partial class GeneralLog
     {
-        [LoggerMessage(0, LogLevel.Error, @"Unexpected exception {msg}.", EventName = "UnexpectedException", SkipEnabledCheck = true)]
+        [LoggerMessage(0, LogLevel.Error, @"Unexpected exception {Msg}.", EventName = "UnexpectedException", SkipEnabledCheck = true)]
         public static partial void UnexpectedException(ILogger logger, string msg, Exception ex);
 
         [LoggerMessage(1, LogLevel.Debug, @"Connection id ""{ConnectionId}"" started.", EventName = "ConnectionStart")]
@@ -180,13 +181,39 @@ public partial class OrzTrace : ILogger
         GeneralLog.NotFoundRouteL4(_proxylogger, endPoint);
     }
 
+    public void StopEndpointsInfo(List<ListenOptions> endPoints)
+    {
+        if (_proxylogger.IsEnabled(LogLevel.Information))
+            GeneralLog.StopEndpointsInfo(_proxylogger, string.Join(',', endPoints));
+    }
+
+    public void StartEndpointsInfo(List<ListenOptions> endPoints)
+    {
+        if (_proxylogger.IsEnabled(LogLevel.Information))
+            GeneralLog.StartEndpointsInfo(_proxylogger, string.Join(',', endPoints));
+    }
+
+    public void BindListenOptionsError(ListenOptions endPoint, Exception ex)
+    {
+        GeneralLog.BindListenOptionsError(_proxylogger, endPoint, ex);
+    }
+
     private static partial class GeneralLog
     {
-        [LoggerMessage(15, LogLevel.Warning, @"Not found available upstream for cluster ""{clusterId}"".", EventName = "NotFoundAvailableUpstream")]
+        [LoggerMessage(15, LogLevel.Warning, @"Not found available upstream for cluster ""{ClusterId}"".", EventName = "NotFoundAvailableUpstream")]
         public static partial void NotFoundAvailableUpstream(ILogger logger, string clusterId);
 
-        [LoggerMessage(16, LogLevel.Warning, @"Not found route for ""{endPoint}"".", EventName = "NotFoundRouteL4")]
+        [LoggerMessage(16, LogLevel.Warning, @"Not found route for ""{EndPoint}"".", EventName = "NotFoundRouteL4")]
         public static partial void NotFoundRouteL4(ILogger logger, EndPoint endPoint);
+
+        [LoggerMessage(17, LogLevel.Information, @"Config changed. Stopping the following endpoints: {Endpoints}.", EventName = "StopEndpointsInfo", SkipEnabledCheck = true)]
+        public static partial void StopEndpointsInfo(ILogger logger, string endpoints);
+
+        [LoggerMessage(18, LogLevel.Information, @"Config changed. Starting the following endpoints: {endpoints}", EventName = "StartEndpointsInfo", SkipEnabledCheck = true)]
+        public static partial void StartEndpointsInfo(ILogger logger, string endpoints);
+
+        [LoggerMessage(19, LogLevel.Critical, @"Unable to bind to {Endpoint} on config reload.", EventName = "BindListenOptionsError")]
+        public static partial void BindListenOptionsError(ILogger logger, ListenOptions endpoint, Exception ex);
     }
 
     #endregion ReverseProxy
