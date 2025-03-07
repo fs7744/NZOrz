@@ -20,7 +20,7 @@ NZOrz ( NeZha Orz ) is network proxy written in c# language, because vic lazy, s
 - [ ] HTTP2 server core
 - [ ] HTTP3 server core
 - [ ] HTTP proxy core
-- [ ] proxy file config
+- [ ] Metrics
 
 
 # PS
