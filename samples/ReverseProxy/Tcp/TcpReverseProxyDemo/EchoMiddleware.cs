@@ -1,6 +1,5 @@
 ﻿using NZ.Orz.Connections;
 using NZ.Orz.ReverseProxy.L4;
-using System.Text;
 
 public class EchoMiddleware : ITcpMiddleware
 {

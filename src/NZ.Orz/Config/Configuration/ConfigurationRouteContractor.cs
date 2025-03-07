@@ -3,7 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Primitives;
 using NZ.Orz.Sockets;
 using System.Collections.Frozen;
-using System.Collections.Immutable;
 using System.Net.Sockets;
 
 namespace NZ.Orz.Config.Configuration;
