@@ -1,15 +1,8 @@
 ﻿using DotNext;
 using DotNext.Collections.Generic;
-using Microsoft.Extensions.Options;
 using NZ.Orz.Connections;
-using NZ.Orz.ReverseProxy.L4;
-using NZ.Orz.Routing;
 using NZ.Orz.Sockets;
-using System.Collections.Frozen;
-using System.Diagnostics.Metrics;
-using System.Linq;
 using System.Net;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace NZ.Orz.Config.Validators;
 
@@ -57,7 +50,7 @@ public class RouteContractorValidator : IRouteContractorValidator
         return app;
     }
 
-    public async ValueTask<IList<ListenOptions>> ValidateAndGenerateListenOptionsAsync(ProxyConfigSnapshot config, ServerOptions serverOptions, SocketTransportOptions options, IList<Exception> errors, CancellationToken cancellationToken)
+    public async ValueTask<List<ListenOptions>> ValidateAndGenerateListenOptionsAsync(ProxyConfigSnapshot config, ServerOptions serverOptions, SocketTransportOptions options, IList<Exception> errors, CancellationToken cancellationToken)
     {
         //todo remove error config and log
         var ec = errors.Count;

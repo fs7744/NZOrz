@@ -10,6 +10,7 @@ using NZ.Orz.Routing;
 using System.IO.Pipelines;
 using DotNext;
 using NZ.Orz.Health;
+using System.Threading;
 
 namespace NZ.Orz.Servers;
 
@@ -22,6 +23,7 @@ public class OrzServer : IServer
     private readonly CancellationTokenSource _stopCts = new CancellationTokenSource();
     private readonly TaskCompletionSource _stoppedTcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly IRouteContractor contractor;
+    private readonly ServerOptions serverOptions;
     private readonly OrzMetrics metrics;
     private readonly OrzTrace trace;
     private readonly IL4Router l4;
@@ -39,7 +41,7 @@ public class OrzServer : IServer
         IActiveHealthCheckMonitor monitor)
     {
         this.contractor = contractor;
-        var serverOptions = contractor.GetServerOptions();
+        this.serverOptions = contractor.GetServerOptions();
         this.metrics = metrics;
         this.trace = trace;
         this.l4 = l4;
@@ -64,7 +66,7 @@ public class OrzServer : IServer
             TimeProvider = TimeProvider.System,
             ConnectionManager = connectionManager,
             Heartbeat = heartbeat,
-            ServerOptions = contractor.GetServerOptions(),
+            ServerOptions = serverOptions,
             Metrics = metrics
         };
         _transportManager = new TransportManager(Enumerable.Reverse(transportFactories).ToList(), Enumerable.Reverse(multiplexedFactories).ToList(), ServiceContext);
@@ -156,8 +158,6 @@ public class OrzServer : IServer
             }
 
             reloadToken = contractor.GetReloadToken();
-
-            // todo
             var changedProxyConfig = await contractor.ReloadAsync();
             if (changedProxyConfig != null)
             {
@@ -165,61 +165,31 @@ public class OrzServer : IServer
                 await ReloadRouteAsync(changedProxyConfig.ProxyConfig, changedProxyConfig.RouteChanged);
                 if (changedProxyConfig.NewClusters != null)
                     _ = monitor.CheckHealthAsync(changedProxyConfig.NewClusters);
+
+                var toStop = changedProxyConfig.EndpointsToStop;
+                if (toStop != null && toStop.Count > 0)
+                {
+                    using var cts = CancellationTokenSource.CreateLinkedTokenSource(_stopCts.Token);
+                    cts.CancelAfter(serverOptions.ShutdownTimeout);
+                    await _transportManager.StopEndpointsAsync(toStop, cts.Token).ConfigureAwait(false);
+                }
+
+                var toStart = changedProxyConfig.EndpointsToStart;
+                if (toStart != null && toStart.Count > 0)
+                {
+                    foreach (var listenOptions in toStart)
+                    {
+                        try
+                        {
+                            await OnBind(listenOptions, _stopCts.Token).ConfigureAwait(false);
+                        }
+                        catch (Exception ex)
+                        {
+                            // todo
+                        }
+                    }
+                }
             }
-
-            //trace.LogDebug("Config reload token fired. Checking for changes...");
-
-            //if (endpointsToStop.Count > 0)
-            //{
-            //    var urlsToStop = endpointsToStop.Select(lo => lo.EndpointConfig!.Url);
-            //    if (trace.IsEnabled(LogLevel.Information))
-            //    {
-            //        trace.LogInformation("Config changed. Stopping the following endpoints: '{endpoints}'", string.Join("', '", urlsToStop));
-            //    }
-
-            //    // 5 is the default value for WebHost's "shutdownTimeoutSeconds", so use that.
-            //    using var cts = CancellationTokenSource.CreateLinkedTokenSource(_stopCts.Token);
-            //    cts.CancelAfter(TimeSpan.FromSeconds(5));
-
-            //    // TODO: It would be nice to start binding to new endpoints immediately and reconfigured endpoints as soon
-            //    // as the unbinding finished for the given endpoint rather than wait for all transports to unbind first.
-            //    var configsToStop = new List<EndpointConfig>(endpointsToStop.Count);
-            //    foreach (var lo in endpointsToStop)
-            //    {
-            //        configsToStop.Add(lo.EndpointConfig!);
-            //    }
-            //    await _transportManager.StopEndpointsAsync(configsToStop, cts.Token).ConfigureAwait(false);
-
-            //    foreach (var listenOption in endpointsToStop)
-            //    {
-            //        Options.OptionsInUse.Remove(listenOption);
-            //        _serverAddresses.InternalCollection.Remove(listenOption.GetDisplayName());
-            //    }
-            //}
-
-            //if (endpointsToStart.Count > 0)
-            //{
-            //    var urlsToStart = endpointsToStart.Select(lo => lo.EndpointConfig!.Url);
-            //    if (trace.IsEnabled(LogLevel.Information))
-            //    {
-            //        trace.LogInformation("Config changed. Starting the following endpoints: '{endpoints}'", string.Join("', '", urlsToStart));
-            //    }
-
-            //    foreach (var listenOption in endpointsToStart)
-            //    {
-            //        try
-            //        {
-            //            await listenOption.BindAsync(AddressBindContext!, _stopCts.Token).ConfigureAwait(false);
-            //        }
-            //        catch (Exception ex)
-            //        {
-            //            if (trace.IsEnabled(LogLevel.Critical))
-            //            {
-            //                trace.LogCritical(0, ex, "Unable to bind to '{url}' on config reload.", listenOption.EndpointConfig!.Url);
-            //            }
-            //        }
-            //    }
-            //}
         }
         catch (Exception ex)
         {
@@ -311,7 +281,7 @@ public class OrzServer : IServer
 
         static void Set(RouteTableBuilder<RouteConfig> builder, RouteConfig? route, string host)
         {
-            if (host.StartsWith("*"))
+            if (host.StartsWith('*'))
             {
                 builder.Add(host[1..].Reverse(), route, RouteType.Prefix, route.Order);
             }

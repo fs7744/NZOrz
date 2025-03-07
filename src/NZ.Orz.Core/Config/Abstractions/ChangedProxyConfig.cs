@@ -2,9 +2,9 @@
 
 public class ChangedProxyConfig
 {
-    public IEnumerable<ListenOptions> EndpointsToStop { get; set; }
+    public List<ListenOptions> EndpointsToStop { get; set; }
 
-    public IEnumerable<ListenOptions> EndpointsToStart { get; set; }
+    public List<ListenOptions> EndpointsToStart { get; set; }
 
     public bool RouteChanged { get; set; }
     public IProxyConfig ProxyConfig { get; set; }

@@ -16,7 +16,7 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
     private IDisposable? subscription;
     private ServerOptions serverOptions;
     private SocketTransportOptions socketTransportOptions;
-    private IList<ListenOptions> listenOptions;
+    private List<ListenOptions> listenOptions;
     private IProxyConfig proxyConfig;
     private CancellationTokenSource cts;
     private IChangeToken changeToken;
@@ -142,7 +142,7 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
         }
     }
 
-    private async Task OnConfigChanged(CancellationTokenSource oldToken, ProxyConfigSnapshot oldConf, ProxyConfigSnapshot newConf, IList<ListenOptions> listenOptions, CancellationToken cancellationToken)
+    private async Task OnConfigChanged(CancellationTokenSource oldToken, ProxyConfigSnapshot oldConf, ProxyConfigSnapshot newConf, List<ListenOptions> listenOptions, CancellationToken cancellationToken)
     {
         var errors = new List<Exception>();
         var newListenOptions = await serviceProvider.GetRequiredService<IRouteContractorValidator>().ValidateAndGenerateListenOptionsAsync(newConf, serverOptions, socketTransportOptions, errors, cancellationToken);
@@ -172,7 +172,7 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
         }
     }
 
-    private ChangedProxyConfig MergeConfig(ProxyConfigSnapshot newConf, ProxyConfigSnapshot oldConf, IList<ListenOptions> oldListenOptions, IList<ListenOptions> newListenOptions)
+    private ChangedProxyConfig MergeConfig(ProxyConfigSnapshot newConf, ProxyConfigSnapshot oldConf, List<ListenOptions> oldListenOptions, List<ListenOptions> newListenOptions)
     {
         if (oldConf is null && oldListenOptions is null) return null;
         var changedProxyConfig = new ChangedProxyConfig();
@@ -190,7 +190,7 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
                 }
             }
 
-            changedProxyConfig.EndpointsToStop = set.Values.ToImmutableList();
+            changedProxyConfig.EndpointsToStop = set.Values.ToList();
             changedProxyConfig.EndpointsToStart = start;
         }
         else
@@ -210,6 +210,7 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
                     dict[item.ClusterId] = item;
                 }
             }
+            newConf.Clusters = dict;
             changedProxyConfig.NewClusters = newClusters;
             if (newConf.Routes.Count != oldConf.Routes.Count)
             {
