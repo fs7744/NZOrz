@@ -9,9 +9,7 @@ using NZ.Orz.ReverseProxy.L4;
 using NZ.Orz.Routing;
 using System.IO.Pipelines;
 using DotNext;
-using Microsoft.Extensions.DependencyInjection;
 using NZ.Orz.Health;
-using System.Net;
 
 namespace NZ.Orz.Servers;
 
@@ -164,7 +162,7 @@ public class OrzServer : IServer
             if (changedProxyConfig != null)
             {
                 MakeSureConfig(changedProxyConfig.ProxyConfig);
-                await ReloadRouteAsync(changedProxyConfig.ProxyConfig, changedProxyConfig.L4Changed);
+                await ReloadRouteAsync(changedProxyConfig.ProxyConfig, changedProxyConfig.RouteChanged);
                 if (changedProxyConfig.NewClusters != null)
                     _ = monitor.CheckHealthAsync(changedProxyConfig.NewClusters);
             }
@@ -234,9 +232,9 @@ public class OrzServer : IServer
         }
     }
 
-    private async Task ReloadRouteAsync(IProxyConfig proxyConfig, bool l4Changed)
+    private async Task ReloadRouteAsync(IProxyConfig proxyConfig, bool changed)
     {
-        if (l4Changed)
+        if (changed)
         {
             var old = l4.RouteTable;
             l4.RouteTable = BuildL4RouteTable(proxyConfig, contractor.GetServerOptions());

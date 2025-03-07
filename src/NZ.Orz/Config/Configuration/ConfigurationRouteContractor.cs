@@ -211,6 +211,19 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
                 }
             }
             changedProxyConfig.NewClusters = newClusters;
+            if (newConf.Routes.Count != oldConf.Routes.Count)
+            {
+                changedProxyConfig.RouteChanged = true;
+            }
+            else
+            {
+                var old = oldConf.Routes.ToFrozenDictionary(i => i.RouteId, StringComparer.OrdinalIgnoreCase);
+                changedProxyConfig.RouteChanged = newConf.Routes.Any(i => !old.TryGetValue(i.RouteId, out var c) || !i.Equals(c));
+            }
+        }
+        else
+        {
+            changedProxyConfig.RouteChanged = true;
         }
         changedProxyConfig.ProxyConfig = newConf;
 

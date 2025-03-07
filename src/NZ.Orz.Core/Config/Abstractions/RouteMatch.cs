@@ -9,18 +9,29 @@ public sealed record RouteMatch
     /// </summary>
     public IReadOnlyList<string>? Hosts { get; init; }
 
-    public bool Equals(RouteMatch? other)
+    public static bool Equals(RouteMatch? t, RouteMatch? other)
     {
+        if (t is null && other is null) return true;
         if (other is null)
         {
             return false;
         }
 
-        return CollectionUtilities.Equals(Hosts, other.Hosts);
+        return CollectionUtilities.Equals(t.Hosts, other.Hosts);
+    }
+
+    public bool Equals(RouteMatch? other)
+    {
+        return Equals(this, other);
+    }
+
+    public static int GetHashCode(RouteMatch t)
+    {
+        return HashCode.Combine(CollectionUtilities.GetStringHashCode(t.Hosts));
     }
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(CollectionUtilities.GetStringHashCode(Hosts));
+        return GetHashCode(this);
     }
 }

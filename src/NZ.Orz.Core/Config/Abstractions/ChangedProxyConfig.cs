@@ -6,7 +6,7 @@ public class ChangedProxyConfig
 
     public IEnumerable<ListenOptions> EndpointsToStart { get; set; }
 
-    public bool L4Changed { get; set; }
+    public bool RouteChanged { get; set; }
     public IProxyConfig ProxyConfig { get; set; }
     public IEnumerable<ClusterConfig> NewClusters { get; set; }
 }
