@@ -13,4 +13,17 @@ public class ListenOptions
 
     public ConnectionDelegate ConnectionDelegate { get; set; }
     public MultiplexedConnectionDelegate MultiplexedConnectionDelegate { get; set; }
+
+    public bool Equals(ListenOptions? obj)
+    {
+        if (obj is null) return false;
+        return Key.Equals(obj.Key, StringComparison.OrdinalIgnoreCase)
+            && Protocols == obj.Protocols
+            && EndPoint.GetHashCode() == EndPoint.GetHashCode();
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Key?.GetHashCode(StringComparison.OrdinalIgnoreCase), Protocols, EndPoint.GetHashCode());
+    }
 }

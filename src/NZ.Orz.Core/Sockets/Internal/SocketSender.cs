@@ -76,7 +76,7 @@ internal sealed class SocketSender : SocketAwaitableEventArgs
         Debug.Assert(!buffer.IsEmpty);
         Debug.Assert(!buffer.IsSingleSegment);
 
-        if (_bufferList == null)
+        if (_bufferList is null)
         {
             _bufferList = new List<ArraySegment<byte>>();
         }

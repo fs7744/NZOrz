@@ -23,7 +23,7 @@ public class FeatureCollection : IFeatureCollection
         }
         set
         {
-            if (value == null)
+            if (value is null)
             {
                 _features?.Remove(key);
                 return;
@@ -46,7 +46,7 @@ public class FeatureCollection : IFeatureCollection
 
         if (_defaults != null)
         {
-            foreach (var pair in _features == null ? _defaults : _defaults.Except(_features))
+            foreach (var pair in _features is null ? _defaults : _defaults.Except(_features))
             {
                 yield return pair;
             }

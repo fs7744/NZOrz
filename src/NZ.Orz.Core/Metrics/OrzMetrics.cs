@@ -216,7 +216,7 @@ public sealed class OrzMetrics
             }
             else if (TryGetErrorType(reason, out _))
             {
-                if (context.ConnectionEndReason == null)
+                if (context.ConnectionEndReason is null)
                 {
                     context.ConnectionEndReason = reason;
                 }

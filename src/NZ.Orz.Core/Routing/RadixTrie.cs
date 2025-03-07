@@ -89,7 +89,7 @@ public class RadixTrie<T> : IDisposable
             }
         }
 
-        if (curr.Children == null)
+        if (curr.Children is null)
         {
             curr.Children = new List<RadixTrieNode<T>>() { new RadixTrieNode<T>() { Key = term, Value = value() } };
         }
@@ -106,7 +106,7 @@ public class RadixTrie<T> : IDisposable
 
     private static IEnumerable<T> Search(RadixTrieNode<T> trie, StringSegment key, StringComparison comparison)
     {
-        if (trie.Children == null) yield break;
+        if (trie.Children is null) yield break;
 
         foreach (var item in trie.Children)
         {

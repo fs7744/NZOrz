@@ -31,8 +31,8 @@ public class RadixTrieBenchmarks
         data = new List<string>();
         Func<List<string>, List<string>, List<string>> merge = (i, j) =>
         {
-            if (i == null) return j;
-            if (j == null) return i;
+            if (i is null) return j;
+            if (j is null) return i;
             i.AddRange(j);
             return i;
         };

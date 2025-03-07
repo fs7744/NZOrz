@@ -43,7 +43,7 @@ public abstract class OrzConnection : IConnectionHeartbeatFeature, IConnectionCo
     {
         lock (_heartbeatLock)
         {
-            if (_heartbeatHandlers == null)
+            if (_heartbeatHandlers is null)
             {
                 return;
             }
@@ -61,7 +61,7 @@ public abstract class OrzConnection : IConnectionHeartbeatFeature, IConnectionCo
     {
         lock (_heartbeatLock)
         {
-            if (_heartbeatHandlers == null)
+            if (_heartbeatHandlers is null)
             {
                 _heartbeatHandlers = new List<(Action<object> handler, object state)>();
             }
@@ -77,7 +77,7 @@ public abstract class OrzConnection : IConnectionHeartbeatFeature, IConnectionCo
             throw new InvalidOperationException("The connection is already complete.");
         }
 
-        if (_onCompleted == null)
+        if (_onCompleted is null)
         {
             _onCompleted = new Stack<KeyValuePair<Func<object, Task>, object>>();
         }
@@ -94,7 +94,7 @@ public abstract class OrzConnection : IConnectionHeartbeatFeature, IConnectionCo
         _completed = true;
         var onCompleted = _onCompleted;
 
-        if (onCompleted == null || onCompleted.Count == 0)
+        if (onCompleted is null || onCompleted.Count == 0)
         {
             return Task.CompletedTask;
         }

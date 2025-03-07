@@ -141,7 +141,7 @@ internal class SocketAwaitableEventArgs : SocketAsyncEventArgs, IValueTaskSource
 //    public ValueTask<SocketReceiveFromResult> ReceiveFromAsync(Socket socket, Memory<byte> buffer)
 //    {
 //        SetBuffer(buffer);
-//        Debug.Assert(Volatile.Read(ref _continuation) == null, "Expected null continuation to indicate reserved for use");
+//        Debug.Assert(Volatile.Read(ref _continuation) is null, "Expected null continuation to indicate reserved for use");
 
 //        if (socket.ReceiveFromAsync(this))
 //        {

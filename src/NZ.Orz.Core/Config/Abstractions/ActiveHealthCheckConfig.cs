@@ -22,30 +22,41 @@ public sealed record ActiveHealthCheckConfig
     /// </summary>
     public string? Query { get; set; }
 
-    public bool Equals(ActiveHealthCheckConfig? other)
+    public static bool Equals(ActiveHealthCheckConfig? t, ActiveHealthCheckConfig? other)
     {
+        if (t is null && other is null) return true;
         if (other is null)
         {
             return false;
         }
 
-        return Interval == other.Interval
-            && Timeout == other.Timeout
-            && Passes == other.Passes
-            && Fails == other.Fails
-            && string.Equals(Policy, other.Policy, StringComparison.OrdinalIgnoreCase)
-            && string.Equals(Path, other.Path, StringComparison.Ordinal)
-            && string.Equals(Query, other.Query, StringComparison.Ordinal);
+        return t.Interval == other.Interval
+            && t.Timeout == other.Timeout
+            && t.Passes == other.Passes
+            && t.Fails == other.Fails
+            && string.Equals(t.Policy, other.Policy, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(t.Path, other.Path, StringComparison.Ordinal)
+            && string.Equals(t.Query, other.Query, StringComparison.Ordinal);
+    }
+
+    public bool Equals(ActiveHealthCheckConfig? other)
+    {
+        return Equals(this, other);
+    }
+
+    public static int GetHashCode(ActiveHealthCheckConfig t)
+    {
+        return HashCode.Combine(t.Interval,
+            t.Timeout,
+            t.Passes,
+            t.Fails,
+            t.Policy?.GetHashCode(StringComparison.OrdinalIgnoreCase),
+            t.Path?.GetHashCode(StringComparison.Ordinal),
+            t.Query?.GetHashCode(StringComparison.Ordinal));
     }
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(Interval,
-            Timeout,
-            Passes,
-            Fails,
-            Policy?.GetHashCode(StringComparison.OrdinalIgnoreCase),
-            Path?.GetHashCode(StringComparison.Ordinal),
-            Query?.GetHashCode(StringComparison.Ordinal));
+        return GetHashCode(this);
     }
 }

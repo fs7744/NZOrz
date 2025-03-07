@@ -14,7 +14,7 @@ public class RouteConfigBuilder
     {
         get
         {
-            if (_SocketTransportOptions == null)
+            if (_SocketTransportOptions is null)
                 _SocketTransportOptions = new SocketTransportOptions();
             return _SocketTransportOptions;
         }

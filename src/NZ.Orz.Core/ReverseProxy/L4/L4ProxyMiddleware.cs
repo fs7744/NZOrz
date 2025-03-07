@@ -35,7 +35,7 @@ public class L4ProxyMiddleware : IOrderMiddleware
         try
         {
             var route = await router.MatchAsync(context);
-            if (route == null)
+            if (route is null)
             {
                 logger.LogWarning($"No match route {context.LocalEndPoint}");
             }
@@ -49,7 +49,7 @@ public class L4ProxyMiddleware : IOrderMiddleware
                 else
                 {
                     var upstream = await TryConnectionAsync(context, route);
-                    if (upstream == null)
+                    if (upstream is null)
                     {
                         logger.LogWarning($"No available upstream for {route.ClusterId}");
                     }
@@ -103,7 +103,7 @@ public class L4ProxyMiddleware : IOrderMiddleware
         try
         {
             selectedDestination = context.SelectedDestination = loadBalancing.PickDestination(context, route);
-            if (selectedDestination == null)
+            if (selectedDestination is null)
             {
                 return null;
             }

@@ -56,8 +56,8 @@ public class RouteTableBuilder<T>
 
     private PriorityRouteDataList<T>? MergePriorityRouteDataList(PriorityRouteDataList<T>? list1, PriorityRouteDataList<T>? list2)
     {
-        if (list1 == null) return list2;
-        if (list2 == null) return list1;
+        if (list1 is null) return list2;
+        if (list2 is null) return list1;
         foreach (var item in list2)
         {
             if (list1.TryGetValue(item.Key, out var v))

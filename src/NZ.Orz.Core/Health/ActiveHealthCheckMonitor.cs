@@ -17,7 +17,7 @@ public class ActiveHealthCheckMonitor : IActiveHealthCheckMonitor, IDisposable
 
     private async Task ProbeCluster(WeakReference<ClusterConfig> reference)
     {
-        if (!reference.TryGetTarget(out var cluster) || cluster.HealthCheck == null || cluster.HealthCheck.Active == null)
+        if (!reference.TryGetTarget(out var cluster) || cluster.HealthCheck is null || cluster.HealthCheck.Active is null)
         {
             Scheduler.UnscheduleEntity(reference);
             return;

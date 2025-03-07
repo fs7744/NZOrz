@@ -61,8 +61,8 @@ public class RouteContractorValidator : IRouteContractorValidator
     {
         //todo remove error config and log
         var ec = errors.Count;
-        var clusters = config.Clusters.ToList();
-        foreach (var cluster in config.Clusters)
+        var clusters = config.Clusters.ToDictionary(i => i.Key, i => i.Value, StringComparer.OrdinalIgnoreCase);
+        foreach (var cluster in config.Clusters.Values)
         {
             foreach (var validator in clusterConfigValidators)
             {
@@ -70,7 +70,7 @@ public class RouteContractorValidator : IRouteContractorValidator
                 await validator.ValidateAsync(cluster, errors, cancellationToken);
                 if (errors.Count > ec)
                 {
-                    clusters.Remove(cluster);
+                    clusters.Remove(cluster.ClusterId);
                 }
             }
         }
@@ -113,14 +113,29 @@ public class RouteContractorValidator : IRouteContractorValidator
         {
             foreach (var item in config.Routes)
             {
-                if (item.Protocols.HasFlag(GatewayProtocols.TCP) || item.Protocols.HasFlag(GatewayProtocols.UDP))
+                var es = item.Match.Hosts.SelectMany(i => ConvertEndPoint(i, errors)).Where(i => i != null).ToArray();
+                if (item.Protocols.HasFlag(GatewayProtocols.TCP))
                 {
-                    foreach (var e in item.Match.Hosts.SelectMany(i => ConvertEndPoint(i, errors)).Where(i => i != null).ToArray())
+                    foreach (var e in es)
                     {
                         yield return new ListenOptions()
                         {
                             Key = item.RouteId,
-                            Protocols = item.Protocols.HasFlag(GatewayProtocols.TCP) ? GatewayProtocols.TCP : GatewayProtocols.UDP,
+                            Protocols = GatewayProtocols.TCP,
+                            EndPoint = e,
+                            ConnectionDelegate = middleware
+                        };
+                    }
+                }
+
+                if (item.Protocols.HasFlag(GatewayProtocols.UDP))
+                {
+                    foreach (var e in es)
+                    {
+                        yield return new ListenOptions()
+                        {
+                            Key = item.RouteId,
+                            Protocols = GatewayProtocols.UDP,
                             EndPoint = e,
                             ConnectionDelegate = middleware
                         };

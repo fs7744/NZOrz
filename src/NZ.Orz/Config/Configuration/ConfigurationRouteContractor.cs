@@ -2,6 +2,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Primitives;
 using NZ.Orz.Sockets;
+using System.Collections.Frozen;
+using System.Collections.Immutable;
 using System.Net.Sockets;
 
 namespace NZ.Orz.Config.Configuration;
@@ -15,9 +17,10 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
     private ServerOptions serverOptions;
     private SocketTransportOptions socketTransportOptions;
     private IList<ListenOptions> listenOptions;
-    private ProxyConfigSnapshot proxyConfig;
+    private IProxyConfig proxyConfig;
     private CancellationTokenSource cts;
     private IChangeToken changeToken;
+    private ChangedProxyConfig changedProxyConfig;
     private readonly IServiceProvider serviceProvider;
 
     public ConfigurationRouteContractor(IConfiguration configuration, IServiceProvider serviceProvider)
@@ -110,7 +113,7 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
         {
             c = new ProxyConfigSnapshot();
             c.Routes = configuration.GetSection(nameof(ProxyConfigSnapshot.Routes)).GetChildren().Select(CreateRoute).ToList();
-            c.Clusters = configuration.GetSection(nameof(ProxyConfigSnapshot.Clusters)).GetChildren().Select(CreateCluster).ToList();
+            c.Clusters = configuration.GetSection(nameof(ProxyConfigSnapshot.Clusters)).GetChildren().Select(CreateCluster).ToFrozenDictionary(i => i.ClusterId, StringComparer.OrdinalIgnoreCase);
         }
         catch (Exception ex)
         {
@@ -132,7 +135,7 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
             var oldToken = cts;
             cts = new CancellationTokenSource();
             changeToken = new CancellationChangeToken(cts.Token);
-            await OnConfigChanged(oldToken, proxyConfig, c, listenOptions, cancellationToken);
+            await OnConfigChanged(oldToken, proxyConfig as ProxyConfigSnapshot, c, listenOptions, cancellationToken);
         }
         catch (Exception ex)
         {// todo log
@@ -148,9 +151,17 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
         {
             throw new AggregateException(errors);
         }
-        // todo merge old and new
-        proxyConfig = newConf;
+        changedProxyConfig = MergeConfig(newConf, oldConf, listenOptions, newListenOptions);
+        if (changedProxyConfig != null)
+        {
+            proxyConfig = changedProxyConfig.ProxyConfig;
+        }
+        else
+        {
+            proxyConfig = newConf;
+        }
         this.listenOptions = newListenOptions;
+
         try
         {
             oldToken?.Cancel(throwOnFirstException: false);
@@ -159,6 +170,51 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
         {
             //todo
         }
+    }
+
+    private ChangedProxyConfig MergeConfig(ProxyConfigSnapshot newConf, ProxyConfigSnapshot oldConf, IList<ListenOptions> oldListenOptions, IList<ListenOptions> newListenOptions)
+    {
+        if (oldConf is null && oldListenOptions is null) return null;
+        var changedProxyConfig = new ChangedProxyConfig();
+        if (oldListenOptions != null)
+        {
+            var set = oldListenOptions.ToDictionary(i => i.GetHashCode());
+            var start = newListenOptions.ToList();
+            foreach (var listenOption in newListenOptions)
+            {
+                var key = listenOption.GetHashCode();
+                if (set.TryGetValue(key, out var v) && v.Equals(listenOption))
+                {
+                    set.Remove(key);
+                    start.Remove(listenOption);
+                }
+            }
+
+            changedProxyConfig.EndpointsToStop = set.Values.ToImmutableList();
+            changedProxyConfig.EndpointsToStart = start;
+        }
+        else
+        {
+            changedProxyConfig.EndpointsToStart = newListenOptions;
+        }
+
+        if (oldConf != null)
+        {
+            var dict = newConf.Clusters.ToDictionary(StringComparer.OrdinalIgnoreCase);
+            var newClusters = newConf.Clusters.Values.ToList();
+            foreach (var item in oldConf.Clusters.Values)
+            {
+                if (dict.TryGetValue(item.ClusterId, out var c) && c.Equals(item))
+                {
+                    newClusters.Remove(c);
+                    dict[item.ClusterId] = item;
+                }
+            }
+            changedProxyConfig.NewClusters = newClusters;
+        }
+        changedProxyConfig.ProxyConfig = newConf;
+
+        return changedProxyConfig;
     }
 
     private ClusterConfig CreateCluster(IConfigurationSection section)
@@ -261,6 +317,8 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
 
     public Task<ChangedProxyConfig> ReloadAsync()
     {
-        throw new NotImplementedException();
+        var old = changedProxyConfig;
+        changedProxyConfig = null;
+        return Task.FromResult(old);
     }
 }

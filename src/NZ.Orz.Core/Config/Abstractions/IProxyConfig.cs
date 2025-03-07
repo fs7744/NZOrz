@@ -8,5 +8,5 @@ public interface IProxyConfig
 
     IReadOnlyList<RouteConfig> Routes { get; }
 
-    IReadOnlyList<ClusterConfig> Clusters { get; }
+    IReadOnlyDictionary<string, ClusterConfig> Clusters { get; }
 }

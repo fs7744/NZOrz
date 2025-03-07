@@ -77,7 +77,7 @@ public class DnsDestinationResolver : DestinationResolverBase
 
     private bool HasChange(IReadOnlyList<DestinationState> destinations1, List<DestinationState> destinations2)
     {
-        if (destinations1 == null || destinations1.Count != destinations2.Count) return true;
+        if (destinations1 is null || destinations1.Count != destinations2.Count) return true;
         foreach (var dest in destinations1)
         {
             if (destinations2.Any(i => i.EndPoint.GetHashCode() == dest.EndPoint.GetHashCode()))

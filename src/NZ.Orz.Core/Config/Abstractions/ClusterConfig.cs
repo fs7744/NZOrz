@@ -33,8 +33,8 @@ public sealed record class ClusterConfig : IDisposable
 
         return string.Equals(ClusterId, other.ClusterId, StringComparison.OrdinalIgnoreCase)
             && string.Equals(LoadBalancingPolicy, other.LoadBalancingPolicy, StringComparison.OrdinalIgnoreCase)
-            && HealthCheck == other.HealthCheck
-            && CollectionUtilities.Equals(Destinations, other.Destinations);
+            && HealthCheckConfig.Equals(HealthCheck, other.HealthCheck)
+            && CollectionUtilities.Equals(Destinations, other.Destinations, DestinationConfig.Comparer);
     }
 
     public override int GetHashCode()

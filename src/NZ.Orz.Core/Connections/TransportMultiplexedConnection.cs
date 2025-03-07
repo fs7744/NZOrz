@@ -52,7 +52,7 @@ public abstract class TransportMultiplexedConnection : MultiplexedConnectionCont
     {
         get
         {
-            if (_Parameters == null)
+            if (_Parameters is null)
             {
                 _Parameters = new FeatureCollection();
                 InitFeatures();

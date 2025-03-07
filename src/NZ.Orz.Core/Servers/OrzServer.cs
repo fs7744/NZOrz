@@ -84,8 +84,9 @@ public class OrzServer : IServer
 
             ServiceContext.Heartbeat?.Start();
             var proxyConfig = contractor.GetProxyConfig();
-            await ReloadRouteAsync(proxyConfig);
-            _ = monitor.CheckHealthAsync(proxyConfig.Clusters);
+            MakeSureConfig(proxyConfig);
+            await ReloadRouteAsync(proxyConfig, true);
+            _ = monitor.CheckHealthAsync(proxyConfig.Clusters.Values);
             await BindAsync(cancellationToken).ConfigureAwait(false);
         }
         catch
@@ -162,8 +163,8 @@ public class OrzServer : IServer
             var changedProxyConfig = await contractor.ReloadAsync();
             if (changedProxyConfig != null)
             {
-                if (changedProxyConfig.L4Changed)
-                    await ReloadRouteAsync(changedProxyConfig.ProxyConfig);
+                MakeSureConfig(changedProxyConfig.ProxyConfig);
+                await ReloadRouteAsync(changedProxyConfig.ProxyConfig, changedProxyConfig.L4Changed);
                 if (changedProxyConfig.NewClusters != null)
                     _ = monitor.CheckHealthAsync(changedProxyConfig.NewClusters);
             }
@@ -233,12 +234,26 @@ public class OrzServer : IServer
         }
     }
 
-    private async Task ReloadRouteAsync(IProxyConfig proxyConfig)
+    private async Task ReloadRouteAsync(IProxyConfig proxyConfig, bool l4Changed)
     {
-        var old = l4.RouteTable;
-        l4.RouteTable = BuildL4RouteTable(proxyConfig, contractor.GetServerOptions());
-        if (old != null)
-            await old.DisposeAsync();
+        if (l4Changed)
+        {
+            var old = l4.RouteTable;
+            l4.RouteTable = BuildL4RouteTable(proxyConfig, contractor.GetServerOptions());
+            if (old != null)
+                await old.DisposeAsync();
+        }
+    }
+
+    private static void MakeSureConfig(IProxyConfig proxyConfig)
+    {
+        foreach (var route in proxyConfig.Routes)
+        {
+            if (proxyConfig.Clusters.TryGetValue(route.ClusterId, out var clusterConfig))
+            {
+                route.ClusterConfig = clusterConfig;
+            }
+        }
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
@@ -282,13 +297,8 @@ public class OrzServer : IServer
     private RouteTable<RouteConfig> BuildL4RouteTable(IProxyConfig config, ServerOptions serverOptions)
     {
         var builder = new RouteTableBuilder<RouteConfig>();
-        var clusters = config.Clusters.DistinctBy(i => i.ClusterId, StringComparer.OrdinalIgnoreCase).ToDictionary(i => i.ClusterId, StringComparer.OrdinalIgnoreCase);
         foreach (var route in config.Routes.Where(i => i.Protocols.HasFlag(GatewayProtocols.TCP) || i.Protocols.HasFlag(GatewayProtocols.UDP)))
         {
-            if (clusters.TryGetValue(route.ClusterId, out var clusterConfig))
-            {
-                route.ClusterConfig = clusterConfig;
-            }
             foreach (var host in route.Match.Hosts)
             {
                 if (host.StartsWith("localhost:"))

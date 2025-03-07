@@ -12,7 +12,7 @@ public class L4Router : IL4Router
 
     public ValueTask<RouteConfig> MatchAsync(ConnectionContext context)
     {
-        if (RouteTable == null) return ValueTask.FromResult<RouteConfig>(null);
+        if (RouteTable is null) return ValueTask.FromResult<RouteConfig>(null);
         return RouteTable.MatchAsync(context.LocalEndPoint.ToString().Reverse(), context is UdpConnectionContext ? GatewayProtocols.UDP : GatewayProtocols.TCP, Match);
     }
 

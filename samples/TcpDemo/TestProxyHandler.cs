@@ -30,7 +30,7 @@ public class TestProxyHandler : IMiddleware
     {
         var r = await route.MatchAsync(connection.LocalEndPoint.ToString(), connection, MatchRoute);
         var n = r?.Backends.First();
-        if (n == null)
+        if (n is null)
         {
             logger.LogWarning($"No match upstream {connection.LocalEndPoint}");
             connection.Abort();

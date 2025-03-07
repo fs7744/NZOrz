@@ -39,7 +39,7 @@ internal sealed class ConnectionDispatcher<T> where T : BaseConnectionContext
                 {
                     var connection = await listener.AcceptAsync();
 
-                    if (connection == null)
+                    if (connection is null)
                     {
                         break;
                     }

@@ -56,11 +56,11 @@ public class RouteTable<T> : IAsyncDisposable, IDisposable
     public async ValueTask<T> FirstAsync(string key)
     {
         var all = await FindAllAsync(key);
-        if (all == null) return default;
+        if (all is null) return default;
         var f = all.FirstOrDefault();
-        if (f == null) return default;
+        if (f is null) return default;
         var f2 = f.FirstOrDefault().Value;
-        if (f2 == null) return default;
+        if (f2 is null) return default;
         return f2.FirstOrDefault();
     }
 
