@@ -92,7 +92,8 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
         {
             s.DnsRefreshPeriod = section.ReadTimeSpan(nameof(ServerOptions.DnsRefreshPeriod));
             s.DnsAddressFamily = section.ReadEnum<AddressFamily>(nameof(ServerOptions.DnsAddressFamily));
-            s.DefaultProxyTimeout = section.ReadTimeSpan(nameof(ServerOptions.DefaultProxyTimeout)).GetValueOrDefault(TimeSpan.FromSeconds(60));
+            s.DefaultProxyTimeout = section.ReadTimeSpan(nameof(ServerOptions.DefaultProxyTimeout)).GetValueOrDefault(s.DefaultProxyTimeout);
+            s.ShutdownTimeout = section.ReadTimeSpan(nameof(ServerOptions.ShutdownTimeout)).GetValueOrDefault(s.ShutdownTimeout);
             CreateLimits(s.Limits, section.GetSection(nameof(ServerOptions.Limits)));
         }
         return s;

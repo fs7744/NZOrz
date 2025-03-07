@@ -10,5 +10,5 @@ public class ServerOptions
 
     public TimeSpan? DnsRefreshPeriod { get; set; } = TimeSpan.FromMinutes(5);
     public AddressFamily? DnsAddressFamily { get; set; }
-    public TimeSpan ShutdownTimeout { get; set; }
+    public TimeSpan ShutdownTimeout { get; set; } = TimeSpan.FromSeconds(5);
 }
