@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using NZ.Orz.Config;
 using NZ.Orz.Connections;
+using NZ.Orz.Metrics;
 using NZ.Orz.Sockets.Internal;
 using System.Buffers;
 using System.IO.Pipelines;
@@ -13,19 +14,19 @@ public class SocketConnectionFactory : IConnectionFactory, IAsyncDisposable
 {
     private readonly SocketTransportOptions _options;
     private readonly MemoryPool<byte> _memoryPool;
-    private readonly ILogger _trace;
+    private readonly OrzTrace _trace;
     private readonly PipeOptions _inputOptions;
     private readonly PipeOptions _outputOptions;
     private readonly SocketSenderPool _socketSenderPool;
 
-    public SocketConnectionFactory(IRouteContractor contractor, ILoggerFactory loggerFactory)
+    public SocketConnectionFactory(IRouteContractor contractor, OrzTrace logger)
     {
         ArgumentNullException.ThrowIfNull(contractor);
-        ArgumentNullException.ThrowIfNull(loggerFactory);
+        ArgumentNullException.ThrowIfNull(logger);
 
         _options = contractor.GetSocketTransportOptions();
         _memoryPool = _options.MemoryPoolFactory();
-        _trace = loggerFactory.CreateLogger("NZ.Orz.Sockets.Client");
+        _trace = logger;
 
         var maxReadBufferSize = _options.MaxReadBufferSize ?? 0;
         var maxWriteBufferSize = _options.MaxWriteBufferSize ?? 0;

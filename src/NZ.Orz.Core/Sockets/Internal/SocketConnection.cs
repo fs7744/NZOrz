@@ -4,6 +4,7 @@ using NZ.Orz.Connections;
 using NZ.Orz.Connections.Exceptions;
 using NZ.Orz.Connections.Features;
 using NZ.Orz.Infrastructure;
+using NZ.Orz.Metrics;
 using System.Buffers;
 using System.Diagnostics;
 using System.IO.Pipelines;
@@ -16,7 +17,7 @@ internal sealed partial class SocketConnection : TransportConnection, IConnectio
     private static readonly int MinAllocBufferSize = PinnedBlockMemoryPool.BlockSize / 2;
 
     private readonly Socket _socket;
-    private readonly ILogger _logger;
+    private readonly OrzTrace _logger;
     private readonly SocketReceiver _receiver;
     private SocketSender? _sender;
     private readonly SocketSenderPool _socketSenderPool;
@@ -35,7 +36,7 @@ internal sealed partial class SocketConnection : TransportConnection, IConnectio
     internal SocketConnection(Socket socket,
                               MemoryPool<byte> memoryPool,
                               PipeScheduler socketScheduler,
-                              ILogger logger,
+                              OrzTrace logger,
                               SocketSenderPool socketSenderPool,
                               PipeOptions inputOptions,
                               PipeOptions outputOptions,
@@ -90,7 +91,7 @@ internal sealed partial class SocketConnection : TransportConnection, IConnectio
         }
         catch (Exception ex)
         {
-            _logger.LogError(0, ex, $"Unexpected exception in {nameof(SocketConnection)}.{nameof(Start)}.");
+            _logger.UnexpectedException($"in {nameof(SocketConnection)}.{nameof(Start)}.", ex);
         }
     }
 
@@ -124,7 +125,7 @@ internal sealed partial class SocketConnection : TransportConnection, IConnectio
         }
         catch (Exception ex)
         {
-            _logger.LogError(0, ex, $"Unexpected exception in {nameof(SocketConnection)}.{nameof(Start)}.");
+            _logger.UnexpectedException($"in {nameof(SocketConnection)}.{nameof(Start)}.", ex);
         }
         finally
         {
@@ -169,7 +170,7 @@ internal sealed partial class SocketConnection : TransportConnection, IConnectio
                 if (bytesReceived == 0)
                 {
                     // FIN
-                    SocketsLog.ConnectionReadFin(_logger, this);
+                    _logger.ConnectionReadFin(this.ConnectionId);
                     break;
                 }
 
@@ -181,14 +182,14 @@ internal sealed partial class SocketConnection : TransportConnection, IConnectio
 
                 if (paused)
                 {
-                    SocketsLog.ConnectionPause(_logger, this);
+                    _logger.ConnectionPause(ConnectionId);
                 }
 
                 var result = await flushTask;
 
                 if (paused)
                 {
-                    SocketsLog.ConnectionResume(_logger, this);
+                    _logger.ConnectionResume(ConnectionId);
                 }
 
                 if (result.IsCompleted || result.IsCanceled)
@@ -217,7 +218,7 @@ internal sealed partial class SocketConnection : TransportConnection, IConnectio
                         var ex = result.SocketError;
                         error = new ConnectionResetException(ex.Message, ex);
 
-                        SocketsLog.ConnectionReset(_logger, this);
+                        _logger.ConnectionReset(ConnectionId);
 
                         return false;
                     }
@@ -227,14 +228,14 @@ internal sealed partial class SocketConnection : TransportConnection, IConnectio
                         error = result.SocketError;
 
                         // This is unexpected if the socket hasn't been disposed yet.
-                        SocketsLog.ConnectionError(_logger, this, error);
+                        _logger.ConnectionError(ConnectionId, error);
 
                         return false;
                     }
 
                     // This is unexpected.
                     error = result.SocketError;
-                    SocketsLog.ConnectionError(_logger, this, error);
+                    _logger.ConnectionError(ConnectionId, error);
 
                     return false;
                 }
@@ -248,14 +249,14 @@ internal sealed partial class SocketConnection : TransportConnection, IConnectio
             if (_shutdownReason is not null)
             {
                 // This is unexpected if the socket hasn't been disposed yet.
-                SocketsLog.ConnectionError(_logger, this, error);
+                _logger.ConnectionError(ConnectionId, error);
             }
         }
         catch (Exception ex)
         {
             // This is unexpected.
             error = ex;
-            SocketsLog.ConnectionError(_logger, this, error);
+            _logger.ConnectionError(ConnectionId, error);
         }
         finally
         {
@@ -296,7 +297,7 @@ internal sealed partial class SocketConnection : TransportConnection, IConnectio
                         {
                             var ex = transferResult.SocketError;
                             shutdownReason = new ConnectionResetException(ex.Message, ex);
-                            SocketsLog.ConnectionReset(_logger, this);
+                            _logger.ConnectionReset(this.ConnectionId);
 
                             break;
                         }
@@ -334,7 +335,7 @@ internal sealed partial class SocketConnection : TransportConnection, IConnectio
         {
             shutdownReason = ex;
             unexpectedError = ex;
-            SocketsLog.ConnectionError(_logger, this, unexpectedError);
+            _logger.ConnectionError(ConnectionId, unexpectedError);
         }
         finally
         {
@@ -389,14 +390,14 @@ internal sealed partial class SocketConnection : TransportConnection, IConnectio
             // NB: not _shutdownReason since we don't want to do this on graceful completion
             if (!_finOnError && shutdownReason is not null)
             {
-                SocketsLog.ConnectionWriteRst(_logger, this, shutdownReason.Message);
+                _logger.ConnectionWriteRst(this.ConnectionId, shutdownReason.Message);
 
                 // This forces an abortive close with linger time 0 (and implies Dispose)
                 _socket.Close(timeout: 0);
                 return;
             }
 
-            SocketsLog.ConnectionWriteFin(_logger, this, _shutdownReason.Message);
+            _logger.ConnectionWriteFin(this.ConnectionId, _shutdownReason.Message);
 
             try
             {
@@ -419,7 +420,7 @@ internal sealed partial class SocketConnection : TransportConnection, IConnectio
         }
         catch (Exception ex)
         {
-            _logger.LogError(0, ex, $"Unexpected exception in {nameof(SocketConnection)}.{nameof(CancelConnectionClosedToken)}.");
+            _logger.UnexpectedException($"in {nameof(SocketConnection)}.{nameof(CancelConnectionClosedToken)}.", ex);
         }
     }
 

@@ -52,7 +52,7 @@ public class Heartbeat : IDisposable
         }
         catch (Exception ex)
         {
-            _trace.LogError(0, ex, $"{nameof(Heartbeat)}.{nameof(OnHeartbeat)}");
+            _trace.UnexpectedException($"{nameof(Heartbeat)}.{nameof(OnHeartbeat)}", ex);
         }
     }
 

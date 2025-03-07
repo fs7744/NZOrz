@@ -116,7 +116,7 @@ public abstract class OrzConnection : IConnectionHeartbeatFeature, IConnectionCo
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "An error occurred running an IConnectionCompleteFeature.OnCompleted callback.");
+                Logger.ConnectionCompleteFeatureError(ex);
             }
         }
 
@@ -131,7 +131,7 @@ public abstract class OrzConnection : IConnectionHeartbeatFeature, IConnectionCo
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "An error occurred running an IConnectionCompleteFeature.OnCompleted callback.");
+            Logger.ConnectionCompleteFeatureError(ex);
         }
 
         while (onCompleted.TryPop(out var entry))
@@ -142,7 +142,7 @@ public abstract class OrzConnection : IConnectionHeartbeatFeature, IConnectionCo
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "An error occurred running an IConnectionCompleteFeature.OnCompleted callback.");
+                Logger.ConnectionCompleteFeatureError(ex);
             }
         }
     }

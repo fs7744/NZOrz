@@ -3,7 +3,7 @@ using NZ.Orz.Buffers;
 using NZ.Orz.Config;
 using NZ.Orz.Connections;
 using NZ.Orz.Connections.Exceptions;
-using NZ.Orz.Sockets.Internal;
+using NZ.Orz.Metrics;
 using System.Buffers;
 using System.Diagnostics;
 using System.Net;
@@ -15,18 +15,18 @@ internal sealed class UdpConnectionListener : IConnectionListener
 {
     private EndPoint? udpEndPoint;
     private readonly GatewayProtocols protocols;
-    private ILogger _logger;
+    private OrzTrace _logger;
     private SocketTransportOptions? _options;
     private MemoryPool<byte> udpBufferPool;
 
     //private readonly UdpAwaitableEventArgs _receiver;
     private Socket? _listenSocket;
 
-    public UdpConnectionListener(EndPoint? udpEndPoint, GatewayProtocols protocols, IRouteContractor contractor, ILoggerFactory loggerFactory)
+    public UdpConnectionListener(EndPoint? udpEndPoint, GatewayProtocols protocols, IRouteContractor contractor, OrzTrace logger)
     {
         this.udpEndPoint = udpEndPoint;
         this.protocols = protocols;
-        _logger = loggerFactory.CreateLogger("Orz.Server.Transport.Sockets.Udp");
+        _logger = logger;
         _options = contractor.GetSocketTransportOptions();
         udpBufferPool = PinnedBlockMemoryPoolFactory.Create(_options.UdpMaxSize);
 
@@ -82,7 +82,7 @@ internal sealed class UdpConnectionListener : IConnectionListener
             catch (SocketException)
             {
                 // The connection got reset while it was in the backlog, so we try again.
-                SocketsLog.ConnectionReset(_logger, connectionId: "(null)");
+                _logger.ConnectionReset("(null)");
             }
         }
     }

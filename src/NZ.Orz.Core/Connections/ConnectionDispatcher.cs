@@ -61,7 +61,7 @@ internal sealed class ConnectionDispatcher<T> where T : BaseConnectionContext
             }
             catch (Exception ex)
             {
-                Log.LogCritical(0, ex, "The connection listener failed to accept any new connections.");
+                Log.UnexpectedException("The connection listener failed to accept any new connections", ex);
             }
             finally
             {

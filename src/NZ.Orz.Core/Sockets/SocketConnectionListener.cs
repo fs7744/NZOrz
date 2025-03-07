@@ -2,6 +2,7 @@
 using NZ.Orz.Config;
 using NZ.Orz.Connections;
 using NZ.Orz.Connections.Exceptions;
+using NZ.Orz.Metrics;
 using NZ.Orz.Sockets.Internal;
 using System.Diagnostics;
 using System.Net;
@@ -12,7 +13,7 @@ namespace NZ.Orz.Sockets;
 internal sealed class SocketConnectionListener : IConnectionListener
 {
     private readonly SocketConnectionContextFactory _factory;
-    private readonly ILogger _logger;
+    private readonly OrzTrace _logger;
     private Socket? _listenSocket;
     private readonly SocketTransportOptions _options;
     private readonly GatewayProtocols protocols;
@@ -23,12 +24,11 @@ internal sealed class SocketConnectionListener : IConnectionListener
         EndPoint endpoint,
         GatewayProtocols protocols,
         IRouteContractor contractor,
-        ILoggerFactory loggerFactory)
+        OrzTrace logger)
     {
         EndPoint = endpoint;
         this.protocols = protocols;
         _options = contractor.GetSocketTransportOptions();
-        var logger = loggerFactory.CreateLogger("Orz.Server.Transport.Sockets.Tcp");
         _logger = logger;
         _factory = new SocketConnectionContextFactory(contractor, logger);
     }
@@ -88,7 +88,7 @@ internal sealed class SocketConnectionListener : IConnectionListener
             catch (SocketException)
             {
                 // The connection got reset while it was in the backlog, so we try again.
-                SocketsLog.ConnectionReset(_logger, connectionId: "(null)");
+                _logger.ConnectionReset("(null)");
             }
         }
     }

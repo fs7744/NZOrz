@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using NZ.Orz.Config;
 using NZ.Orz.Connections;
+using NZ.Orz.Metrics;
 using System.Net;
 
 namespace NZ.Orz.Sockets;
@@ -8,17 +9,17 @@ namespace NZ.Orz.Sockets;
 public sealed class UdpTransportFactory : IConnectionListenerFactory, IConnectionListenerFactorySelector
 {
     private readonly IRouteContractor contractor;
-    private readonly ILoggerFactory _logger;
+    private readonly OrzTrace _logger;
 
     public UdpTransportFactory(
         IRouteContractor contractor,
-        ILoggerFactory loggerFactory)
+        OrzTrace logger)
     {
         ArgumentNullException.ThrowIfNull(contractor);
-        ArgumentNullException.ThrowIfNull(loggerFactory);
+        ArgumentNullException.ThrowIfNull(logger);
 
         this.contractor = contractor;
-        _logger = loggerFactory;
+        _logger = logger;
     }
 
     public ValueTask<IConnectionListener> BindAsync(EndPoint endpoint, GatewayProtocols protocols, CancellationToken cancellationToken = default)

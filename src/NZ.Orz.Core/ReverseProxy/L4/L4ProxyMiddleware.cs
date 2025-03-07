@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using NZ.Orz.Config;
 using NZ.Orz.Connections;
+using NZ.Orz.Metrics;
 using NZ.Orz.ReverseProxy.LoadBalancing;
 using NZ.Orz.Sockets;
 
@@ -10,14 +11,14 @@ public class L4ProxyMiddleware : IOrderMiddleware
 {
     private readonly IConnectionFactory connectionFactory;
     private readonly IL4Router router;
-    private readonly ILogger<L4ProxyMiddleware> logger;
+    private readonly OrzTrace logger;
     private readonly LoadBalancingPolicy loadBalancing;
     private readonly SocketTransportOptions? options;
     private readonly TcpConnectionDelegate reqTcp;
     private readonly TcpConnectionDelegate respTcp;
     private readonly bool hasMiddlewareTcp;
 
-    public L4ProxyMiddleware(IConnectionFactory connectionFactory, IL4Router router, ILogger<L4ProxyMiddleware> logger, LoadBalancingPolicy loadBalancing, IRouteContractor contractor,
+    public L4ProxyMiddleware(IConnectionFactory connectionFactory, IL4Router router, OrzTrace logger, LoadBalancingPolicy loadBalancing, IRouteContractor contractor,
         IEnumerable<ITcpMiddleware> tcpMiddlewares)
     {
         this.connectionFactory = connectionFactory;
@@ -37,7 +38,7 @@ public class L4ProxyMiddleware : IOrderMiddleware
             var route = await router.MatchAsync(context);
             if (route is null)
             {
-                logger.LogWarning($"No match route {context.LocalEndPoint}");
+                logger.NotFoundRouteL4(context.LocalEndPoint);
             }
             else
             {
@@ -51,7 +52,7 @@ public class L4ProxyMiddleware : IOrderMiddleware
                     var upstream = await TryConnectionAsync(context, route);
                     if (upstream is null)
                     {
-                        logger.LogWarning($"No available upstream for {route.ClusterId}");
+                        logger.NotFoundAvailableUpstream(route.ClusterId);
                     }
                     else
                     {
@@ -83,7 +84,7 @@ public class L4ProxyMiddleware : IOrderMiddleware
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, ex.Message);
+            logger.UnexpectedException(ex.Message, ex);
         }
         finally
         {
@@ -128,24 +129,18 @@ public class L4ProxyMiddleware : IOrderMiddleware
     private (TcpConnectionDelegate req, TcpConnectionDelegate resp, bool hasMiddleware) BuildMiddleware(IEnumerable<ITcpMiddleware> middlewares)
     {
         var hasMiddleware = false;
-        TcpConnectionDelegate request = (context, s, t) =>
+        TcpConnectionDelegate request;
+        TcpConnectionDelegate response;
+        request = response = (context, s, t) =>
         {
             return Task.FromResult(s);
         };
-        foreach (var component in middlewares.OrderBy(i => i.Order)
-            .Select<ITcpMiddleware, Func<TcpConnectionDelegate, TcpConnectionDelegate>>(p => (TcpConnectionDelegate next) => (c, s, t) => p.OnRequest(c, s, t, next)))
+        foreach (var p in middlewares.OrderBy(i => i.Order))
         {
             hasMiddleware = true;
+            Func<TcpConnectionDelegate, TcpConnectionDelegate> component = (TcpConnectionDelegate next) => (c, s, t) => p.OnRequest(c, s, t, next);
             request = component(request);
-        }
-
-        TcpConnectionDelegate response = (context, s, t) =>
-        {
-            return Task.FromResult(s);
-        };
-        foreach (var component in middlewares.OrderBy(i => i.Order)
-            .Select<ITcpMiddleware, Func<TcpConnectionDelegate, TcpConnectionDelegate>>(p => (TcpConnectionDelegate next) => (c, s, t) => p.OnResponse(c, s, t, next)))
-        {
+            component = (TcpConnectionDelegate next) => (c, s, t) => p.OnResponse(c, s, t, next);
             response = component(response);
         }
         return (request, response, hasMiddleware);

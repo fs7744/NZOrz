@@ -2,6 +2,7 @@
 using NZ.Orz.Connections.Features;
 using NZ.Orz.Metrics;
 using NZ.Orz.Servers;
+using NZ.Orz.Sockets.Internal;
 using System.Diagnostics;
 
 namespace NZ.Orz.Connections;
@@ -67,7 +68,7 @@ internal sealed class OrzConnection<T> : OrzConnection, IThreadPoolWorkItem wher
                 catch (Exception ex)
                 {
                     unhandledException = ex;
-                    Logger.LogError(0, ex, "Unhandled exception while processing {ConnectionId}.", connectionContext.ConnectionId);
+                    Logger.UnexpectedException($"while processing {connectionContext.ConnectionId}", ex);
                 }
             }
         }

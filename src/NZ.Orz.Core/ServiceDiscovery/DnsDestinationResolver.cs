@@ -3,17 +3,18 @@ using Microsoft.Extensions.Primitives;
 using NZ.Orz.Config;
 using NZ.Orz.Health;
 using NZ.Orz.Infrastructure;
+using NZ.Orz.Metrics;
 using System.Net;
 
 namespace NZ.Orz.ServiceDiscovery;
 
 public class DnsDestinationResolver : DestinationResolverBase
 {
-    private readonly ILogger<DnsDestinationResolver> logger;
+    private readonly OrzTrace logger;
     private readonly IHealthUpdater healthUpdater;
     private ServerOptions options;
 
-    public DnsDestinationResolver(IRouteContractor contractor, ILogger<DnsDestinationResolver> logger, IHealthUpdater healthUpdater)
+    public DnsDestinationResolver(IRouteContractor contractor, OrzTrace logger, IHealthUpdater healthUpdater)
     {
         options = contractor.GetServerOptions();
         this.logger = logger;

@@ -192,7 +192,7 @@ public class OrzServer : IServer
         }
         catch (Exception ex)
         {
-            trace.LogCritical(0, ex, "Unable to reload configuration.");
+            trace.UnexpectedException("Unable to reload configuration", ex);
         }
         finally
         {
