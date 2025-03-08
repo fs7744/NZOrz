@@ -17,6 +17,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NZ.Orz", "src\NZ.Orz\NZ.Orz
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "doc", "doc", "{29480E9F-F2D6-4B04-91C1-7E638DE5B0C7}"
 	ProjectSection(SolutionItems) = preProject
+		ProjectCommon.targets = ProjectCommon.targets
 		README.md = README.md
 	EndProjectSection
 EndProject
