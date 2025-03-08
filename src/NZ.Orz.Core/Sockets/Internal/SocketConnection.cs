@@ -22,8 +22,12 @@ internal sealed partial class SocketConnection : TransportConnection, IConnectio
     private readonly SocketSenderPool _socketSenderPool;
     private readonly IDuplexPipe _originalTransport;
     private readonly CancellationTokenSource _connectionClosedTokenSource = new CancellationTokenSource();
-
+#if NET9_0_OR_GREATER
+    private readonly Lock _shutdownLock = new();
+#else
     private readonly object _shutdownLock = new();
+#endif
+
     private volatile Exception? _shutdownReason;
     private Task? _sendingTask;
     private Task? _receivingTask;

@@ -8,7 +8,11 @@ namespace NZ.Orz.Connections;
 public abstract class OrzConnection : IConnectionHeartbeatFeature, IConnectionCompleteFeature, IConnectionLifetimeNotificationFeature, IConnectionMetricsContextFeature
 {
     private List<(Action<object> handler, object state)>? _heartbeatHandlers;
+#if NET9_0_OR_GREATER
+    private readonly Lock _heartbeatLock = new();
+#else
     private readonly object _heartbeatLock = new();
+#endif
 
     private Stack<KeyValuePair<Func<object, Task>, object>>? _onCompleted;
     private bool _completed;
