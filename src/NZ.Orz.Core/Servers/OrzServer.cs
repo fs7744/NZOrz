@@ -274,7 +274,7 @@ public class OrzServer : IServer
 
     private RouteTable<RouteConfig> BuildL4RouteTable(IProxyConfig config, ServerOptions serverOptions)
     {
-        var builder = new RouteTableBuilder<RouteConfig>();
+        var builder = new RouteTableBuilder<RouteConfig>(serverOptions.RouteComparison, serverOptions.RouteCahceSize);
         foreach (var route in config.Routes.Where(i => i.Protocols.HasFlag(GatewayProtocols.TCP) || i.Protocols.HasFlag(GatewayProtocols.UDP)))
         {
             foreach (var host in route.Match.Hosts)

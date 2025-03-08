@@ -96,6 +96,8 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
             s.DnsAddressFamily = section.ReadEnum<AddressFamily>(nameof(ServerOptions.DnsAddressFamily));
             s.DefaultProxyTimeout = section.ReadTimeSpan(nameof(ServerOptions.DefaultProxyTimeout)).GetValueOrDefault(s.DefaultProxyTimeout);
             s.ShutdownTimeout = section.ReadTimeSpan(nameof(ServerOptions.ShutdownTimeout)).GetValueOrDefault(s.ShutdownTimeout);
+            s.RouteCahceSize = section.ReadInt32(nameof(ServerOptions.RouteCahceSize)).GetValueOrDefault(s.RouteCahceSize);
+            s.RouteComparison = section.ReadEnum<StringComparison>(nameof(ServerOptions.RouteComparison)).GetValueOrDefault(s.RouteComparison);
             CreateLimits(s.Limits, section.GetSection(nameof(ServerOptions.Limits)));
         }
         return s;
