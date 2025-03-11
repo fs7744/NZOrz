@@ -82,9 +82,12 @@ public class OrzServer : IServer
 
             ServiceContext.Heartbeat?.Start();
             var proxyConfig = contractor.GetProxyConfig();
-            MakeSureConfig(proxyConfig);
-            await ReloadRouteAsync(proxyConfig, true);
-            _ = monitor.CheckHealthAsync(proxyConfig.Clusters.Values);
+            if (proxyConfig is not null)
+            {
+                MakeSureConfig(proxyConfig);
+                await ReloadRouteAsync(proxyConfig, true);
+                _ = monitor.CheckHealthAsync(proxyConfig.Clusters.Values);
+            }
             await BindAsync(cancellationToken).ConfigureAwait(false);
         }
         catch
