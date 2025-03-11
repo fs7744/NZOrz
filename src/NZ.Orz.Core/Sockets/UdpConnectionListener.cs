@@ -3,8 +3,10 @@ using NZ.Orz.Config;
 using NZ.Orz.Connections;
 using NZ.Orz.Connections.Exceptions;
 using NZ.Orz.Metrics;
+using NZ.Orz.Sockets.Internal;
 using System.Buffers;
 using System.Diagnostics;
+using System.IO.Pipelines;
 using System.Net;
 using System.Net.Sockets;
 
@@ -18,7 +20,7 @@ internal sealed class UdpConnectionListener : IConnectionListener
     private SocketTransportOptions? _options;
     private MemoryPool<byte> udpBufferPool;
 
-    //private readonly UdpAwaitableEventArgs _receiver;
+    private readonly PipeScheduler _PipeScheduler;
     private Socket? _listenSocket;
 
     public UdpConnectionListener(EndPoint? udpEndPoint, GatewayProtocols protocols, IRouteContractor contractor, OrzLogger logger)
@@ -29,7 +31,7 @@ internal sealed class UdpConnectionListener : IConnectionListener
         _options = contractor.GetSocketTransportOptions();
         udpBufferPool = PinnedBlockMemoryPoolFactory.Create(_options.UdpMaxSize);
 
-        //_receiver = new UdpAwaitableEventArgs(_options.UnsafePreferInlineScheduling ? PipeScheduler.Inline : PipeScheduler.ThreadPool);
+        _PipeScheduler = _options.UnsafePreferInlineScheduling ? PipeScheduler.Inline : PipeScheduler.ThreadPool;
     }
 
     public EndPoint EndPoint => udpEndPoint;
@@ -64,8 +66,10 @@ internal sealed class UdpConnectionListener : IConnectionListener
             {
                 Debug.Assert(_listenSocket != null, "Bind must be called first.");
                 var buffer = udpBufferPool.Rent();
-                //var r = await _receiver.ReceiveFromAsync(_listenSocket, buffer.Memory);
-                var r = await _listenSocket.ReceiveFromAsync(buffer.Memory, EndPoint, cancellationToken);
+                var receiver = new UdpAwaitableEventArgs(_PipeScheduler);
+                receiver.RemoteEndPoint = EndPoint;
+                var r = await receiver.ReceiveFromAsync(_listenSocket, buffer.Memory);
+                //var r = await _listenSocket.ReceiveFromAsync(buffer.Memory, EndPoint, cancellationToken);
                 return new UdpConnectionContext(_listenSocket, r.RemoteEndPoint, r.ReceivedBytes, buffer);
             }
             catch (ObjectDisposedException)
