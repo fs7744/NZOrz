@@ -84,7 +84,7 @@ public abstract class TransportConnection : ConnectionContext,
     // sufficient to abort the connection if there is backpressure.
     public override void Abort(ConnectionAbortedException abortReason)
     {
-        Debug.Assert(Application != null);
-        Application.Input.CancelPendingRead();
+        Application?.Input.CancelPendingRead();
+        throw abortReason;
     }
 }

@@ -23,6 +23,7 @@ public class TestProxyHandler : IMiddleware
             Console.WriteLine($"{context.LocalEndPoint} received {context.ReceivedBytesCount} from {context.RemoteEndPoint}");
             var udp = new UdpClient();
             await udp.SendAsync(context.ReceivedBytes, proxyServer);
+            context.Abort();
             var d = await udp.ReceiveAsync();
             await context.Socket.SendToAsync(d.Buffer, context.RemoteEndPoint);
         }
