@@ -84,6 +84,8 @@ internal sealed partial class SocketConnection : TransportConnection, IConnectio
 
     public Socket Socket => _socket;
 
+    public override string TransportType => "tcp";
+
     public void Start()
     {
         try

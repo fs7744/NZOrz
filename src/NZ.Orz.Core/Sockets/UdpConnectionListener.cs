@@ -1,5 +1,4 @@
-﻿using NZ.Orz.Buffers;
-using NZ.Orz.Config;
+﻿using NZ.Orz.Config;
 using NZ.Orz.Connections;
 using NZ.Orz.Connections.Exceptions;
 using NZ.Orz.Metrics;
@@ -23,13 +22,13 @@ internal sealed class UdpConnectionListener : IConnectionListener
     private readonly PipeScheduler _PipeScheduler;
     private Socket? _listenSocket;
 
-    public UdpConnectionListener(EndPoint? udpEndPoint, GatewayProtocols protocols, IRouteContractor contractor, OrzLogger logger)
+    public UdpConnectionListener(EndPoint? udpEndPoint, GatewayProtocols protocols, IRouteContractor contractor, OrzLogger logger, MemoryPool<byte> pool)
     {
         this.udpEndPoint = udpEndPoint;
         this.protocols = protocols;
         _logger = logger;
         _options = contractor.GetSocketTransportOptions();
-        udpBufferPool = PinnedBlockMemoryPoolFactory.Create(_options.UdpMaxSize);
+        udpBufferPool = pool;
 
         _PipeScheduler = _options.UnsafePreferInlineScheduling ? PipeScheduler.Inline : PipeScheduler.ThreadPool;
     }
@@ -93,8 +92,6 @@ internal sealed class UdpConnectionListener : IConnectionListener
     public ValueTask DisposeAsync()
     {
         _listenSocket?.Dispose();
-
-        //_factory.Dispose();
 
         return default;
     }

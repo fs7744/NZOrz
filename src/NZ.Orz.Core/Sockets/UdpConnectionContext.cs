@@ -8,7 +8,7 @@ namespace NZ.Orz.Sockets;
 public sealed class UdpConnectionContext : TransportConnection
 {
     private readonly IMemoryOwner<byte> memory;
-
+    public override string TransportType => "udp";
     public Socket Socket { get; }
     public int ReceivedBytesCount { get; }
 

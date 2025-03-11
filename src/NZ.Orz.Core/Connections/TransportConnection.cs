@@ -9,7 +9,7 @@ using System.Net;
 
 namespace NZ.Orz.Connections;
 
-public class TransportConnection : ConnectionContext,
+public abstract class TransportConnection : ConnectionContext,
                                                  IConnectionIdFeature,
                                                  IConnectionTransportFeature,
                                                  IConnectionItemsFeature,

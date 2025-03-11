@@ -1,5 +1,6 @@
 ﻿using NZ.Orz.Connections;
 using NZ.Orz.Connections.Features;
+using NZ.Orz.Sockets;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Metrics;
@@ -163,11 +164,7 @@ public sealed class OrzMetrics
                     break;
             }
 
-            // There isn't an easy way to detect whether QUIC is the underlying transport.
-            // This code assumes that a multiplexed connection is QUIC.
-            // Improve in the future if there are additional multiplexed connection types.
-            var transport = metricsContext.ConnectionContext is not MultiplexedConnectionContext ? "tcp" : "udp";
-            tags.Add("network.transport", transport);
+            tags.Add("network.transport", metricsContext.ConnectionContext.TransportType);
         }
         else if (localEndpoint is UnixDomainSocketEndPoint udsEndPoint)
         {
