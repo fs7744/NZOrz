@@ -18,6 +18,7 @@ public sealed record RouteConfig
     public TimeSpan Timeout { get; init; }
 
     public int RetryCount { get; init; }
+    public int UdpResponses { get; init; }
     public ClusterConfig ClusterConfig { get; internal set; }
 
     public bool Equals(RouteConfig? other)
@@ -33,6 +34,7 @@ public sealed record RouteConfig
             && string.Equals(ClusterId, other.ClusterId, StringComparison.OrdinalIgnoreCase)
             && Timeout == other.Timeout
             && RetryCount == other.RetryCount
+            && UdpResponses == other.UdpResponses
             && Match == other.Match;
     }
 
@@ -44,6 +46,7 @@ public sealed record RouteConfig
             ClusterId?.GetHashCode(StringComparison.OrdinalIgnoreCase),
             Timeout.GetHashCode(),
             RetryCount,
+            UdpResponses,
             Match);
     }
 

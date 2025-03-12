@@ -3,12 +3,16 @@ using NZ.Orz.Connections;
 using NZ.Orz.Metrics;
 using NZ.Orz.ReverseProxy.LoadBalancing;
 using NZ.Orz.Sockets;
+using NZ.Orz.Sockets.Client;
+using System.IO;
+using System.Net.Sockets;
 
 namespace NZ.Orz.ReverseProxy.L4;
 
 public class L4ProxyMiddleware : IOrderMiddleware
 {
     private readonly IConnectionFactory connectionFactory;
+    private readonly IUdpConnectionFactory udp;
     private readonly IL4Router router;
     private readonly OrzLogger logger;
     private readonly LoadBalancingPolicy loadBalancing;
@@ -17,10 +21,11 @@ public class L4ProxyMiddleware : IOrderMiddleware
     private readonly TcpConnectionDelegate respTcp;
     private readonly bool hasMiddlewareTcp;
 
-    public L4ProxyMiddleware(IConnectionFactory connectionFactory, IL4Router router, OrzLogger logger, LoadBalancingPolicy loadBalancing, IRouteContractor contractor,
+    public L4ProxyMiddleware(IConnectionFactory connectionFactory, IUdpConnectionFactory udp, IL4Router router, OrzLogger logger, LoadBalancingPolicy loadBalancing, IRouteContractor contractor,
         IEnumerable<ITcpMiddleware> tcpMiddlewares)
     {
         this.connectionFactory = connectionFactory;
+        this.udp = udp;
         this.router = router;
         this.logger = logger;
         this.loadBalancing = loadBalancing;
@@ -42,14 +47,16 @@ public class L4ProxyMiddleware : IOrderMiddleware
             else
             {
                 context.Route = route;
-                if (context is UdpConnectionContext)
+                logger.ProxyBegin(route.RouteId);
+                if (context is UdpConnectionContext udp)
                 {
-                    // todo udp
+                    await UdpProxyAsync(udp, route);
                 }
                 else
                 {
                     await TcpProxyAsync(context, route);
                 }
+                logger.ProxyEnd(route.RouteId);
             }
         }
         catch (Exception ex)
@@ -62,13 +69,78 @@ public class L4ProxyMiddleware : IOrderMiddleware
         }
     }
 
+    private async Task UdpProxyAsync(UdpConnectionContext context, RouteConfig route)
+    {
+        try
+        {
+            var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            var cts = route.CreateTimeoutTokenSource();
+            var token = cts.Token;
+            if (await DoUdpSendToAsync(socket, context, route, route.RetryCount, token))
+            {
+                var c = route.UdpResponses;
+                while (c > 0)
+                {
+                    var r = await udp.ReceiveAsync(socket, token);
+                    c--;
+                    await udp.SendToAsync(context.Socket, context.RemoteEndPoint, r.ReceivedBytes, token);
+                }
+            }
+            else
+            {
+                logger.NotFoundAvailableUpstream(route.ClusterId);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            logger.ConnectUpstreamTimeout(route.RouteId);
+        }
+        catch (Exception ex)
+        {
+            logger.UnexpectedException(nameof(UdpProxyAsync), ex);
+        }
+        finally
+        {
+            context.SelectedDestination?.ConcurrencyCounter.Decrement();
+        }
+    }
+
+    private async Task<bool> DoUdpSendToAsync(Socket socket, UdpConnectionContext context, RouteConfig route, int retryCount, CancellationToken cancellationToken)
+    {
+        DestinationState selectedDestination = null;
+        try
+        {
+            selectedDestination = context.SelectedDestination = loadBalancing.PickDestination(context, route);
+            if (selectedDestination is null)
+            {
+                return false;
+            }
+            await udp.SendToAsync(socket, selectedDestination.EndPoint, context.ReceivedBytes, cancellationToken);
+            selectedDestination.ReportSuccessed();
+            return true;
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            selectedDestination?.ReportFailed();
+            retryCount--;
+            if (retryCount < 0)
+            {
+                throw;
+            }
+            return await DoUdpSendToAsync(socket, context, route, retryCount, cancellationToken);
+        }
+    }
+
     private async Task TcpProxyAsync(ConnectionContext context, RouteConfig route)
     {
-        logger.ProxyTcpBegin(route.RouteId);
         ConnectionContext upstream = null;
         try
         {
-            upstream = await TryConnectionAsync(context, route);
+            upstream = await DoConnectionAsync(context, route, route.RetryCount);
             if (upstream is null)
             {
                 logger.NotFoundAvailableUpstream(route.ClusterId);
@@ -103,13 +175,6 @@ public class L4ProxyMiddleware : IOrderMiddleware
             context.SelectedDestination?.ConcurrencyCounter.Decrement();
             upstream?.Abort();
         }
-        logger.ProxyTcpEnd(route.RouteId);
-    }
-
-    private async Task<ConnectionContext> TryConnectionAsync(ConnectionContext context, RouteConfig route)
-    {
-        var retryCount = route.RetryCount;
-        return await DoConnectionAsync(context, route, retryCount);
     }
 
     private async Task<ConnectionContext> DoConnectionAsync(ConnectionContext context, RouteConfig route, int retryCount)

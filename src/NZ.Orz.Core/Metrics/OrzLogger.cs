@@ -226,14 +226,14 @@ public partial class OrzLogger : ILogger
         GeneralLog.ConfigError(_proxylogger, msg);
     }
 
-    public void ProxyTcpBegin(string routeId)
+    public void ProxyBegin(string routeId)
     {
-        GeneralLog.ProxyTcpBegin(_proxylogger, routeId);
+        GeneralLog.ProxyBegin(_proxylogger, routeId);
     }
 
-    public void ProxyTcpEnd(string routeId)
+    public void ProxyEnd(string routeId)
     {
-        GeneralLog.ProxyTcpEnd(_proxylogger, routeId);
+        GeneralLog.ProxyEnd(_proxylogger, routeId);
     }
 
     public void ProxyTimeout(string routeId, TimeSpan time)
@@ -281,11 +281,11 @@ public partial class OrzLogger : ILogger
         [LoggerMessage(25, LogLevel.Warning, @"Config error: {msg}.", EventName = "ConfigError")]
         public static partial void ConfigError(ILogger logger, string msg);
 
-        [LoggerMessage(26, LogLevel.Information, @"Begin proxy tcp for route {routeId}.", EventName = "ProxyTcpBegin")]
-        public static partial void ProxyTcpBegin(ILogger logger, string routeId);
+        [LoggerMessage(26, LogLevel.Information, @"Begin proxy for route {routeId}.", EventName = "ProxyBegin")]
+        public static partial void ProxyBegin(ILogger logger, string routeId);
 
-        [LoggerMessage(27, LogLevel.Information, @"End proxy tcp for route {routeId}.", EventName = "ProxyTcpEnd")]
-        public static partial void ProxyTcpEnd(ILogger logger, string routeId);
+        [LoggerMessage(27, LogLevel.Information, @"End proxy for route {routeId}.", EventName = "ProxyEnd")]
+        public static partial void ProxyEnd(ILogger logger, string routeId);
 
         [LoggerMessage(28, LogLevel.Information, @"Proxy timeout ({time}) for route {routeId}.", EventName = "ProxyTimeout")]
         public static partial void ProxyTimeout(ILogger logger, string routeId, TimeSpan time);

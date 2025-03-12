@@ -293,8 +293,9 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
             Order = section.ReadInt32(nameof(RouteConfig.Order)).GetValueOrDefault(),
             ClusterId = section[nameof(RouteConfig.ClusterId)],
             RetryCount = section.ReadInt32(nameof(RouteConfig.RetryCount)).GetValueOrDefault(),
+            UdpResponses = section.ReadInt32(nameof(RouteConfig.UdpResponses)).GetValueOrDefault(),
             Timeout = section.ReadTimeSpan(nameof(RouteConfig.Timeout)).GetValueOrDefault(serverOptions.DefaultProxyTimeout),
-            Protocols = section.ReadEnum<GatewayProtocols>(nameof(RouteConfig.Protocols)).GetValueOrDefault(GatewayProtocols.TCP),
+            Protocols = section.ReadGatewayProtocols(nameof(RouteConfig.Protocols)).GetValueOrDefault(GatewayProtocols.TCP),
             Match = CreateRouteMatch(section.GetSection(nameof(RouteConfig.Match)))
         };
     }
