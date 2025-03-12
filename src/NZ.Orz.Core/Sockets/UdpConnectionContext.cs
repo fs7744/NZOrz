@@ -1,5 +1,4 @@
 ﻿using NZ.Orz.Connections;
-using NZ.Orz.Connections.Exceptions;
 using System.Buffers;
 using System.Net;
 using System.Net.Sockets;

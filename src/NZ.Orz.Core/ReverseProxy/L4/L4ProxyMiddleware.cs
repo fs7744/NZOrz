@@ -4,7 +4,6 @@ using NZ.Orz.Metrics;
 using NZ.Orz.ReverseProxy.LoadBalancing;
 using NZ.Orz.Sockets;
 using NZ.Orz.Sockets.Client;
-using System.IO;
 using System.Net.Sockets;
 
 namespace NZ.Orz.ReverseProxy.L4;
