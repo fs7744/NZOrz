@@ -1,4 +1,5 @@
-﻿using NZ.Orz.Connections.Exceptions;
+﻿using Microsoft.Extensions.Logging;
+using NZ.Orz.Connections.Exceptions;
 using NZ.Orz.Connections.Features;
 using NZ.Orz.Metrics;
 using NZ.Orz.Servers;
@@ -67,6 +68,7 @@ internal sealed class OrzConnection<T> : OrzConnection, IThreadPoolWorkItem wher
                 catch (ConnectionAbortedException e)
                 {
                     unhandledException = e;
+                    Logger.LogInformation(e, e.Message);
                 }
                 catch (Exception ex)
                 {
