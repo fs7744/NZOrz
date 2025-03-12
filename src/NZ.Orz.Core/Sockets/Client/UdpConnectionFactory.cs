@@ -24,13 +24,13 @@ public class UdpConnectionFactory : IUdpConnectionFactory
         socketSenderPool = new UdpSenderPool(OperatingSystem.IsWindows() ? pipeScheduler : PipeScheduler.Inline);
     }
 
-    public async ValueTask<UdpConnectionContext> ReceiveAsync(Socket socket, CancellationToken cancellationToken)
+    public async ValueTask<UdpReceiveFromResult> ReceiveAsync(Socket socket, CancellationToken cancellationToken)
     {
         var buffer = pool.Rent();
         var receiver = new UdpAwaitableEventArgs(pipeScheduler);
         receiver.RemoteEndPoint = socket.LocalEndPoint;
         var r = await receiver.ReceiveFromAsync(socket, buffer.Memory);
-        return new UdpConnectionContext(socket, r.RemoteEndPoint, r.ReceivedBytes, buffer);
+        return new UdpReceiveFromResult{ RemoteEndPoint = r.RemoteEndPoint, ReceivedBytesCount = r.ReceivedBytes, Buffer = buffer };
     }
 
     public async Task<int> SendToAsync(Socket socket, EndPoint remoteEndPoint, ReadOnlyMemory<byte> receivedBytes, CancellationToken cancellationToken)

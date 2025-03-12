@@ -25,7 +25,7 @@ public class TestProxyHandler : IMiddleware
             var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             await connectionFactory.SendToAsync(socket, proxyServer, context.ReceivedBytes, CancellationToken.None);
             var r = await connectionFactory.ReceiveAsync(socket, CancellationToken.None);
-            await connectionFactory.SendToAsync(context.Socket, context.RemoteEndPoint, r.ReceivedBytes, CancellationToken.None);
+            await connectionFactory.SendToAsync(context.Socket, context.RemoteEndPoint, r.GetReceivedBytes(), CancellationToken.None);
             //context.Abort();
         }
 

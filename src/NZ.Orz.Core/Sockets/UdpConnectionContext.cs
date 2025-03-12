@@ -1,4 +1,5 @@
 ﻿using NZ.Orz.Connections;
+using NZ.Orz.Sockets.Client;
 using System.Buffers;
 using System.Net;
 using System.Net.Sockets;
@@ -8,11 +9,19 @@ namespace NZ.Orz.Sockets;
 public sealed class UdpConnectionContext : TransportConnection
 {
     private readonly IMemoryOwner<byte> memory;
-    public override string TransportType => "udp";
     public Socket Socket { get; }
     public int ReceivedBytesCount { get; }
 
     public Memory<byte> ReceivedBytes => memory.Memory.Slice(0, ReceivedBytesCount);
+
+    public UdpConnectionContext(Socket socket, UdpReceiveFromResult result)
+    {
+        Socket = socket;
+        ReceivedBytesCount = result.ReceivedBytesCount;
+        this.memory = result.Buffer;
+        LocalEndPoint = socket.LocalEndPoint;
+        RemoteEndPoint = result.RemoteEndPoint;
+    }
 
     public UdpConnectionContext(Socket socket, EndPoint remoteEndPoint, int receivedBytes, IMemoryOwner<byte> memory)
     {
@@ -26,6 +35,6 @@ public sealed class UdpConnectionContext : TransportConnection
     public override ValueTask DisposeAsync()
     {
         memory.Dispose();
-        return base.DisposeAsync();
+        return default;
     }
 }

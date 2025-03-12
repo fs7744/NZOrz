@@ -1,4 +1,5 @@
-﻿using NZ.Orz.Connections.Features;
+﻿using NZ.Orz.Connections.Exceptions;
+using NZ.Orz.Connections.Features;
 using NZ.Orz.Metrics;
 using NZ.Orz.Servers;
 using System.Diagnostics;
@@ -62,6 +63,10 @@ internal sealed class OrzConnection<T> : OrzConnection, IThreadPoolWorkItem wher
                 try
                 {
                     await _connectionDelegate(connectionContext);
+                }
+                catch (ConnectionAbortedException e)
+                {
+                    unhandledException = e;
                 }
                 catch (Exception ex)
                 {

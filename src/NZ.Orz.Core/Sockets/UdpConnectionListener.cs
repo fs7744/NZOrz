@@ -58,7 +58,8 @@ internal sealed class UdpConnectionListener : IConnectionListener
             try
             {
                 Debug.Assert(_listenSocket != null, "Bind must be called first.");
-                return await connectionFactory.ReceiveAsync(_listenSocket, cancellationToken);
+                var r = await connectionFactory.ReceiveAsync(_listenSocket, cancellationToken);
+                return new UdpConnectionContext(_listenSocket, r);
             }
             catch (ObjectDisposedException)
             {

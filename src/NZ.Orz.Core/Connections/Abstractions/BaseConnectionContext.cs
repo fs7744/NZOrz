@@ -7,7 +7,6 @@ namespace NZ.Orz.Connections;
 
 public abstract class BaseConnectionContext : IAsyncDisposable
 {
-    public abstract string TransportType { get; }
     public abstract string ConnectionId { get; set; }
 
     public abstract IFeatureCollection Parameters { get; }

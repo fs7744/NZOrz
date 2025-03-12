@@ -86,7 +86,7 @@ public class L4ProxyMiddleware : IOrderMiddleware
                 {
                     var r = await udp.ReceiveAsync(socket, token);
                     c--;
-                    await udp.SendToAsync(context.Socket, context.RemoteEndPoint, await respUdp(context, r.ReceivedBytes, token), token);
+                    await udp.SendToAsync(context.Socket, context.RemoteEndPoint, await respUdp(context, r.GetReceivedBytes(), token), token);
                 }
             }
             else

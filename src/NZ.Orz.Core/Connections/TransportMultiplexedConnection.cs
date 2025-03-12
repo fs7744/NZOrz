@@ -1,4 +1,5 @@
-﻿using NZ.Orz.Connections.Features;
+﻿using NZ.Orz.Connections.Exceptions;
+using NZ.Orz.Connections.Features;
 using NZ.Orz.Features;
 using NZ.Orz.Infrastructure;
 using System.Net;
@@ -59,5 +60,10 @@ public abstract class TransportMultiplexedConnection : MultiplexedConnectionCont
             }
             return _Parameters;
         }
+    }
+
+    public override void Abort(ConnectionAbortedException abortReason)
+    {
+        throw abortReason;
     }
 }
