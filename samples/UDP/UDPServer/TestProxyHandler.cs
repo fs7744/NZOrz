@@ -1,5 +1,6 @@
 ﻿using NZ.Orz.Connections;
 using NZ.Orz.Sockets;
+using NZ.Orz.Sockets.Client;
 using System.Net;
 using System.Net.Sockets;
 
@@ -7,11 +8,11 @@ namespace UDPServer;
 
 public class TestProxyHandler : IMiddleware
 {
-    private readonly IConnectionFactory connectionFactory;
+    private readonly IUdpConnectionFactory connectionFactory;
     private readonly IPEndPoint proxyServer = new(IPAddress.Parse("127.0.0.1"), 11000);
     private ConnectionContext upstream;
 
-    public TestProxyHandler(IConnectionFactory connectionFactory)
+    public TestProxyHandler(IUdpConnectionFactory connectionFactory)
     {
         this.connectionFactory = connectionFactory;
     }
@@ -21,17 +22,13 @@ public class TestProxyHandler : IMiddleware
         if (connection is UdpConnectionContext context)
         {
             Console.WriteLine($"{context.LocalEndPoint} received {context.ReceivedBytesCount} from {context.RemoteEndPoint}");
-            var udp = new UdpClient();
-            await udp.SendAsync(context.ReceivedBytes, proxyServer);
-            context.Abort();
-            var d = await udp.ReceiveAsync();
-            await context.Socket.SendToAsync(d.Buffer, context.RemoteEndPoint);
+            var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            await connectionFactory.SendToAsync(socket, proxyServer, context.ReceivedBytes, CancellationToken.None);
+            var r = await connectionFactory.ReceiveAsync(socket, CancellationToken.None);
+            await connectionFactory.SendToAsync(context.Socket, context.RemoteEndPoint, r.ReceivedBytes, CancellationToken.None);
+            //context.Abort();
         }
 
-        //upstream = await connectionFactory.ConnectAsync(proxyServer);
-        //var task1 = connection.Transport.Input.CopyToAsync(upstream.Transport.Output);
-        //var task2 = upstream.Transport.Input.CopyToAsync(connection.Transport.Output);
-        //await Task.WhenAny(task1, task2);
         await next(connection);
     }
 }

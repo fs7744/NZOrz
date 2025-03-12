@@ -3,7 +3,6 @@ using NZ.Orz.Connections.Features;
 using NZ.Orz.Features;
 using NZ.Orz.Infrastructure;
 using System.Buffers;
-using System.Diagnostics;
 using System.IO.Pipelines;
 using System.Net;
 
@@ -85,6 +84,5 @@ public abstract class TransportConnection : ConnectionContext,
     public override void Abort(ConnectionAbortedException abortReason)
     {
         Application?.Input.CancelPendingRead();
-        throw abortReason;
     }
 }

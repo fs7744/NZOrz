@@ -2,10 +2,8 @@
 using NZ.Orz.Connections;
 using NZ.Orz.Connections.Exceptions;
 using NZ.Orz.Metrics;
-using NZ.Orz.Sockets.Internal;
-using System.Buffers;
+using NZ.Orz.Sockets.Client;
 using System.Diagnostics;
-using System.IO.Pipelines;
 using System.Net;
 using System.Net.Sockets;
 
@@ -16,21 +14,17 @@ internal sealed class UdpConnectionListener : IConnectionListener
     private EndPoint? udpEndPoint;
     private readonly GatewayProtocols protocols;
     private OrzLogger _logger;
-    private SocketTransportOptions? _options;
-    private MemoryPool<byte> udpBufferPool;
-
-    private readonly PipeScheduler _PipeScheduler;
+    private readonly IUdpConnectionFactory connectionFactory;
+    private readonly Func<EndPoint, GatewayProtocols, Socket> createBoundListenSocket;
     private Socket? _listenSocket;
 
-    public UdpConnectionListener(EndPoint? udpEndPoint, GatewayProtocols protocols, IRouteContractor contractor, OrzLogger logger, MemoryPool<byte> pool)
+    public UdpConnectionListener(EndPoint? udpEndPoint, GatewayProtocols protocols, IRouteContractor contractor, OrzLogger logger, IUdpConnectionFactory connectionFactory)
     {
         this.udpEndPoint = udpEndPoint;
         this.protocols = protocols;
         _logger = logger;
-        _options = contractor.GetSocketTransportOptions();
-        udpBufferPool = pool;
-
-        _PipeScheduler = _options.UnsafePreferInlineScheduling ? PipeScheduler.Inline : PipeScheduler.ThreadPool;
+        this.connectionFactory = connectionFactory;
+        createBoundListenSocket = contractor.GetSocketTransportOptions().CreateBoundListenSocket;
     }
 
     public EndPoint EndPoint => udpEndPoint;
@@ -45,7 +39,7 @@ internal sealed class UdpConnectionListener : IConnectionListener
         Socket listenSocket;
         try
         {
-            listenSocket = _options.CreateBoundListenSocket(EndPoint, protocols);
+            listenSocket = createBoundListenSocket(EndPoint, protocols);
         }
         catch (SocketException e) when (e.SocketErrorCode == SocketError.AddressAlreadyInUse)
         {
@@ -64,12 +58,7 @@ internal sealed class UdpConnectionListener : IConnectionListener
             try
             {
                 Debug.Assert(_listenSocket != null, "Bind must be called first.");
-                var buffer = udpBufferPool.Rent();
-                var receiver = new UdpAwaitableEventArgs(_PipeScheduler);
-                receiver.RemoteEndPoint = EndPoint;
-                var r = await receiver.ReceiveFromAsync(_listenSocket, buffer.Memory);
-                //var r = await _listenSocket.ReceiveFromAsync(buffer.Memory, EndPoint, cancellationToken);
-                return new UdpConnectionContext(_listenSocket, r.RemoteEndPoint, r.ReceivedBytes, buffer);
+                return await connectionFactory.ReceiveAsync(_listenSocket, cancellationToken);
             }
             catch (ObjectDisposedException)
             {

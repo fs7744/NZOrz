@@ -1,8 +1,7 @@
-﻿using NZ.Orz.Buffers;
-using NZ.Orz.Config;
+﻿using NZ.Orz.Config;
 using NZ.Orz.Connections;
 using NZ.Orz.Metrics;
-using System.Buffers;
+using NZ.Orz.Sockets.Client;
 using System.Net;
 
 namespace NZ.Orz.Sockets;
@@ -10,25 +9,25 @@ namespace NZ.Orz.Sockets;
 public sealed class UdpTransportFactory : IConnectionListenerFactory, IConnectionListenerFactorySelector
 {
     private readonly IRouteContractor contractor;
-    private readonly OrzLogger _logger;
-    private readonly MemoryPool<byte> _pool;
+    private readonly OrzLogger logger;
+    private readonly IUdpConnectionFactory connectionFactory;
 
     public UdpTransportFactory(
         IRouteContractor contractor,
-        OrzLogger logger)
+        OrzLogger logger,
+        IUdpConnectionFactory connectionFactory)
     {
         ArgumentNullException.ThrowIfNull(contractor);
         ArgumentNullException.ThrowIfNull(logger);
 
         this.contractor = contractor;
-        _logger = logger;
-        var options = contractor.GetSocketTransportOptions();
-        _pool = PinnedBlockMemoryPoolFactory.Create(options.UdpMaxSize);
+        this.logger = logger;
+        this.connectionFactory = connectionFactory;
     }
 
     public ValueTask<IConnectionListener> BindAsync(EndPoint endpoint, GatewayProtocols protocols, CancellationToken cancellationToken = default)
     {
-        var transport = new UdpConnectionListener(endpoint, GatewayProtocols.UDP, contractor, _logger, _pool);
+        var transport = new UdpConnectionListener(endpoint, GatewayProtocols.UDP, contractor, logger, connectionFactory);
         transport.Bind();
         return new ValueTask<IConnectionListener>(transport);
     }

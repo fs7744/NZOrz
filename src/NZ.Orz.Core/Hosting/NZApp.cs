@@ -34,6 +34,7 @@ public static partial class NZApp
         services.AddSingleton<OrzMetrics>();
         services.AddSingleton<IConnectionListenerFactory, SocketTransportFactory>();
         services.AddSingleton<IConnectionListenerFactory, UdpTransportFactory>();
+        services.AddSingleton<IUdpConnectionFactory, UdpConnectionFactory>();
         services.AddSingleton<IConnectionFactory, SocketConnectionFactory>();
         services.AddSingleton<IRouteContractorValidator, RouteContractorValidator>();
         services.AddSingleton<IEndPointConvertor, CommonEndPointConvertor>();
