@@ -7,5 +7,5 @@ public interface IUdpConnectionFactory
 {
     ValueTask<UdpConnectionContext> ReceiveAsync(Socket socket, CancellationToken cancellationToken);
 
-    Task<int> SendToAsync(Socket socket, EndPoint remoteEndPoint, Memory<byte> receivedBytes, CancellationToken cancellationToken);
+    Task<int> SendToAsync(Socket socket, EndPoint remoteEndPoint, ReadOnlyMemory<byte> receivedBytes, CancellationToken cancellationToken);
 }

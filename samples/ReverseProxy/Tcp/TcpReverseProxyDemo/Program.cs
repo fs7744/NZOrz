@@ -7,6 +7,7 @@ var app = NZApp.CreateBuilder(args)
     .ConfigServices(services =>
     {
         services.AddSingleton<ITcpMiddleware, EchoMiddleware>();
+        services.AddSingleton<IUdpMiddleware, UdpEchoMiddleware>();
     })
     .UseJsonConfig()
     .Build();

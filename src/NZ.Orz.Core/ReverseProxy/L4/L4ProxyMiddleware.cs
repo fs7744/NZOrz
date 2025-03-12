@@ -16,12 +16,15 @@ public class L4ProxyMiddleware : IOrderMiddleware
     private readonly OrzLogger logger;
     private readonly LoadBalancingPolicy loadBalancing;
     private readonly SocketTransportOptions? options;
-    private readonly TcpConnectionDelegate reqTcp;
-    private readonly TcpConnectionDelegate respTcp;
+    private readonly ProxyConnectionDelegate reqTcp;
+    private readonly ProxyConnectionDelegate respTcp;
     private readonly bool hasMiddlewareTcp;
+    private readonly ProxyConnectionDelegate reqUdp;
+    private readonly ProxyConnectionDelegate respUdp;
+    private readonly bool hasMiddlewareUdp;
 
     public L4ProxyMiddleware(IConnectionFactory connectionFactory, IUdpConnectionFactory udp, IL4Router router, OrzLogger logger, LoadBalancingPolicy loadBalancing, IRouteContractor contractor,
-        IEnumerable<ITcpMiddleware> tcpMiddlewares)
+        IEnumerable<ITcpMiddleware> tcpMiddlewares, IEnumerable<IUdpMiddleware> udpMiddlewares)
     {
         this.connectionFactory = connectionFactory;
         this.udp = udp;
@@ -30,6 +33,7 @@ public class L4ProxyMiddleware : IOrderMiddleware
         this.loadBalancing = loadBalancing;
         this.options = contractor.GetSocketTransportOptions();
         (reqTcp, respTcp, hasMiddlewareTcp) = BuildMiddleware(tcpMiddlewares);
+        (reqUdp, respUdp, hasMiddlewareUdp) = BuildMiddleware(udpMiddlewares);
     }
 
     public int Order => 0;
@@ -75,14 +79,14 @@ public class L4ProxyMiddleware : IOrderMiddleware
             var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             var cts = route.CreateTimeoutTokenSource();
             var token = cts.Token;
-            if (await DoUdpSendToAsync(socket, context, route, route.RetryCount, token))
+            if (await DoUdpSendToAsync(socket, context, route, route.RetryCount, await reqUdp(context, context.ReceivedBytes, token), token))
             {
                 var c = route.UdpResponses;
                 while (c > 0)
                 {
                     var r = await udp.ReceiveAsync(socket, token);
                     c--;
-                    await udp.SendToAsync(context.Socket, context.RemoteEndPoint, r.ReceivedBytes, token);
+                    await udp.SendToAsync(context.Socket, context.RemoteEndPoint, await respUdp(context, r.ReceivedBytes, token), token);
                 }
             }
             else
@@ -104,7 +108,7 @@ public class L4ProxyMiddleware : IOrderMiddleware
         }
     }
 
-    private async Task<bool> DoUdpSendToAsync(Socket socket, UdpConnectionContext context, RouteConfig route, int retryCount, CancellationToken cancellationToken)
+    private async Task<bool> DoUdpSendToAsync(Socket socket, UdpConnectionContext context, RouteConfig route, int retryCount, ReadOnlyMemory<byte> bytes, CancellationToken cancellationToken)
     {
         DestinationState selectedDestination = null;
         try
@@ -114,7 +118,7 @@ public class L4ProxyMiddleware : IOrderMiddleware
             {
                 return false;
             }
-            await udp.SendToAsync(socket, selectedDestination.EndPoint, context.ReceivedBytes, cancellationToken);
+            await udp.SendToAsync(socket, selectedDestination.EndPoint, bytes, cancellationToken);
             selectedDestination.ReportSuccessed();
             return true;
         }
@@ -130,7 +134,7 @@ public class L4ProxyMiddleware : IOrderMiddleware
             {
                 throw;
             }
-            return await DoUdpSendToAsync(socket, context, route, retryCount, cancellationToken);
+            return await DoUdpSendToAsync(socket, context, route, retryCount, bytes, cancellationToken);
         }
     }
 
@@ -204,11 +208,11 @@ public class L4ProxyMiddleware : IOrderMiddleware
         }
     }
 
-    private (TcpConnectionDelegate req, TcpConnectionDelegate resp, bool hasMiddleware) BuildMiddleware(IEnumerable<ITcpMiddleware> middlewares)
+    private (ProxyConnectionDelegate req, ProxyConnectionDelegate resp, bool hasMiddleware) BuildMiddleware(IEnumerable<IProxyMiddleware> middlewares)
     {
         var hasMiddleware = false;
-        TcpConnectionDelegate request;
-        TcpConnectionDelegate response;
+        ProxyConnectionDelegate request;
+        ProxyConnectionDelegate response;
         request = response = (context, s, t) =>
         {
             return Task.FromResult(s);
@@ -216,9 +220,9 @@ public class L4ProxyMiddleware : IOrderMiddleware
         foreach (var p in middlewares.OrderBy(i => i.Order))
         {
             hasMiddleware = true;
-            Func<TcpConnectionDelegate, TcpConnectionDelegate> component = (TcpConnectionDelegate next) => (c, s, t) => p.OnRequest(c, s, t, next);
+            Func<ProxyConnectionDelegate, ProxyConnectionDelegate> component = (ProxyConnectionDelegate next) => (c, s, t) => p.OnRequest(c, s, t, next);
             request = component(request);
-            component = (TcpConnectionDelegate next) => (c, s, t) => p.OnResponse(c, s, t, next);
+            component = (ProxyConnectionDelegate next) => (c, s, t) => p.OnResponse(c, s, t, next);
             response = component(response);
         }
         return (request, response, hasMiddleware);

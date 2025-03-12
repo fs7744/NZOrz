@@ -7,9 +7,9 @@ public class MiddlewarePipeWriter : PipeWriter
 {
     private readonly PipeWriter pipeWriter;
     private readonly ConnectionContext context;
-    private readonly TcpConnectionDelegate connectionDelegate;
+    private readonly ProxyConnectionDelegate connectionDelegate;
 
-    public MiddlewarePipeWriter(PipeWriter pipeWriter, ConnectionContext context, TcpConnectionDelegate connectionDelegate)
+    public MiddlewarePipeWriter(PipeWriter pipeWriter, ConnectionContext context, ProxyConnectionDelegate connectionDelegate)
     {
         this.pipeWriter = pipeWriter;
         this.context = context;

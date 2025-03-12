@@ -33,7 +33,7 @@ public class UdpConnectionFactory : IUdpConnectionFactory
         return new UdpConnectionContext(socket, r.RemoteEndPoint, r.ReceivedBytes, buffer);
     }
 
-    public async Task<int> SendToAsync(Socket socket, EndPoint remoteEndPoint, Memory<byte> receivedBytes, CancellationToken cancellationToken)
+    public async Task<int> SendToAsync(Socket socket, EndPoint remoteEndPoint, ReadOnlyMemory<byte> receivedBytes, CancellationToken cancellationToken)
     {
         var sender = socketSenderPool.Rent();
         sender.RemoteEndPoint = remoteEndPoint;
