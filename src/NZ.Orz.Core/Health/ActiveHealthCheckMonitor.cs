@@ -1,4 +1,5 @@
 ﻿using NZ.Orz.Config;
+using NZ.Orz.Infrastructure;
 using NZ.Orz.Metrics;
 using System.Collections.Frozen;
 
@@ -9,6 +10,7 @@ public class ActiveHealthCheckMonitor : IActiveHealthCheckMonitor, IDisposable
     private readonly FrozenDictionary<string, IActiveHealthChecker> checkers;
     private readonly IHealthUpdater healthUpdater;
     private readonly OrzLogger logger;
+    private readonly CancellationTokenSourcePool cancellationTokenSourcePool = new();
 
     public ActiveHealthCheckMonitor(TimeProvider timeProvider, IEnumerable<IActiveHealthChecker> checkers, IHealthUpdater healthUpdater, OrzLogger logger)
     {
@@ -36,7 +38,8 @@ public class ActiveHealthCheckMonitor : IActiveHealthCheckMonitor, IDisposable
 
         try
         {
-            var cts = new CancellationTokenSource(config.Timeout);
+            var cts = cancellationTokenSourcePool.Rent();
+            cts.CancelAfter(config.Timeout);
             var all = cluster.DestinationStates.ToArray();
             await Task.WhenAll(all.Select(i => checker.CheckAsync(config, i, cts.Token)).ToArray());
             healthUpdater.UpdateAvailableDestinations(cluster);

@@ -1,4 +1,6 @@
-﻿namespace NZ.Orz.Config;
+﻿using NZ.Orz.Infrastructure;
+
+namespace NZ.Orz.Config;
 
 public sealed record RouteConfig
 {
@@ -50,9 +52,9 @@ public sealed record RouteConfig
             Match);
     }
 
-    internal CancellationTokenSource CreateTimeoutTokenSource()
+    internal CancellationTokenSource CreateTimeoutTokenSource(CancellationTokenSourcePool pool)
     {
-        CancellationTokenSource cts = new CancellationTokenSource();
+        var cts = pool.Rent();
         cts.CancelAfter(Timeout);
         return cts;
     }

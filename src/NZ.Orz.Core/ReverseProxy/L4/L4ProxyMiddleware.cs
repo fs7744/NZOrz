@@ -1,5 +1,6 @@
 ﻿using NZ.Orz.Config;
 using NZ.Orz.Connections;
+using NZ.Orz.Infrastructure;
 using NZ.Orz.Metrics;
 using NZ.Orz.ReverseProxy.LoadBalancing;
 using NZ.Orz.Sockets;
@@ -10,6 +11,7 @@ namespace NZ.Orz.ReverseProxy.L4;
 
 public class L4ProxyMiddleware : IOrderMiddleware
 {
+    private readonly CancellationTokenSourcePool cancellationTokenSourcePool = new();
     private readonly IConnectionFactory connectionFactory;
     private readonly IUdpConnectionFactory udp;
     private readonly IL4Router router;
@@ -77,7 +79,7 @@ public class L4ProxyMiddleware : IOrderMiddleware
         try
         {
             var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            var cts = route.CreateTimeoutTokenSource();
+            var cts = route.CreateTimeoutTokenSource(cancellationTokenSourcePool);
             var token = cts.Token;
             if (await DoUdpSendToAsync(socket, context, route, route.RetryCount, await reqUdp(context, context.ReceivedBytes, token), token))
             {
@@ -151,7 +153,7 @@ public class L4ProxyMiddleware : IOrderMiddleware
             else
             {
                 context.SelectedDestination?.ConcurrencyCounter.Increment();
-                var cts = route.CreateTimeoutTokenSource();
+                var cts = route.CreateTimeoutTokenSource(cancellationTokenSourcePool);
                 var task = hasMiddlewareTcp ?
                         await Task.WhenAny(
                         context.Transport.Input.CopyToAsync(new MiddlewarePipeWriter(upstream.Transport.Output, context, reqTcp), cts.Token)
@@ -190,7 +192,7 @@ public class L4ProxyMiddleware : IOrderMiddleware
             {
                 return null;
             }
-            CancellationTokenSource cts = new CancellationTokenSource();
+            var cts = cancellationTokenSourcePool.Rent();
             cts.CancelAfter(options.ConnectionTimeout);
             var c = await connectionFactory.ConnectAsync(selectedDestination.EndPoint, cts.Token);
             selectedDestination.ReportSuccessed();

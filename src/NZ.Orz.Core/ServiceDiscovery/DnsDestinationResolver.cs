@@ -13,6 +13,7 @@ public class DnsDestinationResolver : DestinationResolverBase
     private readonly OrzLogger logger;
     private readonly IHealthUpdater healthUpdater;
     private ServerOptions options;
+    private readonly CancellationTokenSourcePool cancellationTokenSourcePool = new();
 
     public DnsDestinationResolver(IRouteContractor contractor, OrzLogger logger, IHealthUpdater healthUpdater)
     {
@@ -53,7 +54,8 @@ public class DnsDestinationResolver : DestinationResolverBase
             {
                 cts.Cancel();
             }
-            state.CancellationTokenSource = cts = new CancellationTokenSource(options.DnsRefreshPeriod.Value);
+            state.CancellationTokenSource = cts = cancellationTokenSourcePool.Rent();
+            cts.CancelAfter(options.DnsRefreshPeriod.Value);
             new CancellationChangeToken(cts.Token).RegisterChangeCallback(o =>
             {
                 if (o is FuncDestinationResolverState s)
