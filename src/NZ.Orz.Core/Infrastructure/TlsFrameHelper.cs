@@ -10,7 +10,7 @@ using System.Text;
 namespace NZ.Orz.Infrastructure.Tls
 {
     // SSL3/TLS protocol frames definitions.
-    internal enum TlsContentType : byte
+    public enum TlsContentType : byte
     {
         ChangeCipherSpec = 20,
         Alert = 21,
@@ -18,7 +18,7 @@ namespace NZ.Orz.Infrastructure.Tls
         AppData = 23
     }
 
-    internal enum TlsHandshakeType : byte
+    public enum TlsHandshakeType : byte
     {
         HelloRequest = 0,
         ClientHello = 1,
@@ -37,13 +37,13 @@ namespace NZ.Orz.Infrastructure.Tls
         MessageHash = 254
     }
 
-    internal enum TlsAlertLevel : byte
+    public enum TlsAlertLevel : byte
     {
         Warning = 1,
         Fatal = 2,
     }
 
-    internal enum TlsAlertDescription : byte
+    public enum TlsAlertDescription : byte
     {
         CloseNotify = 0, // warning
         UnexpectedMessage = 10, // error
@@ -71,7 +71,7 @@ namespace NZ.Orz.Infrastructure.Tls
         UnsupportedExt = 110, // error
     }
 
-    internal enum ExtensionType : ushort
+    public enum ExtensionType : ushort
     {
         ServerName = 0,
         MaximumFagmentLength = 1,
@@ -83,7 +83,7 @@ namespace NZ.Orz.Infrastructure.Tls
         SupportedVersions = 43
     }
 
-    internal struct TlsFrameHeader
+    public struct TlsFrameHeader
     {
         public TlsContentType Type;
         public SslProtocols Version;
@@ -92,7 +92,7 @@ namespace NZ.Orz.Infrastructure.Tls
         public override string ToString() => $"{Version}:{Type}[{Length}]";
     }
 
-    internal static class TlsFrameHelper
+    public static class TlsFrameHelper
     {
         public const int HeaderSize = 5;
 

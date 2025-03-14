@@ -1,7 +1,10 @@
 ﻿using DotNext;
 using NZ.Orz.Config;
 using NZ.Orz.Connections;
+using NZ.Orz.Infrastructure.Tls;
+using NZ.Orz.Metrics;
 using NZ.Orz.Routing;
+using System.IO.Pipelines;
 
 namespace NZ.Orz.ReverseProxy.L4;
 
@@ -9,6 +12,12 @@ public class L4Router : IL4Router
 {
     private RouteTable<RouteConfig> routeTable;
     private RouteTable<RouteConfig> sniRoute;
+    private readonly OrzLogger logger;
+
+    public L4Router(OrzLogger logger)
+    {
+        this.logger = logger;
+    }
 
     public ValueTask<RouteConfig> MatchAsync(ConnectionContext context)
     {
@@ -76,8 +85,75 @@ public class L4Router : IL4Router
         }
     }
 
-    public ValueTask<RouteConfig> MatchSNIAsync(ConnectionContext context)
+    public async ValueTask<(RouteConfig, ReadResult)> MatchSNIAsync(ConnectionContext context, CancellationToken token)
     {
-        throw new NotImplementedException();
+        var (hello, rr) = await TryGetClientHelloAsync(context, token);
+        if (hello.HasValue)
+        {
+            var h = hello.Value;
+            var r = await sniRoute.MatchAsync(h.TargetName.Reverse(), h, MatchSNI);
+            if (r is null)
+            {
+                logger.NotFoundRouteSni(h.TargetName);
+            }
+            return (r, rr);
+        }
+        else
+        {
+            logger.NotFoundRouteSni("client hello failed");
+            return (null, rr);
+        }
+    }
+
+    private bool MatchSNI(RouteConfig config, TlsFrameHelper.TlsFrameInfo info)
+    {
+        //todo tls match
+        return true;
+    }
+
+    private static async ValueTask<(TlsFrameHelper.TlsFrameInfo?, ReadResult)> TryGetClientHelloAsync(ConnectionContext context, CancellationToken token)
+    {
+        var input = context.Transport.Input;
+        //var minBytesExamined = 0L;
+        TlsFrameHelper.TlsFrameInfo info = default;
+        while (true)
+        {
+            var f = await input.ReadAsync(token);
+            if (f.IsCompleted)
+            {
+                return (null, f);
+            }
+            var buffer = f.Buffer;
+            if (buffer.Length == 0)
+            {
+                continue;
+            }
+
+            //if (!buffer.IsSingleSegment)
+            //{
+            //    throw new NotImplementedException("Multiple buffer segments");
+            //}
+            var data = buffer.First.Span;
+
+            if (TlsFrameHelper.TryGetFrameInfo(data, ref info))
+            {
+                input.AdvanceTo(buffer.Start, buffer.End);
+                //var examined = buffer.Slice(buffer.Start, buffer.Length).End;
+                //input.AdvanceTo(buffer.Start, examined);
+                return (info, f);
+            }
+            else
+            {
+                // todo how to handler large client hello
+                //minBytesExamined = buffer.Length;
+                //input.AdvanceTo(buffer.Start, buffer.End);
+                //continue;
+                return (null, f);
+            }
+
+            //var examined = buffer.Slice(buffer.Start, minBytesExamined).End;
+            //input.AdvanceTo(buffer.Start, examined);
+            //break;
+        }
     }
 }

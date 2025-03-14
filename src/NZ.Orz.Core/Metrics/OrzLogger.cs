@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using NZ.Orz.Config;
+using NZ.Orz.Infrastructure.Tls;
 using System.Net;
 
 namespace NZ.Orz.Metrics;
@@ -179,6 +180,11 @@ public partial class OrzLogger : ILogger
         GeneralLog.NotFoundRouteL4(_proxylogger, endPoint);
     }
 
+    public void NotFoundRouteSni(string host)
+    {
+        GeneralLog.NotFoundRouteSni(_proxylogger, host);
+    }
+
     public void StopEndpointsInfo(List<ListenOptions> endPoints)
     {
         if (_proxylogger.IsEnabled(LogLevel.Information))
@@ -251,7 +257,7 @@ public partial class OrzLogger : ILogger
         [LoggerMessage(15, LogLevel.Warning, @"Not found available upstream for cluster ""{ClusterId}"".", EventName = "NotFoundAvailableUpstream")]
         public static partial void NotFoundAvailableUpstream(ILogger logger, string clusterId);
 
-        [LoggerMessage(16, LogLevel.Warning, @"Not found route for ""{EndPoint}"".", EventName = "NotFoundRouteL4")]
+        [LoggerMessage(16, LogLevel.Warning, @"Not found l4 route for ""{EndPoint}"".", EventName = "NotFoundRouteL4")]
         public static partial void NotFoundRouteL4(ILogger logger, EndPoint endPoint);
 
         [LoggerMessage(17, LogLevel.Information, @"Config changed. Stopping the following endpoints: {Endpoints}.", EventName = "StopEndpointsInfo", SkipEnabledCheck = true)]
@@ -292,6 +298,9 @@ public partial class OrzLogger : ILogger
 
         [LoggerMessage(29, LogLevel.Information, @"Connect upstream timeout for route {routeId}.", EventName = "ConnectUpstreamTimeout")]
         public static partial void ConnectUpstreamTimeout(ILogger logger, string routeId);
+
+        [LoggerMessage(30, LogLevel.Warning, @"Not found sni route for ""{EndPoint}"".", EventName = "NotFoundRouteSni")]
+        public static partial void NotFoundRouteSni(ILogger logger, string endPoint);
     }
 
     #endregion ReverseProxy

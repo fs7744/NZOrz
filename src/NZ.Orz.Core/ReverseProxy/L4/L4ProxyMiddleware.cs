@@ -1,11 +1,16 @@
-﻿using NZ.Orz.Config;
+﻿using DotNext;
+using Microsoft.Extensions.Logging;
+using NZ.Orz.Config;
 using NZ.Orz.Connections;
 using NZ.Orz.Infrastructure;
+using NZ.Orz.Infrastructure.Tls;
 using NZ.Orz.Metrics;
 using NZ.Orz.ReverseProxy.LoadBalancing;
 using NZ.Orz.Sockets;
 using NZ.Orz.Sockets.Client;
+using System.Buffers;
 using System.Net.Sockets;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace NZ.Orz.ReverseProxy.L4;
 
@@ -85,7 +90,55 @@ public class L4ProxyMiddleware : IOrderMiddleware
 
     private async Task SNIProxyAsync(ConnectionContext context)
     {
-        throw new NotImplementedException();
+        var c = cancellationTokenSourcePool.Rent();
+        c.CancelAfter(options.ConnectionTimeout);
+        var (route, r) = await router.MatchSNIAsync(context, c.Token);
+        if (route is not null)
+        {
+            logger.ProxyBegin(route.RouteId);
+            ConnectionContext upstream = null;
+            try
+            {
+                upstream = await DoConnectionAsync(context, route, route.RetryCount);
+                if (upstream is null)
+                {
+                    logger.NotFoundAvailableUpstream(route.ClusterId);
+                }
+                else
+                {
+                    context.SelectedDestination?.ConcurrencyCounter.Increment();
+                    var cts = route.CreateTimeoutTokenSource(cancellationTokenSourcePool);
+                    var t = cts.Token;
+                    await upstream.Transport.Output.WriteAsync(r.Buffer.First, t);
+                    await upstream.Transport.Output.FlushAsync(t);
+                    var task = hasMiddlewareTcp ?
+                            await Task.WhenAny(
+                            context.Transport.Input.CopyToAsync(new MiddlewarePipeWriter(upstream.Transport.Output, context, reqTcp), t)
+                            , upstream.Transport.Input.CopyToAsync(new MiddlewarePipeWriter(context.Transport.Output, context, respTcp), t))
+                            : await Task.WhenAny(
+                            context.Transport.Input.CopyToAsync(upstream.Transport.Output, t)
+                            , upstream.Transport.Input.CopyToAsync(context.Transport.Output, t));
+                    if (task.IsCanceled)
+                    {
+                        logger.ProxyTimeout(route.RouteId, route.Timeout);
+                    }
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                logger.ConnectUpstreamTimeout(route.RouteId);
+            }
+            catch (Exception ex)
+            {
+                logger.UnexpectedException(nameof(TcpProxyAsync), ex);
+            }
+            finally
+            {
+                context.SelectedDestination?.ConcurrencyCounter.Decrement();
+                upstream?.Abort();
+            }
+            logger.ProxyEnd(route.RouteId);
+        }
     }
 
     #endregion Sni
