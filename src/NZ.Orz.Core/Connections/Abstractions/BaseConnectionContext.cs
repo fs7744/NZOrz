@@ -17,6 +17,8 @@ public abstract class BaseConnectionContext : IAsyncDisposable
 
     public virtual EndPoint? RemoteEndPoint { get; set; }
 
+    public GatewayProtocols Protocols { get; set; }
+
     public RouteConfig? Route { get; set; }
     public DestinationState? SelectedDestination { get; set; }
 

@@ -102,7 +102,8 @@ public class OrzServer : IServer
         var protocols = options.Protocols;
         if (protocols.HasFlag(GatewayProtocols.TCP) || protocols.HasFlag(GatewayProtocols.UDP))
         {
-            await _transportManager.BindAsync(options.EndPoint, options.Protocols, options.ConnectionDelegate, options, cancellationToken);
+            var next = options.ConnectionDelegate;
+            await _transportManager.BindAsync(options.EndPoint, options.Protocols, c => { c.Protocols = protocols; return next(c); }, options, cancellationToken);
         }
 
         //if (options.Protocols.HasFlag(GatewayProtocols.UDP))

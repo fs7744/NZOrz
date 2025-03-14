@@ -109,7 +109,7 @@ public class RouteContractorValidator : IRouteContractorValidator
     {
         if (config != null && config.Routes != null)
         {
-            foreach (var item in config.Routes)
+            foreach (var item in config.Routes.Where(i => i.Protocols.HasFlag(GatewayProtocols.TCP) || i.Protocols.HasFlag(GatewayProtocols.UDP)))
             {
                 var es = item.Match.Hosts.SelectMany(i => ConvertEndPoint(i, errors)).Where(i => i != null).ToArray();
                 if (item.Protocols.HasFlag(GatewayProtocols.TCP))

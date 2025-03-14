@@ -1,4 +1,5 @@
-﻿using NZ.Orz.Connections;
+﻿using NZ.Orz.Config;
+using NZ.Orz.Connections;
 using NZ.Orz.Connections.Features;
 using NZ.Orz.Sockets;
 using System.Diagnostics;
@@ -164,7 +165,7 @@ public sealed class OrzMetrics
                     break;
             }
 
-            tags.Add("network.transport", metricsContext.ConnectionContext is MultiplexedConnectionContext || metricsContext.ConnectionContext is UdpConnectionContext ? "udp" : "tcp");
+            tags.Add("network.transport", GetTransportType(metricsContext.ConnectionContext.Protocols));
         }
         else if (localEndpoint is UnixDomainSocketEndPoint udsEndPoint)
         {
@@ -181,6 +182,15 @@ public sealed class OrzMetrics
             tags.Add("server.address", localEndpoint.ToString());
             tags.Add("network.transport", localEndpoint.AddressFamily.ToString());
         }
+    }
+
+    private static string GetTransportType(GatewayProtocols protocols)
+    {
+        return protocols switch
+        {
+            GatewayProtocols.UDP or GatewayProtocols.HTTP3 => "udp",
+            _ => "tcp",
+        };
     }
 
     public ConnectionMetricsContext CreateContext(BaseConnectionContext connection)

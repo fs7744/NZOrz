@@ -53,13 +53,19 @@ public class L4ProxyMiddleware : IOrderMiddleware
             {
                 context.Route = route;
                 logger.ProxyBegin(route.RouteId);
-                if (context is UdpConnectionContext udp)
+                switch (context.Protocols)
                 {
-                    await UdpProxyAsync(udp, route);
-                }
-                else
-                {
-                    await TcpProxyAsync(context, route);
+                    case GatewayProtocols.TCP:
+                        await TcpProxyAsync(context, route);
+                        break;
+
+                    case GatewayProtocols.UDP:
+                        await UdpProxyAsync((UdpConnectionContext)context, route);
+                        break;
+
+                    case GatewayProtocols.SNI:
+                        await SNIProxyAsync(context, route);
+                        break;
                 }
                 logger.ProxyEnd(route.RouteId);
             }
@@ -73,6 +79,17 @@ public class L4ProxyMiddleware : IOrderMiddleware
             await next(context);
         }
     }
+
+    #region Sni
+
+    private async Task SNIProxyAsync(ConnectionContext context, RouteConfig route)
+    {
+        throw new NotImplementedException();
+    }
+
+    #endregion Sni
+
+    #region Udp
 
     private async Task UdpProxyAsync(UdpConnectionContext context, RouteConfig route)
     {
@@ -139,6 +156,10 @@ public class L4ProxyMiddleware : IOrderMiddleware
             return await DoUdpSendToAsync(socket, context, route, retryCount, bytes, cancellationToken);
         }
     }
+
+    #endregion Udp
+
+    #region Tcp
 
     private async Task TcpProxyAsync(ConnectionContext context, RouteConfig route)
     {
@@ -209,6 +230,8 @@ public class L4ProxyMiddleware : IOrderMiddleware
             return await DoConnectionAsync(context, route, retryCount);
         }
     }
+
+    #endregion Tcp
 
     private (ProxyConnectionDelegate req, ProxyConnectionDelegate resp, bool hasMiddleware) BuildMiddleware(IEnumerable<IProxyMiddleware> middlewares)
     {

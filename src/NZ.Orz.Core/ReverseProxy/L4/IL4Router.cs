@@ -7,5 +7,7 @@ public interface IL4Router
 {
     ValueTask<RouteConfig> MatchAsync(ConnectionContext context);
 
+    ValueTask<RouteConfig> MatchSNIAsync(ConnectionContext context);
+
     Task ReBulidAsync(IProxyConfig proxyConfig, ServerOptions serverOptions);
 }
