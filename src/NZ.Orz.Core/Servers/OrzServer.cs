@@ -1,5 +1,4 @@
-﻿using DotNext;
-using Microsoft.Extensions.Primitives;
+﻿using Microsoft.Extensions.Primitives;
 using NZ.Orz.Config;
 using NZ.Orz.Connections;
 using NZ.Orz.Features;
@@ -7,7 +6,6 @@ using NZ.Orz.Health;
 using NZ.Orz.Infrastructure;
 using NZ.Orz.Metrics;
 using NZ.Orz.ReverseProxy.L4;
-using NZ.Orz.Routing;
 using System.IO.Pipelines;
 
 namespace NZ.Orz.Servers;
@@ -219,10 +217,7 @@ public class OrzServer : IServer
     {
         if (changed)
         {
-            var old = l4.RouteTable;
-            l4.RouteTable = BuildL4RouteTable(proxyConfig, contractor.GetServerOptions());
-            if (old != null)
-                await old.DisposeAsync();
+            await l4.ReBulidAsync(proxyConfig, contractor.GetServerOptions());
         }
     }
 
@@ -273,35 +268,5 @@ public class OrzServer : IServer
     public void Dispose()
     {
         StopAsync(new CancellationToken(canceled: true)).GetAwaiter().GetResult();
-    }
-
-    private RouteTable<RouteConfig> BuildL4RouteTable(IProxyConfig config, ServerOptions serverOptions)
-    {
-        var builder = new RouteTableBuilder<RouteConfig>(serverOptions.RouteComparison, serverOptions.RouteCahceSize);
-        foreach (var route in config.Routes.Where(i => i.Protocols.HasFlag(GatewayProtocols.TCP) || i.Protocols.HasFlag(GatewayProtocols.UDP)))
-        {
-            foreach (var host in route.Match.Hosts)
-            {
-                if (host.StartsWith("localhost:"))
-                {
-                    Set(builder, route, $"127.0.0.1:{host.AsSpan(10)}");
-                    Set(builder, route, $"[::1]:{host.AsSpan(10)}");
-                }
-                Set(builder, route, host);
-            }
-        }
-        return builder.Build();
-
-        static void Set(RouteTableBuilder<RouteConfig> builder, RouteConfig? route, string host)
-        {
-            if (host.StartsWith('*'))
-            {
-                builder.Add(host[1..].Reverse(), route, RouteType.Prefix, route.Order);
-            }
-            else
-            {
-                builder.Add(host.Reverse(), route, RouteType.Exact, route.Order);
-            }
-        }
     }
 }
