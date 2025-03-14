@@ -110,8 +110,9 @@ public class L4ProxyMiddleware : IOrderMiddleware
                     context.SelectedDestination?.ConcurrencyCounter.Increment();
                     var cts = route.CreateTimeoutTokenSource(cancellationTokenSourcePool);
                     var t = cts.Token;
-                    await upstream.Transport.Output.WriteAsync(r, t);
+                    await upstream.Transport.Output.WriteAsync(r.Buffer.First, t);
                     await upstream.Transport.Output.FlushAsync(t);
+                    context.Transport.Input.AdvanceTo(r.Buffer.End);
                     var task = hasMiddlewareTcp ?
                             await Task.WhenAny(
                             context.Transport.Input.CopyToAsync(new MiddlewarePipeWriter(upstream.Transport.Output, context, reqTcp), t)

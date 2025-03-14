@@ -85,7 +85,7 @@ public class L4Router : IL4Router
         }
     }
 
-    public async ValueTask<(RouteConfig, byte[])> MatchSNIAsync(ConnectionContext context, CancellationToken token)
+    public async ValueTask<(RouteConfig, ReadResult)> MatchSNIAsync(ConnectionContext context, CancellationToken token)
     {
         var (hello, rr) = await TryGetClientHelloAsync(context, token);
         if (hello.HasValue)
@@ -111,7 +111,7 @@ public class L4Router : IL4Router
         return true;
     }
 
-    private static async ValueTask<(TlsFrameHelper.TlsFrameInfo?, byte[])> TryGetClientHelloAsync(ConnectionContext context, CancellationToken token)
+    private static async ValueTask<(TlsFrameHelper.TlsFrameInfo?, ReadResult)> TryGetClientHelloAsync(ConnectionContext context, CancellationToken token)
     {
         var input = context.Transport.Input;
         //var minBytesExamined = 0L;
@@ -121,7 +121,7 @@ public class L4Router : IL4Router
             var f = await input.ReadAsync(token).ConfigureAwait(false);
             if (f.IsCompleted)
             {
-                return (null, null);
+                return (null, f);
             }
             var buffer = f.Buffer;
             if (buffer.Length == 0)
@@ -137,8 +137,9 @@ public class L4Router : IL4Router
             var d = data.ToArray();
             if (TlsFrameHelper.TryGetFrameInfo(data, ref info))
             {
-                input.AdvanceTo(buffer.End);
-                return (info, d);
+                //input.AdvanceTo(buffer.Start, buffer.End);
+                //input.AdvanceTo(buffer.End);
+                return (info, f);
             }
             else
             {
@@ -146,7 +147,7 @@ public class L4Router : IL4Router
                 //minBytesExamined = buffer.Length;
                 input.AdvanceTo(buffer.Start, buffer.End);
                 //continue;
-                return (null, null);
+                return (null, f);
             }
 
             //var examined = buffer.Slice(buffer.Start, minBytesExamined).End;
