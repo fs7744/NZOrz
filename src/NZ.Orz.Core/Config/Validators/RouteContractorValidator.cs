@@ -107,7 +107,7 @@ public class RouteContractorValidator : IRouteContractorValidator
         config.Routes = routes;
 
         var r = Generate(config, serverOptions, errors).ToList();
-        foreach (var item in r.GroupBy(j => j.Protocols.HasFlag(GatewayProtocols.UDP) || j.Protocols.HasFlag(GatewayProtocols.HTTP3)).SelectMany(j =>
+        foreach (var item in r.GroupBy(j => j.Protocols == GatewayProtocols.UDP || j.Protocols == GatewayProtocols.HTTP3).SelectMany(j =>
         {
             return j.GroupBy(i => i.EndPoint.ToString(), StringComparer.OrdinalIgnoreCase).Where(i => i.Count() > 1);
         }))

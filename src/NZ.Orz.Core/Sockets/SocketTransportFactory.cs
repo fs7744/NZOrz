@@ -31,7 +31,7 @@ public sealed class SocketTransportFactory : IConnectionListenerFactory, IConnec
 
     public bool CanBind(EndPoint endpoint, GatewayProtocols protocols)
     {
-        if (!protocols.HasFlag(GatewayProtocols.TCP)) return false;
+        if (protocols is not (GatewayProtocols.TCP or GatewayProtocols.SNI)) return false;
         return endpoint switch
         {
             IPEndPoint _ => true,

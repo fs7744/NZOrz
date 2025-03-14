@@ -44,30 +44,31 @@ public class L4ProxyMiddleware : IOrderMiddleware
     {
         try
         {
-            var route = await router.MatchAsync(context);
-            if (route is null)
+            if (context.Protocols == GatewayProtocols.SNI)
             {
-                logger.NotFoundRouteL4(context.LocalEndPoint);
+                await SNIProxyAsync(context);
             }
             else
             {
-                context.Route = route;
-                logger.ProxyBegin(route.RouteId);
-                switch (context.Protocols)
+                var route = await router.MatchAsync(context);
+                if (route is null)
                 {
-                    case GatewayProtocols.TCP:
-                        await TcpProxyAsync(context, route);
-                        break;
-
-                    case GatewayProtocols.UDP:
-                        await UdpProxyAsync((UdpConnectionContext)context, route);
-                        break;
-
-                    case GatewayProtocols.SNI:
-                        await SNIProxyAsync(context, route);
-                        break;
+                    logger.NotFoundRouteL4(context.LocalEndPoint);
                 }
-                logger.ProxyEnd(route.RouteId);
+                else
+                {
+                    context.Route = route;
+                    logger.ProxyBegin(route.RouteId);
+                    if (context.Protocols == GatewayProtocols.TCP)
+                    {
+                        await TcpProxyAsync(context, route);
+                    }
+                    else
+                    {
+                        await UdpProxyAsync((UdpConnectionContext)context, route);
+                    }
+                    logger.ProxyEnd(route.RouteId);
+                }
             }
         }
         catch (Exception ex)
@@ -82,7 +83,7 @@ public class L4ProxyMiddleware : IOrderMiddleware
 
     #region Sni
 
-    private async Task SNIProxyAsync(ConnectionContext context, RouteConfig route)
+    private async Task SNIProxyAsync(ConnectionContext context)
     {
         throw new NotImplementedException();
     }

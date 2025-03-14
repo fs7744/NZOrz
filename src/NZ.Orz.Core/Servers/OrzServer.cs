@@ -100,7 +100,7 @@ public class OrzServer : IServer
         // todo support tcp / udp / http 1 2 3
 
         var protocols = options.Protocols;
-        if (protocols.HasFlag(GatewayProtocols.TCP) || protocols.HasFlag(GatewayProtocols.UDP))
+        if (protocols == GatewayProtocols.TCP || protocols == GatewayProtocols.UDP || protocols == GatewayProtocols.SNI)
         {
             var next = options.ConnectionDelegate;
             await _transportManager.BindAsync(options.EndPoint, options.Protocols, c => { c.Protocols = protocols; return next(c); }, options, cancellationToken);
