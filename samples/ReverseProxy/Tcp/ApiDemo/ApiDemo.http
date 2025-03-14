@@ -1,4 +1,4 @@
-@ApiDemo_HostAddress = http://127.0.0.1:5000
+@ApiDemo_HostAddress = https://127.0.0.1:448
 
 GET {{ApiDemo_HostAddress}}/weatherforecast/
 Accept: application/json

@@ -85,13 +85,13 @@ public class L4Router : IL4Router
         }
     }
 
-    public async ValueTask<(RouteConfig, ReadResult)> MatchSNIAsync(ConnectionContext context, CancellationToken token)
+    public async ValueTask<(RouteConfig, byte[])> MatchSNIAsync(ConnectionContext context, CancellationToken token)
     {
         var (hello, rr) = await TryGetClientHelloAsync(context, token);
         if (hello.HasValue)
         {
             var h = hello.Value;
-            var r = await sniRoute.MatchAsync(h.TargetName.Reverse(), h, MatchSNI);
+            var r  = await sniRoute.MatchAsync(h.TargetName.Reverse(), h, MatchSNI);
             if (r is null)
             {
                 logger.NotFoundRouteSni(h.TargetName);
@@ -111,17 +111,17 @@ public class L4Router : IL4Router
         return true;
     }
 
-    private static async ValueTask<(TlsFrameHelper.TlsFrameInfo?, ReadResult)> TryGetClientHelloAsync(ConnectionContext context, CancellationToken token)
+    private static async ValueTask<(TlsFrameHelper.TlsFrameInfo?, byte[])> TryGetClientHelloAsync(ConnectionContext context, CancellationToken token)
     {
         var input = context.Transport.Input;
         //var minBytesExamined = 0L;
         TlsFrameHelper.TlsFrameInfo info = default;
         while (true)
         {
-            var f = await input.ReadAsync(token);
+            var f = await input.ReadAsync(token).ConfigureAwait(false);
             if (f.IsCompleted)
             {
-                return (null, f);
+                return (null, null);
             }
             var buffer = f.Buffer;
             if (buffer.Length == 0)
@@ -134,21 +134,19 @@ public class L4Router : IL4Router
             //    throw new NotImplementedException("Multiple buffer segments");
             //}
             var data = buffer.First.Span;
-
+            var d = data.ToArray();
             if (TlsFrameHelper.TryGetFrameInfo(data, ref info))
             {
-                input.AdvanceTo(buffer.Start, buffer.End);
-                //var examined = buffer.Slice(buffer.Start, buffer.Length).End;
-                //input.AdvanceTo(buffer.Start, examined);
-                return (info, f);
+                input.AdvanceTo(buffer.End);
+                return (info, d);
             }
             else
             {
                 // todo how to handler large client hello
                 //minBytesExamined = buffer.Length;
-                //input.AdvanceTo(buffer.Start, buffer.End);
+                input.AdvanceTo(buffer.Start, buffer.End);
                 //continue;
-                return (null, f);
+                return (null, null);
             }
 
             //var examined = buffer.Slice(buffer.Start, minBytesExamined).End;

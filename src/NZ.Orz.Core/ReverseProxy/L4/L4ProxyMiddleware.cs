@@ -95,6 +95,7 @@ public class L4ProxyMiddleware : IOrderMiddleware
         var (route, r) = await router.MatchSNIAsync(context, c.Token);
         if (route is not null)
         {
+            context.Route = route;
             logger.ProxyBegin(route.RouteId);
             ConnectionContext upstream = null;
             try
@@ -109,7 +110,7 @@ public class L4ProxyMiddleware : IOrderMiddleware
                     context.SelectedDestination?.ConcurrencyCounter.Increment();
                     var cts = route.CreateTimeoutTokenSource(cancellationTokenSourcePool);
                     var t = cts.Token;
-                    await upstream.Transport.Output.WriteAsync(r.Buffer.First, t);
+                    await upstream.Transport.Output.WriteAsync(r, t);
                     await upstream.Transport.Output.FlushAsync(t);
                     var task = hasMiddlewareTcp ?
                             await Task.WhenAny(

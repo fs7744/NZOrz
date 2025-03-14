@@ -8,7 +8,7 @@ public interface IL4Router
 {
     ValueTask<RouteConfig> MatchAsync(ConnectionContext context);
 
-    ValueTask<(RouteConfig, ReadResult)> MatchSNIAsync(ConnectionContext context, CancellationToken token);
+    ValueTask<(RouteConfig, byte[])> MatchSNIAsync(ConnectionContext context, CancellationToken token);
 
     Task ReBulidAsync(IProxyConfig proxyConfig, ServerOptions serverOptions);
 }
