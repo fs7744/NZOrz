@@ -5,4 +5,6 @@ public sealed record ProxyConfigSnapshot : IProxyConfig
     public IReadOnlyList<RouteConfig> Routes { get; set; }
 
     public IReadOnlyDictionary<string, ClusterConfig> Clusters { get; set; }
+
+    public IReadOnlyDictionary<string, ListenConfig> Listen { get; set; }
 }

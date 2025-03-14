@@ -16,6 +16,7 @@ public class RouteContractorValidator : IRouteContractorValidator
     private readonly IEnumerable<IListenOptionsValidator> listenOptionsValidator;
     private readonly IEnumerable<IEndPointConvertor> endPointConvertors;
     private readonly ConnectionDelegate middleware;
+    private readonly MultiplexedConnectionDelegate multiplexedConnectionMiddleware;
     private readonly OrzLogger logger;
 
     public int Order => 0;
@@ -26,7 +27,8 @@ public class RouteContractorValidator : IRouteContractorValidator
         IEnumerable<IRouteConfigValidator> routeConfigValidators,
         IEnumerable<IListenOptionsValidator> listenOptionsValidator,
         IEnumerable<IEndPointConvertor> endPointConvertors,
-        IEnumerable<IOrderMiddleware> middlewares, OrzLogger logger)
+        IEnumerable<IOrderMiddleware> middlewares,
+        IEnumerable<IOrderMultiplexedConnectionMiddleware> multiplexedConnectionMiddlewares, OrzLogger logger)
     {
         this.serverOptionsValidators = serverOptionsValidators.OrderByDescending(i => i.Order).ToArray();
         this.socketTransportOptionsValidators = socketTransportOptionsValidators.OrderByDescending(i => i.Order).ToArray();
@@ -35,7 +37,23 @@ public class RouteContractorValidator : IRouteContractorValidator
         this.listenOptionsValidator = listenOptionsValidator.OrderByDescending(i => i.Order).ToArray();
         this.endPointConvertors = endPointConvertors.OrderByDescending(i => i.Order).ToArray();
         this.middleware = BuildMiddleware(middlewares);
+        multiplexedConnectionMiddleware = BuildMiddleware(multiplexedConnectionMiddlewares);
         this.logger = logger;
+    }
+
+    private MultiplexedConnectionDelegate? BuildMiddleware(IEnumerable<IOrderMultiplexedConnectionMiddleware> middlewares)
+    {
+        MultiplexedConnectionDelegate app = context =>
+        {
+            context.Abort();
+            return Task.CompletedTask;
+        };
+        foreach (var component in middlewares.OrderBy(i => i.Order)
+            .Select<IMultiplexedConnectionMiddleware, Func<MultiplexedConnectionDelegate, MultiplexedConnectionDelegate>>(p => (MultiplexedConnectionDelegate next) => (MultiplexedConnectionContext c) => p.Invoke(c, next)))
+        {
+            app = component(app);
+        }
+        return app;
     }
 
     private ConnectionDelegate BuildMiddleware(IEnumerable<IOrderMiddleware> middlewares)
@@ -89,6 +107,17 @@ public class RouteContractorValidator : IRouteContractorValidator
         config.Routes = routes;
 
         var r = Generate(config, serverOptions, errors).ToList();
+        foreach (var item in r.GroupBy(j => j.Protocols.HasFlag(GatewayProtocols.UDP) || j.Protocols.HasFlag(GatewayProtocols.HTTP3)).SelectMany(j =>
+        {
+            return j.GroupBy(i => i.EndPoint.ToString(), StringComparer.OrdinalIgnoreCase).Where(i => i.Count() > 1);
+        }))
+        {
+            errors.Add(new ArgumentException($"There is some conflict with EndPoint: '{item.Key}' and config: {string.Join(",", item.Select(i => i.Key).Distinct(StringComparer.OrdinalIgnoreCase))}."));
+            foreach (var i in item)
+            {
+                r.Remove(i);
+            }
+        }
         foreach (var listenOptions in r.ToList())
         {
             foreach (var validator in listenOptionsValidator)
@@ -107,7 +136,68 @@ public class RouteContractorValidator : IRouteContractorValidator
 
     private IEnumerable<ListenOptions> Generate(IProxyConfig config, ServerOptions serverOptions, IList<Exception> errors)
     {
-        if (config != null && config.Routes != null)
+        if (config == null) yield break;
+        if (config.Listen != null)
+        {
+            foreach (var item in config.Listen.Values)
+            {
+                var p = item.Protocols;
+                if (p.HasFlag(GatewayProtocols.SNI))
+                {
+                    var es = item.Address.SelectMany(i => ConvertEndPoint(i, errors)).Where(i => i != null).ToArray();
+                    foreach (var e in es)
+                    {
+                        yield return new ListenOptions()
+                        {
+                            Key = $"listen_{item.ListenId}",
+                            Protocols = GatewayProtocols.SNI,
+                            EndPoint = e,
+                            ConnectionDelegate = middleware
+                        };
+                    }
+                }
+                else
+                {
+                    var h1 = p.HasFlag(GatewayProtocols.HTTP1);
+                    var h2 = p.HasFlag(GatewayProtocols.HTTP2);
+                    var h3 = p.HasFlag(GatewayProtocols.HTTP3);
+                    if (h3)
+                    {
+                        var es = item.Address.SelectMany(i => ConvertEndPoint(i, errors)).Where(i => i != null).ToArray();
+                        foreach (var e in es)
+                        {
+                            yield return new ListenOptions()
+                            {
+                                Key = $"listen_{item.ListenId}",
+                                Protocols = GatewayProtocols.HTTP3,
+                                EndPoint = e,
+                                MultiplexedConnectionDelegate = multiplexedConnectionMiddleware
+                            };
+                        }
+                    }
+                    else if (h1 || h2)
+                    {
+                        var es = item.Address.SelectMany(i => ConvertEndPoint(i, errors)).Where(i => i != null).ToArray();
+                        var ps = h1 && h2 ? GatewayProtocols.HTTP1 | GatewayProtocols.HTTP2 : (h1 ? GatewayProtocols.HTTP1 : GatewayProtocols.HTTP2);
+                        foreach (var e in es)
+                        {
+                            yield return new ListenOptions()
+                            {
+                                Key = $"listen_{item.ListenId}",
+                                Protocols = ps,
+                                EndPoint = e,
+                                ConnectionDelegate = middleware
+                            };
+                        }
+                    }
+                    else
+                    {
+                        errors.Add(new ArgumentException($"Common listen {item.ListenId} not support TCP or UDP, it can't match upstream."));
+                    }
+                }
+            }
+        }
+        if (config.Routes != null)
         {
             foreach (var item in config.Routes.Where(i => i.Protocols.HasFlag(GatewayProtocols.TCP) || i.Protocols.HasFlag(GatewayProtocols.UDP)))
             {
@@ -118,7 +208,7 @@ public class RouteContractorValidator : IRouteContractorValidator
                     {
                         yield return new ListenOptions()
                         {
-                            Key = item.RouteId,
+                            Key = $"route_{item.RouteId}",
                             Protocols = GatewayProtocols.TCP,
                             EndPoint = e,
                             ConnectionDelegate = middleware
@@ -132,7 +222,7 @@ public class RouteContractorValidator : IRouteContractorValidator
                     {
                         yield return new ListenOptions()
                         {
-                            Key = item.RouteId,
+                            Key = $"route_{item.RouteId}",
                             Protocols = GatewayProtocols.UDP,
                             EndPoint = e,
                             ConnectionDelegate = middleware
@@ -141,8 +231,6 @@ public class RouteContractorValidator : IRouteContractorValidator
                 }
             }
         }
-
-        //todo : http ListenOptions
     }
 
     private IEnumerable<EndPoint> ConvertEndPoint(string address, IList<Exception> errors)

@@ -119,6 +119,7 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
             c = new ProxyConfigSnapshot();
             c.Routes = configuration.GetSection(nameof(ProxyConfigSnapshot.Routes)).GetChildren().Select(CreateRoute).ToList();
             c.Clusters = configuration.GetSection(nameof(ProxyConfigSnapshot.Clusters)).GetChildren().Select(CreateCluster).ToFrozenDictionary(i => i.ClusterId, StringComparer.OrdinalIgnoreCase);
+            c.Listen = configuration.GetSection(nameof(ProxyConfigSnapshot.Listen)).GetChildren().Select(CreateListen).ToFrozenDictionary(i => i.ListenId, StringComparer.OrdinalIgnoreCase);
         }
         catch (Exception ex)
         {
@@ -146,6 +147,16 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
         {
             logger.UnexpectedException("Config changed", ex);
         }
+    }
+
+    private ListenConfig CreateListen(IConfigurationSection section)
+    {
+        return new ListenConfig()
+        {
+            ListenId = section.Key,
+            Protocols = section.ReadGatewayProtocols(nameof(ListenConfig.Protocols)).GetValueOrDefault(GatewayProtocols.SNI),
+            Address = section.GetSection(nameof(ListenConfig.Address)).ReadStringArray()
+        };
     }
 
     private async Task OnConfigChanged(CancellationTokenSource oldToken, ProxyConfigSnapshot oldConf, ProxyConfigSnapshot newConf, List<ListenOptions> listenOptions, CancellationToken cancellationToken)

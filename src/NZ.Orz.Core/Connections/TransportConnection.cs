@@ -84,6 +84,5 @@ public abstract class TransportConnection : ConnectionContext,
     public override void Abort(ConnectionAbortedException abortReason)
     {
         Application?.Input.CancelPendingRead();
-        throw abortReason;
     }
 }

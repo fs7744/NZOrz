@@ -9,4 +9,6 @@ public interface IProxyConfig
     IReadOnlyList<RouteConfig> Routes { get; }
 
     IReadOnlyDictionary<string, ClusterConfig> Clusters { get; }
+
+    IReadOnlyDictionary<string, ListenConfig> Listen { get; }
 }
