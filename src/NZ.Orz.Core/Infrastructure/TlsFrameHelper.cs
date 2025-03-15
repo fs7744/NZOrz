@@ -92,62 +92,62 @@ namespace NZ.Orz.Infrastructure.Tls
         public override string ToString() => $"{Version}:{Type}[{Length}]";
     }
 
-    public static class TlsFrameHelper
+    public struct TlsFrameInfo
     {
-        public const int HeaderSize = 5;
+        public TlsFrameHeader Header;
+        public TlsHandshakeType HandshakeType;
+        public SslProtocols SupportedVersions;
+        public string TargetName;
+        public ApplicationProtocolInfo ApplicationProtocols;
+        public TlsAlertDescription AlertDescription;
+        public byte[]? RawApplicationProtocols;
 
-        [Flags]
-        public enum ProcessingOptions
+        public override string ToString()
         {
-            All = 0,
-            ServerName = 0x1,
-            ApplicationProtocol = 0x2,
-            Versions = 0x4,
-            RawApplicationProtocol = 0x8,
-        }
-
-        [Flags]
-        public enum ApplicationProtocolInfo
-        {
-            None = 0,
-            Http11 = 1,
-            Http2 = 2,
-            Other = 128
-        }
-
-        public struct TlsFrameInfo
-        {
-            public TlsFrameHeader Header;
-            public TlsHandshakeType HandshakeType;
-            public SslProtocols SupportedVersions;
-            public string TargetName;
-            public ApplicationProtocolInfo ApplicationProtocols;
-            public TlsAlertDescription AlertDescription;
-            public byte[]? RawApplicationProtocols;
-
-            public override string ToString()
+            if (Header.Type == TlsContentType.Handshake)
             {
-                if (Header.Type == TlsContentType.Handshake)
+                if (HandshakeType == TlsHandshakeType.ClientHello)
                 {
-                    if (HandshakeType == TlsHandshakeType.ClientHello)
-                    {
-                        return $"{Header.Version}:{HandshakeType}[{Header.Length}] TargetName='{TargetName}' SupportedVersion='{SupportedVersions}' ApplicationProtocols='{ApplicationProtocols}'";
-                    }
-                    else if (HandshakeType == TlsHandshakeType.ServerHello)
-                    {
-                        return $"{Header.Version}:{HandshakeType}[{Header.Length}] SupportedVersion='{SupportedVersions}' ApplicationProtocols='{ApplicationProtocols}'";
-                    }
-                    else
-                    {
-                        return $"{Header.Version}:{HandshakeType}[{Header.Length}] SupportedVersion='{SupportedVersions}'";
-                    }
+                    return $"{Header.Version}:{HandshakeType}[{Header.Length}] TargetName='{TargetName}' SupportedVersion='{SupportedVersions}' ApplicationProtocols='{ApplicationProtocols}'";
+                }
+                else if (HandshakeType == TlsHandshakeType.ServerHello)
+                {
+                    return $"{Header.Version}:{HandshakeType}[{Header.Length}] SupportedVersion='{SupportedVersions}' ApplicationProtocols='{ApplicationProtocols}'";
                 }
                 else
                 {
-                    return $"{Header.Version}:{Header.Type}[{Header.Length}]";
+                    return $"{Header.Version}:{HandshakeType}[{Header.Length}] SupportedVersion='{SupportedVersions}'";
                 }
             }
+            else
+            {
+                return $"{Header.Version}:{Header.Type}[{Header.Length}]";
+            }
         }
+    }
+
+    [Flags]
+    public enum ProcessingOptions
+    {
+        All = 0,
+        ServerName = 0x1,
+        ApplicationProtocol = 0x2,
+        Versions = 0x4,
+        RawApplicationProtocol = 0x8,
+    }
+
+    [Flags]
+    public enum ApplicationProtocolInfo
+    {
+        None = 0,
+        Http11 = 1,
+        Http2 = 2,
+        Other = 128
+    }
+
+    public static class TlsFrameHelper
+    {
+        public const int HeaderSize = 5;
 
         public delegate bool HelloExtensionCallback(ref TlsFrameInfo info, ExtensionType type, ReadOnlySpan<byte> extensionsData);
 

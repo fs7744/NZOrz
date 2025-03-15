@@ -306,7 +306,8 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
             RetryCount = section.ReadInt32(nameof(RouteConfig.RetryCount)).GetValueOrDefault(),
             UdpResponses = section.ReadInt32(nameof(RouteConfig.UdpResponses)).GetValueOrDefault(),
             Timeout = section.ReadTimeSpan(nameof(RouteConfig.Timeout)).GetValueOrDefault(serverOptions.DefaultProxyTimeout),
-            Protocols = section.ReadGatewayProtocols(nameof(RouteConfig.Protocols)).GetValueOrDefault(GatewayProtocols.TCP),
+            Protocols = section.ReadGatewayProtocols(nameof(RouteConfig.Protocols)).GetValueOrDefault(GatewayProtocols.HTTP1 | GatewayProtocols.HTTP2),
+            SupportSslProtocols = section.ReadSslProtocols(nameof(RouteConfig.SupportSslProtocols)),
             Match = CreateRouteMatch(section.GetSection(nameof(RouteConfig.Match)))
         };
     }

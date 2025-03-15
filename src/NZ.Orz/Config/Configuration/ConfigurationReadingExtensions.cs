@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.Security.Authentication;
 using static System.Collections.Specialized.BitVector32;
 
 namespace NZ.Orz.Config.Configuration;
@@ -50,6 +51,21 @@ public static class ConfigurationReadingExtensions
             var s = configuration.GetSection(name);
             if (!s.Exists() || (s.GetChildren() is var children && !children.Any())) return null;
             return s.GetChildren().Select(i => i.Value).Where(i => i != null).Select(i => Enum.Parse<GatewayProtocols>(i, ignoreCase: true))
+                .Aggregate((i, j) => i | j);
+        }
+    }
+
+    public static SslProtocols? ReadSslProtocols(this IConfiguration configuration, string name)
+    {
+        if (configuration[name] is string value)
+        {
+            return Enum.Parse<SslProtocols>(value, ignoreCase: true);
+        }
+        else
+        {
+            var s = configuration.GetSection(name);
+            if (!s.Exists() || (s.GetChildren() is var children && !children.Any())) return null;
+            return s.GetChildren().Select(i => i.Value).Where(i => i != null).Select(i => Enum.Parse<SslProtocols>(i, ignoreCase: true))
                 .Aggregate((i, j) => i | j);
         }
     }

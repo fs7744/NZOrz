@@ -4,7 +4,9 @@ using NZ.Orz.Connections;
 using NZ.Orz.Infrastructure.Tls;
 using NZ.Orz.Metrics;
 using NZ.Orz.Routing;
+using System.Buffers;
 using System.IO.Pipelines;
+using System.Security.Authentication;
 
 namespace NZ.Orz.ReverseProxy.L4;
 
@@ -87,11 +89,12 @@ public class L4Router : IL4Router
 
     public async ValueTask<(RouteConfig, ReadResult)> MatchSNIAsync(ConnectionContext context, CancellationToken token)
     {
+        if (sniRoute is null) return (null, default);
         var (hello, rr) = await TryGetClientHelloAsync(context, token);
         if (hello.HasValue)
         {
             var h = hello.Value;
-            var r  = await sniRoute.MatchAsync(h.TargetName.Reverse(), h, MatchSNI);
+            var r = await sniRoute.MatchAsync(h.TargetName.Reverse(), h, MatchSNI);
             if (r is null)
             {
                 logger.NotFoundRouteSni(h.TargetName);
@@ -105,17 +108,26 @@ public class L4Router : IL4Router
         }
     }
 
-    private bool MatchSNI(RouteConfig config, TlsFrameHelper.TlsFrameInfo info)
+    private bool MatchSNI(RouteConfig config, TlsFrameInfo info)
     {
-        //todo tls match
-        return true;
+        if (!config.SupportSslProtocols.HasValue) return true;
+        var v = config.SupportSslProtocols.Value;
+        if (v == SslProtocols.None) return true;
+        var t = info.SupportedVersions;
+        if (v.HasFlag(SslProtocols.Tls13) && t.HasFlag(SslProtocols.Tls13)) return true;
+        else if (v.HasFlag(SslProtocols.Tls12) && t.HasFlag(SslProtocols.Tls12)) return true;
+        else if (v.HasFlag(SslProtocols.Tls11) && t.HasFlag(SslProtocols.Tls11)) return true;
+        else if (v.HasFlag(SslProtocols.Tls) && t.HasFlag(SslProtocols.Tls)) return true;
+        else if (v.HasFlag(SslProtocols.Ssl3) && t.HasFlag(SslProtocols.Ssl3)) return true;
+        else if (v.HasFlag(SslProtocols.Ssl2) && t.HasFlag(SslProtocols.Ssl2)) return true;
+        else if (v.HasFlag(SslProtocols.Default) && t.HasFlag(SslProtocols.Default)) return true;
+        else return false;
     }
 
-    private static async ValueTask<(TlsFrameHelper.TlsFrameInfo?, ReadResult)> TryGetClientHelloAsync(ConnectionContext context, CancellationToken token)
+    private static async ValueTask<(TlsFrameInfo?, ReadResult)> TryGetClientHelloAsync(ConnectionContext context, CancellationToken token)
     {
         var input = context.Transport.Input;
-        //var minBytesExamined = 0L;
-        TlsFrameHelper.TlsFrameInfo info = default;
+        TlsFrameInfo info = default;
         while (true)
         {
             var f = await input.ReadAsync(token).ConfigureAwait(false);
@@ -129,30 +141,16 @@ public class L4Router : IL4Router
                 continue;
             }
 
-            //if (!buffer.IsSingleSegment)
-            //{
-            //    throw new NotImplementedException("Multiple buffer segments");
-            //}
-            var data = buffer.First.Span;
-            var d = data.ToArray();
+            var data = buffer.IsSingleSegment ? buffer.First.Span : buffer.ToArray();
             if (TlsFrameHelper.TryGetFrameInfo(data, ref info))
             {
-                //input.AdvanceTo(buffer.Start, buffer.End);
-                //input.AdvanceTo(buffer.End);
                 return (info, f);
             }
             else
             {
-                // todo how to handler large client hello
-                //minBytesExamined = buffer.Length;
                 input.AdvanceTo(buffer.Start, buffer.End);
-                //continue;
-                return (null, f);
+                continue;
             }
-
-            //var examined = buffer.Slice(buffer.Start, minBytesExamined).End;
-            //input.AdvanceTo(buffer.Start, examined);
-            //break;
         }
     }
 }

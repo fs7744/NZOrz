@@ -1,4 +1,5 @@
 ﻿using NZ.Orz.Infrastructure;
+using System.Security.Authentication;
 
 namespace NZ.Orz.Config;
 
@@ -21,6 +22,7 @@ public sealed record RouteConfig
 
     public int RetryCount { get; init; }
     public int UdpResponses { get; init; }
+    public SslProtocols? SupportSslProtocols { get; set; }
     public ClusterConfig ClusterConfig { get; internal set; }
 
     public bool Equals(RouteConfig? other)
@@ -37,19 +39,23 @@ public sealed record RouteConfig
             && Timeout == other.Timeout
             && RetryCount == other.RetryCount
             && UdpResponses == other.UdpResponses
+            && SupportSslProtocols == other.SupportSslProtocols
             && Match == other.Match;
     }
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(Protocols,
-            Order,
-            RouteId?.GetHashCode(StringComparison.OrdinalIgnoreCase),
-            ClusterId?.GetHashCode(StringComparison.OrdinalIgnoreCase),
-            Timeout.GetHashCode(),
-            RetryCount,
-            UdpResponses,
-            Match);
+        var code = new HashCode();
+        code.Add(Protocols);
+        code.Add(Order);
+        code.Add(RouteId?.GetHashCode(StringComparison.OrdinalIgnoreCase));
+        code.Add(ClusterId?.GetHashCode(StringComparison.OrdinalIgnoreCase));
+        code.Add(Timeout.GetHashCode());
+        code.Add(RetryCount);
+        code.Add(UdpResponses);
+        code.Add(SupportSslProtocols);
+        code.Add(Match.GetHashCode());
+        return code.ToHashCode();
     }
 
     internal CancellationTokenSource CreateTimeoutTokenSource(CancellationTokenSourcePool pool)

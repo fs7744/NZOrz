@@ -1,16 +1,12 @@
-﻿using DotNext;
-using Microsoft.Extensions.Logging;
+﻿using NZ.Orz.Buffers;
 using NZ.Orz.Config;
 using NZ.Orz.Connections;
 using NZ.Orz.Infrastructure;
-using NZ.Orz.Infrastructure.Tls;
 using NZ.Orz.Metrics;
 using NZ.Orz.ReverseProxy.LoadBalancing;
 using NZ.Orz.Sockets;
 using NZ.Orz.Sockets.Client;
-using System.Buffers;
 using System.Net.Sockets;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace NZ.Orz.ReverseProxy.L4;
 
@@ -110,8 +106,7 @@ public class L4ProxyMiddleware : IOrderMiddleware
                     context.SelectedDestination?.ConcurrencyCounter.Increment();
                     var cts = route.CreateTimeoutTokenSource(cancellationTokenSourcePool);
                     var t = cts.Token;
-                    await upstream.Transport.Output.WriteAsync(r.Buffer.First, t);
-                    await upstream.Transport.Output.FlushAsync(t);
+                    await r.CopyToAsync(upstream.Transport.Output, t);
                     context.Transport.Input.AdvanceTo(r.Buffer.End);
                     var task = hasMiddlewareTcp ?
                             await Task.WhenAny(
