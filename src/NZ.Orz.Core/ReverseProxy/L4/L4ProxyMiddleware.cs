@@ -17,7 +17,7 @@ public class L4ProxyMiddleware : IOrderMiddleware
     private readonly IUdpConnectionFactory udp;
     private readonly IL4Router router;
     private readonly OrzLogger logger;
-    private readonly LoadBalancingPolicy loadBalancing;
+    private readonly ILoadBalancingPolicyFactory loadBalancing;
     private readonly SocketTransportOptions? options;
     private readonly ProxyConnectionDelegate reqTcp;
     private readonly ProxyConnectionDelegate respTcp;
@@ -26,7 +26,7 @@ public class L4ProxyMiddleware : IOrderMiddleware
     private readonly ProxyConnectionDelegate respUdp;
     private readonly bool hasMiddlewareUdp;
 
-    public L4ProxyMiddleware(IConnectionFactory connectionFactory, IUdpConnectionFactory udp, IL4Router router, OrzLogger logger, LoadBalancingPolicy loadBalancing, IRouteContractor contractor,
+    public L4ProxyMiddleware(IConnectionFactory connectionFactory, IUdpConnectionFactory udp, IL4Router router, OrzLogger logger, ILoadBalancingPolicyFactory loadBalancing, IRouteContractor contractor,
         IEnumerable<ITcpMiddleware> tcpMiddlewares, IEnumerable<IUdpMiddleware> udpMiddlewares)
     {
         this.connectionFactory = connectionFactory;

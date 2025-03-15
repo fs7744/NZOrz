@@ -3,7 +3,7 @@ using NZ.Orz.Connections;
 
 namespace NZ.Orz.ReverseProxy.LoadBalancing;
 
-public sealed class LoadBalancingPolicy
+public sealed class LoadBalancingPolicy : ILoadBalancingPolicyFactory
 {
     public static string Random => nameof(Random);
     public static string RoundRobin => nameof(RoundRobin);
