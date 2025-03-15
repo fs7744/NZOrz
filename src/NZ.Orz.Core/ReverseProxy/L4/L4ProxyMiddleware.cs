@@ -146,10 +146,10 @@ public class L4ProxyMiddleware : IOrderMiddleware
     {
         try
         {
-            var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             var cts = route.CreateTimeoutTokenSource(cancellationTokenSourcePool);
             var token = cts.Token;
-            if (await DoUdpSendToAsync(socket, context, route, route.RetryCount, await reqUdp(context, context.ReceivedBytes, token), token))
+            var socket = await DoUdpSendToAsync(null, context, route, route.RetryCount, await reqUdp(context, context.ReceivedBytes, token), token);
+            if (socket != null)
             {
                 var c = route.UdpResponses;
                 while (c > 0)
@@ -158,6 +158,7 @@ public class L4ProxyMiddleware : IOrderMiddleware
                     c--;
                     await udp.SendToAsync(context.Socket, context.RemoteEndPoint, await respUdp(context, r.GetReceivedBytes(), token), token);
                 }
+                socket.Dispose();
             }
             else
             {
@@ -178,19 +179,33 @@ public class L4ProxyMiddleware : IOrderMiddleware
         }
     }
 
-    private async Task<bool> DoUdpSendToAsync(Socket socket, UdpConnectionContext context, RouteConfig route, int retryCount, ReadOnlyMemory<byte> bytes, CancellationToken cancellationToken)
+    private async Task<Socket> DoUdpSendToAsync(Socket s, UdpConnectionContext context, RouteConfig route, int retryCount, ReadOnlyMemory<byte> bytes, CancellationToken cancellationToken)
     {
+        Socket socket = s;
         DestinationState selectedDestination = null;
         try
         {
             selectedDestination = context.SelectedDestination = loadBalancing.PickDestination(context, route);
             if (selectedDestination is null)
             {
-                return false;
+                return null;
             }
-            await udp.SendToAsync(socket, selectedDestination.EndPoint, bytes, cancellationToken);
+            var e = selectedDestination.EndPoint;
+            if (socket == null || socket.AddressFamily != e.AddressFamily)
+            {
+                socket?.Dispose();
+                if (e.AddressFamily == AddressFamily.InterNetworkV6)
+                {
+                    socket = new Socket(AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp);
+                }
+                else
+                {
+                    socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                }
+            }
+            await udp.SendToAsync(socket, e, bytes, cancellationToken);
             selectedDestination.ReportSuccessed();
-            return true;
+            return socket;
         }
         catch (OperationCanceledException)
         {
