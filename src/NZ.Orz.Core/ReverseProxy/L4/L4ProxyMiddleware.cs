@@ -194,14 +194,7 @@ public class L4ProxyMiddleware : IOrderMiddleware
             if (socket == null || socket.AddressFamily != e.AddressFamily)
             {
                 socket?.Dispose();
-                if (e.AddressFamily == AddressFamily.InterNetworkV6)
-                {
-                    socket = new Socket(AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp);
-                }
-                else
-                {
-                    socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-                }
+                socket = new Socket(e.AddressFamily, SocketType.Dgram, ProtocolType.Udp);
             }
             await udp.SendToAsync(socket, e, bytes, cancellationToken);
             selectedDestination.ReportSuccessed();
