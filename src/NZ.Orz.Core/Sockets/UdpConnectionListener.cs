@@ -1,4 +1,5 @@
-﻿using NZ.Orz.Config;
+﻿using DotNext;
+using NZ.Orz.Config;
 using NZ.Orz.Connections;
 using NZ.Orz.Connections.Exceptions;
 using NZ.Orz.Metrics;
@@ -17,6 +18,7 @@ internal sealed class UdpConnectionListener : IConnectionListener
     private readonly IUdpConnectionFactory connectionFactory;
     private readonly Func<EndPoint, GatewayProtocols, Socket> createBoundListenSocket;
     private Socket? _listenSocket;
+    private string localEndPointString;
 
     public UdpConnectionListener(EndPoint? udpEndPoint, GatewayProtocols protocols, IRouteContractor contractor, OrzLogger logger, IUdpConnectionFactory connectionFactory)
     {
@@ -49,6 +51,8 @@ internal sealed class UdpConnectionListener : IConnectionListener
         Debug.Assert(listenSocket.LocalEndPoint != null);
 
         _listenSocket = listenSocket;
+        udpEndPoint = listenSocket.LocalEndPoint;
+        localEndPointString = udpEndPoint.ToString().Reverse();
     }
 
     public async ValueTask<ConnectionContext?> AcceptAsync(CancellationToken cancellationToken = default)
@@ -59,7 +63,7 @@ internal sealed class UdpConnectionListener : IConnectionListener
             {
                 Debug.Assert(_listenSocket != null, "Bind must be called first.");
                 var r = await connectionFactory.ReceiveAsync(_listenSocket, cancellationToken);
-                return new UdpConnectionContext(_listenSocket, r);
+                return new UdpConnectionContext(_listenSocket, r) { LocalEndPointString = localEndPointString };
             }
             catch (ObjectDisposedException)
             {

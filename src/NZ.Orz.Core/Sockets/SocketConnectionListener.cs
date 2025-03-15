@@ -1,4 +1,5 @@
-﻿using NZ.Orz.Config;
+﻿using DotNext;
+using NZ.Orz.Config;
 using NZ.Orz.Connections;
 using NZ.Orz.Connections.Exceptions;
 using NZ.Orz.Metrics;
@@ -15,6 +16,7 @@ internal sealed class SocketConnectionListener : IConnectionListener
     private Socket? _listenSocket;
     private readonly SocketTransportOptions _options;
     private readonly GatewayProtocols protocols;
+    private string localEndPointString;
 
     public EndPoint EndPoint { get; private set; }
 
@@ -50,6 +52,7 @@ internal sealed class SocketConnectionListener : IConnectionListener
 
         Debug.Assert(listenSocket.LocalEndPoint != null);
         EndPoint = listenSocket.LocalEndPoint;
+        localEndPointString = EndPoint.ToString().Reverse();
 
         listenSocket.Listen(_options.Backlog);
 
@@ -71,7 +74,9 @@ internal sealed class SocketConnectionListener : IConnectionListener
                     acceptSocket.NoDelay = _options.NoDelay;
                 }
 
-                return _factory.Create(acceptSocket);
+                var c = _factory.Create(acceptSocket);
+                c.LocalEndPointString = localEndPointString;
+                return c;
             }
             catch (ObjectDisposedException)
             {

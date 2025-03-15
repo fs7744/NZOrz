@@ -24,7 +24,7 @@ public class L4Router : IL4Router
     public ValueTask<RouteConfig> MatchAsync(ConnectionContext context)
     {
         if (routeTable is null) return ValueTask.FromResult<RouteConfig>(null);
-        return routeTable.MatchAsync(context.LocalEndPoint.ToString().Reverse(), context.Protocols, Match);
+        return routeTable.MatchAsync(context.LocalEndPointString, context.Protocols, Match);
     }
 
     private static bool Match(RouteConfig config, GatewayProtocols protocols)

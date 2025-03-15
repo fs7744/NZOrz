@@ -15,6 +15,11 @@ public abstract class BaseConnectionContext : IAsyncDisposable
 
     public virtual EndPoint? LocalEndPoint { get; set; }
 
+    /// <summary>
+    /// to make LocalEndPoint.ToString().Reverse() only once, routeconfig may change or matchs may has not only one, so no keep route config
+    /// </summary>
+    public string LocalEndPointString { get; set; }
+
     public virtual EndPoint? RemoteEndPoint { get; set; }
 
     public GatewayProtocols Protocols { get; set; }
