@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
 using NZ.Orz.Config;
-using NZ.Orz.Infrastructure.Tls;
 using System.Net;
 
 namespace NZ.Orz.Metrics;

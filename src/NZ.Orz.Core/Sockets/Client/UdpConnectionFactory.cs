@@ -30,7 +30,7 @@ public class UdpConnectionFactory : IUdpConnectionFactory
         var receiver = new UdpAwaitableEventArgs(pipeScheduler);
         receiver.RemoteEndPoint = socket.LocalEndPoint;
         var r = await receiver.ReceiveFromAsync(socket, buffer.Memory);
-        return new UdpReceiveFromResult{ RemoteEndPoint = r.RemoteEndPoint, ReceivedBytesCount = r.ReceivedBytes, Buffer = buffer };
+        return new UdpReceiveFromResult { RemoteEndPoint = r.RemoteEndPoint, ReceivedBytesCount = r.ReceivedBytes, Buffer = buffer };
     }
 
     public async Task<int> SendToAsync(Socket socket, EndPoint remoteEndPoint, ReadOnlyMemory<byte> receivedBytes, CancellationToken cancellationToken)
