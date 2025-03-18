@@ -5,16 +5,17 @@ namespace NZ.Orz.Sockets.Internal;
 
 internal sealed class UdpSenderPool : IDisposable
 {
-    private const int MaxQueueSize = 1024;
+    private int _MaxQueueSize;
 
     private readonly ConcurrentQueue<UdpSender> _queue = new();
     private int _count;
     private readonly PipeScheduler _scheduler;
     private bool _disposed;
 
-    public UdpSenderPool(PipeScheduler scheduler)
+    public UdpSenderPool(PipeScheduler scheduler, int poolSize = 1024)
     {
         _scheduler = scheduler;
+        _MaxQueueSize = poolSize;
     }
 
     public PipeScheduler Scheduler => _scheduler;
@@ -31,8 +32,7 @@ internal sealed class UdpSenderPool : IDisposable
 
     public void Return(UdpSender sender)
     {
-        // This counting isn't accurate, but it's good enough for what we need to avoid using _queue.Count which could be expensive
-        if (_disposed || Interlocked.Increment(ref _count) > MaxQueueSize)
+        if (_disposed || Interlocked.Increment(ref _count) > _MaxQueueSize)
         {
             Interlocked.Decrement(ref _count);
             sender.Dispose();

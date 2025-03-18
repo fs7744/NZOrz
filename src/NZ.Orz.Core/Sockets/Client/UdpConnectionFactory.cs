@@ -23,8 +23,8 @@ public class UdpConnectionFactory : IUdpConnectionFactory
         pool = PinnedBlockMemoryPoolFactory.Create(options.UdpMaxSize);
 
         pipeScheduler = options.UnsafePreferInlineScheduling ? PipeScheduler.Inline : PipeScheduler.ThreadPool;
-        socketReceiverPool = new UdpReceiverPool(pipeScheduler);
-        socketSenderPool = new UdpSenderPool(OperatingSystem.IsWindows() ? pipeScheduler : PipeScheduler.Inline);
+        socketReceiverPool = new UdpReceiverPool(pipeScheduler, options.UdpPoolSize);
+        socketSenderPool = new UdpSenderPool(OperatingSystem.IsWindows() ? pipeScheduler : PipeScheduler.Inline, options.UdpPoolSize);
     }
 
     public async ValueTask<UdpReceiveFromResult> ReceiveAsync(Socket socket, CancellationToken cancellationToken)

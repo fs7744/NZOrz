@@ -28,6 +28,8 @@ public class SocketTransportOptions
 
     public bool UnsafePreferInlineScheduling { get; set; }
 
+    public int UdpPoolSize { get; set; } = 1024;
+
     internal Func<MemoryPool<byte>> MemoryPoolFactory { get; set; } = PinnedBlockMemoryPoolFactory.Create;
 
     public Func<EndPoint, GatewayProtocols, Socket> CreateBoundListenSocket { get; set; } = CreateDefaultBoundListenSocket;

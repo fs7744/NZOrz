@@ -83,6 +83,7 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
             s.MaxReadBufferSize = section.ReadInt64(nameof(SocketTransportOptions.MaxReadBufferSize), s.MaxReadBufferSize);
             s.MaxWriteBufferSize = section.ReadInt64(nameof(SocketTransportOptions.MaxWriteBufferSize), s.MaxWriteBufferSize);
             s.UnsafePreferInlineScheduling = section.ReadBool(nameof(SocketTransportOptions.UnsafePreferInlineScheduling)).GetValueOrDefault(s.UnsafePreferInlineScheduling);
+            s.UdpPoolSize = section.ReadInt32(nameof(SocketTransportOptions.UdpPoolSize)).GetValueOrDefault(s.UdpPoolSize);
         }
         return s;
     }
