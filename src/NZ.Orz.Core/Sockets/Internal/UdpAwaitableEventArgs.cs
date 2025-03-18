@@ -6,14 +6,14 @@ using System.Threading.Tasks.Sources;
 
 namespace NZ.Orz.Sockets.Internal;
 
-internal class UdpAwaitableEventArgs : SocketAsyncEventArgs, IValueTaskSource<SocketReceiveFromResult>
+internal class UdpReceiver : SocketAsyncEventArgs, IValueTaskSource<SocketReceiveFromResult>
 {
     private static readonly Action<object?> _continuationCompleted = _ => { };
 
     private readonly PipeScheduler _ioScheduler;
     private volatile Action<object?>? _continuation;
 
-    public UdpAwaitableEventArgs(PipeScheduler ioScheduler)
+    public UdpReceiver(PipeScheduler ioScheduler)
         : base(unsafeSuppressExecutionContextFlow: true)
     {
         _ioScheduler = ioScheduler;
