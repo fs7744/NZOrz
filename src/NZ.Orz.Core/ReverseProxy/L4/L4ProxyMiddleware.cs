@@ -86,7 +86,7 @@ public class L4ProxyMiddleware : IOrderMiddleware
 
     private async Task SNIProxyAsync(ConnectionContext context)
     {
-        var c = cancellationTokenSourcePool.Rent();
+        using var c = cancellationTokenSourcePool.Rent();
         c.CancelAfter(options.ConnectionTimeout);
         var (route, r) = await router.MatchSNIAsync(context, c.Token);
         if (route is not null)
@@ -104,7 +104,7 @@ public class L4ProxyMiddleware : IOrderMiddleware
                 else
                 {
                     context.SelectedDestination?.ConcurrencyCounter.Increment();
-                    var cts = route.CreateTimeoutTokenSource(cancellationTokenSourcePool);
+                    using var cts = route.CreateTimeoutTokenSource(cancellationTokenSourcePool);
                     var t = cts.Token;
                     await r.CopyToAsync(upstream.Transport.Output, t);
                     context.Transport.Input.AdvanceTo(r.Buffer.End);
@@ -146,7 +146,7 @@ public class L4ProxyMiddleware : IOrderMiddleware
     {
         try
         {
-            var cts = route.CreateTimeoutTokenSource(cancellationTokenSourcePool);
+            using var cts = route.CreateTimeoutTokenSource(cancellationTokenSourcePool);
             var token = cts.Token;
             var socket = await DoUdpSendToAsync(null, context, route, route.RetryCount, await reqUdp(context, context.ReceivedBytes, token), token);
             if (socket != null)
@@ -233,7 +233,7 @@ public class L4ProxyMiddleware : IOrderMiddleware
             else
             {
                 context.SelectedDestination?.ConcurrencyCounter.Increment();
-                var cts = route.CreateTimeoutTokenSource(cancellationTokenSourcePool);
+                using var cts = route.CreateTimeoutTokenSource(cancellationTokenSourcePool);
                 var task = hasMiddlewareTcp ?
                         await Task.WhenAny(
                         context.Transport.Input.CopyToAsync(new MiddlewarePipeWriter(upstream.Transport.Output, context, reqTcp), cts.Token)
@@ -272,7 +272,7 @@ public class L4ProxyMiddleware : IOrderMiddleware
             {
                 return null;
             }
-            var cts = cancellationTokenSourcePool.Rent();
+            using var cts = cancellationTokenSourcePool.Rent();
             cts.CancelAfter(options.ConnectionTimeout);
             var c = await connectionFactory.ConnectAsync(selectedDestination.EndPoint, cts.Token);
             selectedDestination.ReportSuccessed();
