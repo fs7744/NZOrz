@@ -1,10 +1,10 @@
 ﻿using DotNext;
+using NZ.Orz.Buffers;
 using NZ.Orz.Config;
 using NZ.Orz.Connections;
 using NZ.Orz.Infrastructure.Tls;
 using NZ.Orz.Metrics;
 using NZ.Orz.Routing;
-using System.Buffers;
 using System.IO.Pipelines;
 using System.Security.Authentication;
 
@@ -141,7 +141,7 @@ public class L4Router : IL4Router
                 continue;
             }
 
-            var data = buffer.IsSingleSegment ? buffer.First.Span : buffer.ToArray();
+            var data = buffer.ToSpan();
             if (TlsFrameHelper.TryGetFrameInfo(data, ref info))
             {
                 return (info, f);

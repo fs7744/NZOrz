@@ -7,6 +7,7 @@ using NZ.Orz.ReverseProxy.LoadBalancing;
 using NZ.Orz.Sockets;
 using NZ.Orz.Sockets.Client;
 using System.Net.Sockets;
+using System.Security.Cryptography.X509Certificates;
 
 namespace NZ.Orz.ReverseProxy.L4;
 

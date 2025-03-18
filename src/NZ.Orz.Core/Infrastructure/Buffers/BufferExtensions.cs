@@ -1,4 +1,6 @@
+using System.Buffers;
 using System.IO.Pipelines;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace NZ.Orz.Buffers;
@@ -30,5 +32,36 @@ public static class BufferExtensions
             }
         }
         await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ReadOnlySpan<byte> ToSpan(in this ReadOnlySequence<byte> buffer)
+    {
+        if (buffer.IsSingleSegment)
+        {
+            return buffer.FirstSpan;
+        }
+        return buffer.ToArray();
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void CopyTo(in this ReadOnlySequence<byte> buffer, PipeWriter pipeWriter)
+    {
+        if (buffer.IsSingleSegment)
+        {
+            pipeWriter.Write(buffer.FirstSpan);
+        }
+        else
+        {
+            CopyToMultiSegment(buffer, pipeWriter);
+        }
+    }
+
+    private static void CopyToMultiSegment(in ReadOnlySequence<byte> buffer, PipeWriter pipeWriter)
+    {
+        foreach (var item in buffer)
+        {
+            pipeWriter.Write(item.Span);
+        }
     }
 }
