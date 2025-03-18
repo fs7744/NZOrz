@@ -5,6 +5,7 @@ using NZ.Orz.Metrics;
 using NZ.Orz.Sockets;
 using System.Collections.Frozen;
 using System.Net.Sockets;
+using static System.Collections.Specialized.BitVector32;
 
 namespace NZ.Orz.Config.Configuration;
 
@@ -308,9 +309,20 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
             UdpResponses = section.ReadInt32(nameof(RouteConfig.UdpResponses)).GetValueOrDefault(),
             Timeout = section.ReadTimeSpan(nameof(RouteConfig.Timeout)).GetValueOrDefault(serverOptions.DefaultProxyTimeout),
             Protocols = section.ReadGatewayProtocols(nameof(RouteConfig.Protocols)).GetValueOrDefault(GatewayProtocols.HTTP1 | GatewayProtocols.HTTP2),
-            SupportSslProtocols = section.ReadSslProtocols(nameof(RouteConfig.SupportSslProtocols)),
-            Match = CreateRouteMatch(section.GetSection(nameof(RouteConfig.Match)))
+            Match = CreateRouteMatch(section.GetSection(nameof(RouteConfig.Match))),
+            Ssl = CreateSslConfig(section.GetSection(nameof(RouteConfig.Ssl)))
         };
+    }
+
+    private SslConfig CreateSslConfig(IConfigurationSection section)
+    {
+        if (!section.Exists()) return null;
+        var s = new SslConfig()
+        {
+            SupportSslProtocols = section.ReadSslProtocols(nameof(SslConfig.SupportSslProtocols)),
+        };
+        s.Passthrough = section.ReadBool(nameof(SslConfig.Passthrough)).GetValueOrDefault(s.Passthrough);
+        return s;
     }
 
     private RouteMatch CreateRouteMatch(IConfigurationSection section)

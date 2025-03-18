@@ -7,6 +7,22 @@ namespace NZ.Orz.Buffers;
 
 public static class BufferExtensions
 {
+    public static int GetMinimumSegmentSize(this MemoryPool<byte> pool)
+    {
+        if (pool == null)
+        {
+            return 4096;
+        }
+
+        return Math.Min(4096, pool.MaxBufferSize);
+    }
+
+    public static int GetMinimumAllocSize(this MemoryPool<byte> pool)
+    {
+        // 1/2 of a segment
+        return pool.GetMinimumSegmentSize() / 2;
+    }
+
     public static ArraySegment<byte> GetArray(this Memory<byte> memory)
     {
         return ((ReadOnlyMemory<byte>)memory).GetArray();

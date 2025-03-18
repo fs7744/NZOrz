@@ -6,13 +6,15 @@ namespace NZ.Orz.Infrastructure;
 
 public class DuplexPipeStream : Stream
 {
+    private ReadResult? readResult;
     private readonly PipeReader _input;
     private readonly PipeWriter _output;
     private readonly bool _throwOnCancelled;
     private volatile bool _cancelCalled;
 
-    public DuplexPipeStream(PipeReader input, PipeWriter output, bool throwOnCancelled = false)
+    public DuplexPipeStream(ReadResult? readResult, PipeReader input, PipeWriter output, bool throwOnCancelled = false)
     {
+        this.readResult = readResult;
         _input = input;
         _output = output;
         _throwOnCancelled = throwOnCancelled;
@@ -106,9 +108,18 @@ public class DuplexPipeStream : Stream
     [AsyncMethodBuilder(typeof(PoolingAsyncValueTaskMethodBuilder<>))]
     private async ValueTask<int> ReadAsyncInternal(Memory<byte> destination, CancellationToken cancellationToken)
     {
+        ReadResult result;
+        if (readResult.HasValue)
+        {
+            result = readResult.Value;
+            readResult = null;
+        }
+        else
+        {
+            result = await _input.ReadAsync(cancellationToken).ConfigureAwait(false);
+        }
         while (true)
         {
-            var result = await _input.ReadAsync(cancellationToken).ConfigureAwait(false);
             var readableBuffer = result.Buffer;
             try
             {
@@ -137,6 +148,7 @@ public class DuplexPipeStream : Stream
             {
                 _input.AdvanceTo(readableBuffer.End, readableBuffer.End);
             }
+            result = await _input.ReadAsync(cancellationToken).ConfigureAwait(false);
         }
     }
 

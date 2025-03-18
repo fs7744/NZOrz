@@ -11,13 +11,13 @@ public class DuplexPipeStreamAdapter<TStream> : DuplexPipeStream, IDuplexPipe wh
     private readonly object _disposeLock = new();
 #endif
 
-    public DuplexPipeStreamAdapter(IDuplexPipe duplexPipe, Func<Stream, TStream> createStream) :
-        this(duplexPipe, new StreamPipeReaderOptions(leaveOpen: true), new StreamPipeWriterOptions(leaveOpen: true), createStream)
+    public DuplexPipeStreamAdapter(ReadResult? readResult, IDuplexPipe duplexPipe, Func<Stream, TStream> createStream) :
+        this(readResult, duplexPipe, new StreamPipeReaderOptions(leaveOpen: true), new StreamPipeWriterOptions(leaveOpen: true), createStream)
     {
     }
 
-    public DuplexPipeStreamAdapter(IDuplexPipe duplexPipe, StreamPipeReaderOptions readerOptions, StreamPipeWriterOptions writerOptions, Func<Stream, TStream> createStream) :
-        base(duplexPipe.Input, duplexPipe.Output)
+    public DuplexPipeStreamAdapter(ReadResult? readResult, IDuplexPipe duplexPipe, StreamPipeReaderOptions readerOptions, StreamPipeWriterOptions writerOptions, Func<Stream, TStream> createStream) :
+        base(readResult, duplexPipe.Input, duplexPipe.Output)
     {
         var stream = createStream(this);
         Stream = stream;

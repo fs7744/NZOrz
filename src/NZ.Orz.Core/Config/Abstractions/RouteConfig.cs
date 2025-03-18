@@ -22,7 +22,7 @@ public sealed record RouteConfig
 
     public int RetryCount { get; init; }
     public int UdpResponses { get; init; }
-    public SslProtocols? SupportSslProtocols { get; set; }
+    public SslConfig Ssl { get; init; }
     public ClusterConfig ClusterConfig { get; internal set; }
 
     public bool Equals(RouteConfig? other)
@@ -39,7 +39,7 @@ public sealed record RouteConfig
             && Timeout == other.Timeout
             && RetryCount == other.RetryCount
             && UdpResponses == other.UdpResponses
-            && SupportSslProtocols == other.SupportSslProtocols
+            && Ssl == other.Ssl
             && Match == other.Match;
     }
 
@@ -53,7 +53,7 @@ public sealed record RouteConfig
         code.Add(Timeout.GetHashCode());
         code.Add(RetryCount);
         code.Add(UdpResponses);
-        code.Add(SupportSslProtocols);
+        code.Add(Ssl?.GetHashCode());
         code.Add(Match.GetHashCode());
         return code.ToHashCode();
     }

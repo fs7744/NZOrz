@@ -97,6 +97,17 @@ public class RouteContractorValidator : IRouteContractorValidator
             {
                 ec = errors.Count;
                 await validator.ValidateAsync(route, errors, cancellationToken);
+                if (route.Ssl is not null && errors.Count == ec)
+                {
+                    try
+                    {
+                        route.Ssl.Init();
+                    }
+                    catch (Exception ex)
+                    {
+                        errors.Add(ex);
+                    }
+                }
                 if (errors.Count > ec)
                 {
                     routes.Remove(route);
