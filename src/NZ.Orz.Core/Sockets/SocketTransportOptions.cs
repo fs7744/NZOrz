@@ -12,6 +12,8 @@ public class SocketTransportOptions
 
     public int UdpMaxSize { get; set; } = 4096;
 
+    public int UdpPoolSize { get; set; } = 1024;
+
     public bool NoDelay { get; set; } = true;
 
     public int Backlog { get; set; } = 512;
@@ -27,8 +29,6 @@ public class SocketTransportOptions
     public long? MaxWriteBufferSize { get; set; } = 64 * 1024;
 
     public bool UnsafePreferInlineScheduling { get; set; }
-
-    public int UdpPoolSize { get; set; } = 1024;
 
     internal Func<MemoryPool<byte>> MemoryPoolFactory { get; set; } = PinnedBlockMemoryPoolFactory.Create;
 
