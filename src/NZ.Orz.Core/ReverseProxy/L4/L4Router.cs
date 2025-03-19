@@ -111,8 +111,7 @@ public class L4Router : IL4Router
     private bool MatchSNI(RouteConfig config, TlsFrameInfo info)
     {
         if (config.Ssl is null) return false;
-        if (!config.Ssl.SupportSslProtocols.HasValue) return true;
-        var v = config.Ssl.SupportSslProtocols.Value;
+        var v = config.Ssl.SupportSslProtocols;
         if (v == SslProtocols.None) return true;
         var t = info.SupportedVersions;
         if (v.HasFlag(SslProtocols.Tls13) && t.HasFlag(SslProtocols.Tls13)) return true;

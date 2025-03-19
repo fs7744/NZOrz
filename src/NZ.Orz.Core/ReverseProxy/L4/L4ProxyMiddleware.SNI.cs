@@ -41,7 +41,10 @@ public partial class L4ProxyMiddleware
         var sslDuplexPipe = CreateSslDuplexPipe(r, context.Transport, context is TransportConnection s ? s.MemoryPool : MemoryPool<byte>.Shared, sslConfig.SslStreamFactory);
         var sslStream = sslDuplexPipe.Stream;
         context.Transport = sslDuplexPipe;
-        // todo sslStream.AuthenticateAsServerAsync()
+        using var cts = cancellationTokenSourcePool.Rent();
+        cts.CancelAfter(sslConfig.HandshakeTimeout);
+        await sslStream.AuthenticateAsServerAsync(sslConfig.Options, cts.Token);
+        await TcpProxyAsync(context, route);
     }
 
     private SslDuplexPipe CreateSslDuplexPipe(ReadResult readResult, IDuplexPipe transport, MemoryPool<byte> memoryPool, Func<Stream, SslStream> sslStreamFactory)

@@ -317,10 +317,8 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
     private SslConfig CreateSslConfig(IConfigurationSection section)
     {
         if (!section.Exists()) return null;
-        var s = new SslConfig()
-        {
-            SupportSslProtocols = section.ReadSslProtocols(nameof(SslConfig.SupportSslProtocols)),
-        };
+        var s = new SslConfig();
+        s.SupportSslProtocols = section.ReadSslProtocols(nameof(SslConfig.SupportSslProtocols)).GetValueOrDefault(s.SupportSslProtocols);
         s.Passthrough = section.ReadBool(nameof(SslConfig.Passthrough)).GetValueOrDefault(s.Passthrough);
         return s;
     }
