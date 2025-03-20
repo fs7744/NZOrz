@@ -77,8 +77,10 @@ public class RouteTableBuilder<T>
         return new PriorityRouteDataList<T>();
     }
 
-    public RouteTable<T> Build()
+    public IRouteTable<T> Build(RouteTableType type)
     {
-        return new RouteTable<T>(exact.ToFrozenDictionary(MatchComparison(comparison)), trie, cacheSize, comparison);
+        return type == RouteTableType.OnlyFirst
+            ? new OnlyFirstRouteTable<T>(exact.ToFrozenDictionary(MatchComparison(comparison)), trie, cacheSize, comparison)
+            : new RouteTable<T>(exact.ToFrozenDictionary(MatchComparison(comparison)), trie, cacheSize, comparison);
     }
 }

@@ -12,9 +12,10 @@ namespace NZ.Orz.ReverseProxy.L4;
 
 public class L4Router : IL4Router
 {
-    private RouteTable<RouteConfig> routeTable;
-    private RouteTable<RouteConfig> sniRoute;
+    private IRouteTable<RouteConfig> routeTable;
+    private IRouteTable<RouteConfig> sniRoute;
     private readonly OrzLogger logger;
+    private bool onlyFirst;
 
     public L4Router(OrzLogger logger)
     {
@@ -43,7 +44,7 @@ public class L4Router : IL4Router
             await oldSniRoute.DisposeAsync();
     }
 
-    private (RouteTable<RouteConfig> l4, RouteTable<RouteConfig> sni) BuildL4RouteTable(IProxyConfig config, ServerOptions serverOptions)
+    private (IRouteTable<RouteConfig> l4, IRouteTable<RouteConfig> sni) BuildL4RouteTable(IProxyConfig config, ServerOptions serverOptions)
     {
         var builder = new RouteTableBuilder<RouteConfig>(serverOptions.RouteComparison, serverOptions.RouteCahceSize);
         var sniRouteBuilder = new RouteTableBuilder<RouteConfig>(serverOptions.RouteComparison, serverOptions.RouteCahceSize);
@@ -72,7 +73,8 @@ public class L4Router : IL4Router
                 Set(b, route, host);
             }
         }
-        return (hasL4 ? builder.Build() : null, hasSni ? sniRouteBuilder.Build() : null);
+        onlyFirst = serverOptions.L4RouteType == RouteTableType.OnlyFirst;
+        return (hasL4 ? builder.Build(serverOptions.L4RouteType) : null, hasSni ? sniRouteBuilder.Build(serverOptions.L4RouteType) : null);
 
         static void Set(RouteTableBuilder<RouteConfig> builder, RouteConfig? route, string host)
         {
@@ -94,12 +96,24 @@ public class L4Router : IL4Router
         if (hello.HasValue)
         {
             var h = hello.Value;
-            var r = await sniRoute.MatchAsync(h.TargetName.Reverse(), h, MatchSNI);
-            if (r is null)
+            if (onlyFirst)
             {
-                logger.NotFoundRouteSni(h.TargetName);
+                var r = await sniRoute.MatchAsync(h.TargetName.Reverse(), context.Protocols, Match);
+                if (r is null || !MatchSNI(r, h))
+                {
+                    logger.NotFoundRouteSni(h.TargetName);
+                }
+                return (r, rr);
             }
-            return (r, rr);
+            else
+            {
+                var r = await sniRoute.MatchAsync(h.TargetName.Reverse(), h, MatchSNI);
+                if (r is null)
+                {
+                    logger.NotFoundRouteSni(h.TargetName);
+                }
+                return (r, rr);
+            }
         }
         else
         {

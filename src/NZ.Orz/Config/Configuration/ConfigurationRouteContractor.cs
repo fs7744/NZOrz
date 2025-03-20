@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Primitives;
 using NZ.Orz.Metrics;
+using NZ.Orz.Routing;
 using NZ.Orz.Sockets;
 using System.Collections.Frozen;
 using System.Net.Sockets;
@@ -100,6 +101,7 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
             s.ShutdownTimeout = section.ReadTimeSpan(nameof(ServerOptions.ShutdownTimeout)).GetValueOrDefault(s.ShutdownTimeout);
             s.RouteCahceSize = section.ReadInt32(nameof(ServerOptions.RouteCahceSize)).GetValueOrDefault(s.RouteCahceSize);
             s.RouteComparison = section.ReadEnum<StringComparison>(nameof(ServerOptions.RouteComparison)).GetValueOrDefault(s.RouteComparison);
+            s.L4RouteType = section.ReadEnum<RouteTableType>(nameof(ServerOptions.L4RouteType)).GetValueOrDefault(s.L4RouteType);
             CreateLimits(s.Limits, section.GetSection(nameof(ServerOptions.Limits)));
         }
         return s;

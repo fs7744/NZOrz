@@ -2,6 +2,19 @@
 
 public static class CollectionUtilities
 {
+    public static IEqualityComparer<string>? MatchComparison(StringComparison comparison)
+    {
+        return comparison switch
+        {
+            StringComparison.CurrentCulture => StringComparer.CurrentCulture,
+            StringComparison.CurrentCultureIgnoreCase => StringComparer.CurrentCultureIgnoreCase,
+            StringComparison.InvariantCulture => StringComparer.InvariantCulture,
+            StringComparison.InvariantCultureIgnoreCase => StringComparer.InvariantCultureIgnoreCase,
+            StringComparison.Ordinal => StringComparer.Ordinal,
+            StringComparison.OrdinalIgnoreCase => StringComparer.OrdinalIgnoreCase,
+        };
+    }
+
     public static bool EqualsString(IReadOnlyList<string>? list1, IReadOnlyList<string>? list2, StringComparer comparer = null)
     {
         return Equals(list1, list2, comparer ?? StringComparer.OrdinalIgnoreCase);

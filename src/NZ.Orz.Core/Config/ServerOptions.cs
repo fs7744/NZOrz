@@ -1,4 +1,5 @@
-﻿using System.Net.Sockets;
+﻿using NZ.Orz.Routing;
+using System.Net.Sockets;
 
 namespace NZ.Orz.Config;
 
@@ -15,4 +16,5 @@ public class ServerOptions
     public int RouteCahceSize { get; set; } = 10240;
 
     public StringComparison RouteComparison { get; set; } = StringComparison.OrdinalIgnoreCase;
+    public RouteTableType L4RouteType { get; set; } = RouteTableType.OnlyFirst;
 }
