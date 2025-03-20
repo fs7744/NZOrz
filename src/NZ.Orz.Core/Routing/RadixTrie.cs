@@ -21,6 +21,7 @@ public class RadixTrieNode<T> : IDisposable
 public class RadixTrie<T> : IDisposable
 {
     private RadixTrieNode<T> trie;
+    public T[] all;
 
     public RadixTrie()
     {
@@ -34,7 +35,21 @@ public class RadixTrie<T> : IDisposable
 
     public void Add(string key, Func<T> value, Func<T?, T?, T?> merge)
     {
-        Add(trie, key, value, merge);
+        if (string.IsNullOrEmpty(key))
+        {
+            if (all == null)
+            {
+                all = [value()];
+            }
+            else
+            {
+                all[0] = merge(all[0], value());
+            }
+        }
+        else
+        {
+            Add(trie, key, value, merge);
+        }
     }
 
     public static void Add(RadixTrieNode<T> curr, string term, Func<T> value, Func<T?, T?, T?> merge)
@@ -101,6 +116,10 @@ public class RadixTrie<T> : IDisposable
 
     public IEnumerable<T> Search(string key, StringComparison comparison = StringComparison.Ordinal)
     {
+        if (all != null)
+        {
+            return Search(trie, new StringSegment(0, key), comparison).Union(all);
+        }
         return Search(trie, new StringSegment(0, key), comparison);
     }
 

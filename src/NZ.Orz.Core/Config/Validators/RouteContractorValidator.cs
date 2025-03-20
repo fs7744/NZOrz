@@ -95,21 +95,25 @@ public class RouteContractorValidator : IRouteContractorValidator
         var routes = config.Routes.ToList();
         foreach (var route in config.Routes.ToList())
         {
+            if (route.Ssl is not null)
+            {
+                try
+                {
+                    route.Ssl.Init(certificateLoader, route);
+                }
+                catch (Exception ex)
+                {
+                    errors.Add(ex);
+                    routes.Remove(route);
+                    logger.RemoveErrorRoute(route.RouteId);
+                    continue;
+                }
+            }
             foreach (var validator in routeConfigValidators)
             {
                 ec = errors.Count;
                 await validator.ValidateAsync(route, errors, cancellationToken);
-                if (route.Ssl is not null && errors.Count == ec)
-                {
-                    try
-                    {
-                        route.Ssl.Init(certificateLoader, route);
-                    }
-                    catch (Exception ex)
-                    {
-                        errors.Add(ex);
-                    }
-                }
+
                 if (errors.Count > ec)
                 {
                     routes.Remove(route);

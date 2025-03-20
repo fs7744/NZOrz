@@ -8,15 +8,15 @@ public class RouteTable<T> : IAsyncDisposable, IDisposable
 {
     private RadixTrie<PriorityRouteDataList<T>> trie;
     private readonly StringComparison comparison;
-    private RandomAccessCache<string, PriorityRouteDataList<T>[]> cache;
-    private FrozenDictionary<string, PriorityRouteDataList<T>> exact;
+    private RandomAccessCache<string, T[]> cache;
+    private FrozenDictionary<string, T[]> exact;
 
     public RouteTable(IDictionary<string, PriorityRouteDataList<T>> exact, RadixTrie<PriorityRouteDataList<T>> trie, int cacheSize, StringComparison comparison)
     {
-        cache = new RandomAccessCache<string, PriorityRouteDataList<T>[]>(cacheSize);
+        cache = new RandomAccessCache<string, T[]>(cacheSize);
         this.trie = trie;
         this.comparison = comparison;
-        this.exact = exact.ToFrozenDictionary(MatchComparison(comparison));
+        this.exact = exact.ToFrozenDictionary(i => i.Key, i => i.Value.SelectMany(j => j.Value).ToArray(), MatchComparison(comparison));
     }
 
     private IEqualityComparer<string>? MatchComparison(StringComparison comparison)
@@ -36,18 +36,11 @@ public class RouteTable<T> : IAsyncDisposable, IDisposable
     {
         var all = await FindAllAsync(key);
         if (all.Length == 0) return default;
-        foreach (var items in all.AsSpan())
+        foreach (var v in all)
         {
-            foreach (var item in items)
+            if (match(v, data))
             {
-                var vs = item.Value;
-                foreach (var v in vs)
-                {
-                    if (match(v, data))
-                    {
-                        return v;
-                    }
-                }
+                return v;
             }
         }
         return default;
@@ -57,14 +50,10 @@ public class RouteTable<T> : IAsyncDisposable, IDisposable
     {
         var all = await FindAllAsync(key);
         if (all is null) return default;
-        var f = all.FirstOrDefault();
-        if (f is null) return default;
-        var f2 = f.FirstOrDefault().Value;
-        if (f2 is null) return default;
-        return f2.FirstOrDefault();
+        return all.FirstOrDefault();
     }
 
-    public async ValueTask<PriorityRouteDataList<T>[]> FindAllAsync(string key)
+    public async ValueTask<T[]> FindAllAsync(string key)
     {
         if (cache.TryRead(key, out var session))
         {
@@ -77,13 +66,13 @@ public class RouteTable<T> : IAsyncDisposable, IDisposable
             {
                 if (exact.TryGetValue(key, out var result))
                 {
-                    value = [result];
+                    value = result;
                 }
                 else
                 {
-                    value = trie.Search(key, comparison).ToArray();
+                    value = trie.Search(key, comparison).SelectMany(i => i.Values.SelectMany(j => j)).ToArray();
                     if (value.Length == 0)
-                        value = Array.Empty<PriorityRouteDataList<T>>();
+                        value = Array.Empty<T>();
                 }
                 writeSession.SetValue(value);
             }
