@@ -1,8 +1,20 @@
-﻿namespace NZ.Orz.Routing;
+﻿using System.Collections;
+
+namespace NZ.Orz.Routing;
 
 public class PriorityRouteDataList<T> : SortedDictionary<int, List<T>>
 {
-    public PriorityRouteDataList() : base(Comparer<int>.Default)
+    public static readonly OrderComparer OrderComparer = new OrderComparer();
+
+    public PriorityRouteDataList() : base(OrderComparer)
     {
+    }
+}
+
+public class OrderComparer : IComparer<int>
+{
+    public int Compare(int x, int y)
+    {
+        return y.CompareTo(x);
     }
 }

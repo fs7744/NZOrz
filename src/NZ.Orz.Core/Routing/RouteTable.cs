@@ -36,7 +36,7 @@ public class RouteTable<T> : IAsyncDisposable, IDisposable
     {
         var all = await FindAllAsync(key);
         if (all.Length == 0) return default;
-        foreach (var v in all)
+        foreach (var v in all.AsSpan())
         {
             if (match(v, data))
             {
