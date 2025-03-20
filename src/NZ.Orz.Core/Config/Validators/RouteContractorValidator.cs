@@ -103,7 +103,7 @@ public class RouteContractorValidator : IRouteContractorValidator
                 {
                     try
                     {
-                        route.Ssl.Init(certificateLoader);
+                        route.Ssl.Init(certificateLoader, route);
                     }
                     catch (Exception ex)
                     {

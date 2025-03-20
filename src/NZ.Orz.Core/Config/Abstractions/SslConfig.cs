@@ -35,20 +35,23 @@ public class SslConfig
 
     public SslServerAuthenticationOptions Options { get; internal set; }
 
-    internal void Init(ICertificateLoader loader)
+    internal void Init(ICertificateLoader loader, RouteConfig routeConfig)
     {
-        SslStreamFactory = s => new SslStream(s);
-
-        var (serverCertificate, fullChain) = loader.LoadCertificate(this);
-        Options = new SslServerAuthenticationOptions
+        if (routeConfig.Protocols.HasFlag(GatewayProtocols.SNI))
         {
-            ServerCertificate = serverCertificate,
-            ServerCertificateContext = SslStreamCertificateContext.Create(serverCertificate, additionalCertificates: fullChain),
-            ClientCertificateRequired = ClientCertificateRequired,
-            EnabledSslProtocols = SupportSslProtocols,
-            CertificateRevocationCheckMode = CheckCertificateRevocation ? X509RevocationMode.Online : X509RevocationMode.NoCheck,
-            EncryptionPolicy = EncryptionPolicy.RequireEncryption,
-        };
+            SslStreamFactory = s => new SslStream(s);
+
+            var (serverCertificate, fullChain) = loader.LoadCertificate(this);
+            Options = new SslServerAuthenticationOptions
+            {
+                ServerCertificate = serverCertificate,
+                ServerCertificateContext = SslStreamCertificateContext.Create(serverCertificate, additionalCertificates: fullChain),
+                ClientCertificateRequired = ClientCertificateRequired,
+                EnabledSslProtocols = SupportSslProtocols,
+                CertificateRevocationCheckMode = CheckCertificateRevocation ? X509RevocationMode.Online : X509RevocationMode.NoCheck,
+                EncryptionPolicy = EncryptionPolicy.RequireEncryption,
+            };
+        }
         //RemoteCertificateValidationCallback? remoteCertificateValidationCallback = ClientCertificateMode == ClientCertificateMode.NoCertificate ?
         //   (RemoteCertificateValidationCallback?)null : RemoteCertificateValidationCallback;
         //SslStreamFactory = s => new SslStream(s, leaveInnerStreamOpen: false, userCertificateValidationCallback: remoteCertificateValidationCallback);

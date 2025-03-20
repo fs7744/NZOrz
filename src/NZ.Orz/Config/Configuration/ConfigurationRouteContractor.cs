@@ -317,9 +317,21 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
     private SslConfig CreateSslConfig(IConfigurationSection section)
     {
         if (!section.Exists()) return null;
-        var s = new SslConfig();
+        var s = new SslConfig()
+        {
+            Path = section[nameof(SslConfig.Path)],
+            KeyPath = section[nameof(SslConfig.KeyPath)],
+            Password = section[nameof(SslConfig.Password)],
+            Subject = section[nameof(SslConfig.Subject)],
+            Store = section[nameof(SslConfig.Store)],
+            Location = section[nameof(SslConfig.Location)],
+            AllowInvalid = section.ReadBool(nameof(SslConfig.AllowInvalid)),
+        };
         s.SupportSslProtocols = section.ReadSslProtocols(nameof(SslConfig.SupportSslProtocols)).GetValueOrDefault(s.SupportSslProtocols);
         s.Passthrough = section.ReadBool(nameof(SslConfig.Passthrough)).GetValueOrDefault(s.Passthrough);
+        s.HandshakeTimeout = section.ReadTimeSpan(nameof(SslConfig.HandshakeTimeout)).GetValueOrDefault(s.HandshakeTimeout);
+        s.ClientCertificateRequired = section.ReadBool(nameof(SslConfig.ClientCertificateRequired)).GetValueOrDefault(s.ClientCertificateRequired);
+        s.CheckCertificateRevocation = section.ReadBool(nameof(SslConfig.CheckCertificateRevocation)).GetValueOrDefault(s.CheckCertificateRevocation);
         return s;
     }
 
