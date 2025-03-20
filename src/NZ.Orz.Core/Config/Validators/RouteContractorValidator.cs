@@ -17,11 +17,12 @@ public class RouteContractorValidator : IRouteContractorValidator
     private readonly IEnumerable<IEndPointConvertor> endPointConvertors;
     private readonly ConnectionDelegate middleware;
     private readonly MultiplexedConnectionDelegate multiplexedConnectionMiddleware;
+    private readonly ICertificateLoader certificateLoader;
     private readonly OrzLogger logger;
 
     public int Order => 0;
 
-    public RouteContractorValidator(IEnumerable<IServerOptionsValidator> serverOptionsValidators,
+    public RouteContractorValidator(ICertificateLoader certificateLoader, IEnumerable<IServerOptionsValidator> serverOptionsValidators,
         IEnumerable<ISocketTransportOptionsValidator> socketTransportOptionsValidators,
         IEnumerable<IClusterConfigValidator> clusterConfigValidators,
         IEnumerable<IRouteConfigValidator> routeConfigValidators,
@@ -38,6 +39,7 @@ public class RouteContractorValidator : IRouteContractorValidator
         this.endPointConvertors = endPointConvertors.OrderByDescending(i => i.Order).ToArray();
         this.middleware = BuildMiddleware(middlewares);
         multiplexedConnectionMiddleware = BuildMiddleware(multiplexedConnectionMiddlewares);
+        this.certificateLoader = certificateLoader;
         this.logger = logger;
     }
 
@@ -101,7 +103,7 @@ public class RouteContractorValidator : IRouteContractorValidator
                 {
                     try
                     {
-                        route.Ssl.Init();
+                        route.Ssl.Init(certificateLoader);
                     }
                     catch (Exception ex)
                     {

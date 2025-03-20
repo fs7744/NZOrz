@@ -35,13 +35,15 @@ public class SslConfig
 
     public SslServerAuthenticationOptions Options { get; internal set; }
 
-    internal void Init()
+    internal void Init(ICertificateLoader loader)
     {
         SslStreamFactory = s => new SslStream(s);
 
+        var (serverCertificate, fullChain) = loader.LoadCertificate(this);
         Options = new SslServerAuthenticationOptions
         {
-            ServerCertificate = LoadServerCertificate(),
+            ServerCertificate = serverCertificate,
+            ServerCertificateContext = SslStreamCertificateContext.Create(serverCertificate, additionalCertificates: fullChain),
             ClientCertificateRequired = ClientCertificateRequired,
             EnabledSslProtocols = SupportSslProtocols,
             CertificateRevocationCheckMode = CheckCertificateRevocation ? X509RevocationMode.Online : X509RevocationMode.NoCheck,
@@ -50,11 +52,6 @@ public class SslConfig
         //RemoteCertificateValidationCallback? remoteCertificateValidationCallback = ClientCertificateMode == ClientCertificateMode.NoCertificate ?
         //   (RemoteCertificateValidationCallback?)null : RemoteCertificateValidationCallback;
         //SslStreamFactory = s => new SslStream(s, leaveInnerStreamOpen: false, userCertificateValidationCallback: remoteCertificateValidationCallback);
-    }
-
-    private X509Certificate2 LoadServerCertificate()
-    {
-        throw new NotImplementedException();
     }
 
     //private bool RemoteCertificateValidationCallback(object sender, X509Certificate? certificate, X509Chain? chain, SslPolicyErrors sslPolicyErrors)

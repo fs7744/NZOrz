@@ -26,6 +26,7 @@ public static partial class NZApp
     internal static HostApplicationBuilder UseOrzDefaults(this HostApplicationBuilder builder)
     {
         var services = builder.Services;
+        services.AddSingleton<ICertificateLoader, CertificateLoader>();
         services.AddSingleton<IHostedService, HostedService>();
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<IMeterFactory, DummyMeterFactory>();
