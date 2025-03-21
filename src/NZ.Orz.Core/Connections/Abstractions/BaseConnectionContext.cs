@@ -35,4 +35,17 @@ public abstract class BaseConnectionContext : IAsyncDisposable
     {
         return default;
     }
+
+    public T? GetFeature<T>()
+    {
+        if (this is T t) return t;
+        else if (Parameters is not null)
+        {
+            return Parameters.GetFeature<T>();
+        }
+        else
+        {
+            return default(T?);
+        }
+    }
 }

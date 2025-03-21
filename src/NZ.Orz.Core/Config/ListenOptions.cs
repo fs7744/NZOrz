@@ -1,4 +1,5 @@
 ﻿using NZ.Orz.Connections;
+using NZ.Orz.Http;
 using System.Net;
 
 namespace NZ.Orz.Config;
@@ -13,6 +14,7 @@ public class ListenOptions
 
     public ConnectionDelegate ConnectionDelegate { get; set; }
     public MultiplexedConnectionDelegate MultiplexedConnectionDelegate { get; set; }
+    public HttpConnectionDelegate HttpConnectionDelegate { get; set; }
 
     public bool Equals(ListenOptions? obj)
     {

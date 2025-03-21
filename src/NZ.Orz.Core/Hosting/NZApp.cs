@@ -5,7 +5,9 @@ using NZ.Orz.Config.Validators;
 using NZ.Orz.Connections;
 using NZ.Orz.Health;
 using NZ.Orz.Hosting;
+using NZ.Orz.Http;
 using NZ.Orz.Metrics;
+using NZ.Orz.ReverseProxy.Http;
 using NZ.Orz.ReverseProxy.L4;
 using NZ.Orz.ReverseProxy.LoadBalancing;
 using NZ.Orz.Servers;
@@ -40,6 +42,8 @@ public static partial class NZApp
         services.AddSingleton<IRouteContractorValidator, RouteContractorValidator>();
         services.AddSingleton<IEndPointConvertor, CommonEndPointConvertor>();
         services.AddSingleton<IL4Router, L4Router>();
+        services.AddSingleton<IHttpRouter, HttpRouter>();
+        services.AddSingleton<IHttpDispatcher, HttpDispatcher>();
         services.AddSingleton<IOrderMiddleware, L4ProxyMiddleware>();
         services.AddSingleton<ILoadBalancingPolicyFactory, LoadBalancingPolicy>();
         services.AddSingleton<IClusterConfigValidator, ClusterConfigValidator>();

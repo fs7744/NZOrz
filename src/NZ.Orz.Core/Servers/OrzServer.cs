@@ -3,10 +3,14 @@ using NZ.Orz.Config;
 using NZ.Orz.Connections;
 using NZ.Orz.Features;
 using NZ.Orz.Health;
+using NZ.Orz.Http;
 using NZ.Orz.Infrastructure;
 using NZ.Orz.Metrics;
+using NZ.Orz.ReverseProxy.Http;
 using NZ.Orz.ReverseProxy.L4;
 using System.IO.Pipelines;
+using System.Net;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace NZ.Orz.Servers;
 
@@ -24,6 +28,8 @@ public class OrzServer : IServer
     private readonly OrzLogger trace;
     private readonly IL4Router l4;
     private readonly IActiveHealthCheckMonitor monitor;
+    private readonly IHttpRouter httpRouter;
+    private readonly IHttpDispatcher httpDispatcher;
     private readonly TransportManager _transportManager;
     public IFeatureCollection Features { get; }
     private ServiceContext ServiceContext { get; }
@@ -34,7 +40,9 @@ public class OrzServer : IServer
         OrzMetrics metrics,
         OrzLogger trace,
         IL4Router l4,
-        IActiveHealthCheckMonitor monitor)
+        IActiveHealthCheckMonitor monitor,
+        IHttpRouter httpRouter,
+        IHttpDispatcher httpDispatcher)
     {
         this.contractor = contractor;
         this.serverOptions = contractor.GetServerOptions();
@@ -42,6 +50,8 @@ public class OrzServer : IServer
         this.trace = trace;
         this.l4 = l4;
         this.monitor = monitor;
+        this.httpRouter = httpRouter;
+        this.httpDispatcher = httpDispatcher;
         Features = new FeatureCollection();
         var connectionManager = new ConnectionManager(
             trace,
@@ -97,19 +107,22 @@ public class OrzServer : IServer
 
     private async Task OnBind(ListenOptions options, CancellationToken cancellationToken)
     {
-        // todo support tcp / udp / http 1 2 3
-
         var protocols = options.Protocols;
         if (protocols == GatewayProtocols.TCP || protocols == GatewayProtocols.UDP || protocols == GatewayProtocols.SNI)
         {
             var next = options.ConnectionDelegate;
             await _transportManager.BindAsync(options.EndPoint, options.Protocols, c => { c.Protocols = protocols; return next(c); }, options, cancellationToken);
         }
-
-        //if (options.Protocols.HasFlag(GatewayProtocols.UDP))
-        //{
-        //    await _transportManager.BindAsync(endPoint, options.Protocols, options.MultiplexedConnectionDelegate, options, cancellationToken);
-        //}
+        else if (protocols.HasFlag(GatewayProtocols.HTTP1) || protocols.HasFlag(GatewayProtocols.HTTP2))
+        {
+            var next = options.HttpConnectionDelegate;
+            await _transportManager.BindAsync(options.EndPoint, options.Protocols, (ConnectionContext c) => { c.Protocols = protocols; return httpDispatcher.StartHttpAsync(c, next); }, options, cancellationToken);
+        }
+        else if (options.Protocols.HasFlag(GatewayProtocols.HTTP3))
+        {
+            var next = options.HttpConnectionDelegate;
+            await _transportManager.BindAsync(options.EndPoint, options.Protocols, (MultiplexedConnectionContext c) => { c.Protocols = protocols; return httpDispatcher.StartHttpAsync(c, next); }, options, cancellationToken);
+        }
     }
 
     private async Task BindAsync(CancellationToken cancellationToken)
@@ -218,7 +231,9 @@ public class OrzServer : IServer
     {
         if (changed)
         {
-            await l4.ReBulidAsync(proxyConfig, contractor.GetServerOptions());
+            var options = contractor.GetServerOptions();
+            await l4.ReBulidAsync(proxyConfig, options);
+            await httpRouter.ReBulidAsync(proxyConfig, options);
         }
     }
 

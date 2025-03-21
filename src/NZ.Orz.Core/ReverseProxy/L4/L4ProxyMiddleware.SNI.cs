@@ -1,6 +1,7 @@
 ﻿using NZ.Orz.Buffers;
 using NZ.Orz.Config;
 using NZ.Orz.Connections;
+using NZ.Orz.Connections.Features;
 using NZ.Orz.Infrastructure;
 using System.Buffers;
 using System.IO.Pipelines;
@@ -38,7 +39,7 @@ public partial class L4ProxyMiddleware
     private async Task DoSslAsync(ConnectionContext context, RouteConfig route, ReadResult r)
     {
         var sslConfig = route.Ssl;
-        var sslDuplexPipe = CreateSslDuplexPipe(r, context.Transport, context is TransportConnection s ? s.MemoryPool : MemoryPool<byte>.Shared, sslConfig.SslStreamFactory);
+        var sslDuplexPipe = CreateSslDuplexPipe(r, context.Transport, context is IMemoryPoolFeature s ? s.MemoryPool : MemoryPool<byte>.Shared, sslConfig.SslStreamFactory);
         var sslStream = sslDuplexPipe.Stream;
         context.Transport = sslDuplexPipe;
         using var cts = cancellationTokenSourcePool.Rent();
