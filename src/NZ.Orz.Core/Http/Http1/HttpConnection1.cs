@@ -1,5 +1,6 @@
 ﻿using NZ.Orz.Config;
 using NZ.Orz.Connections;
+using NZ.Orz.Connections.Exceptions;
 using NZ.Orz.Servers;
 using System;
 using System.Collections.Generic;
@@ -54,6 +55,36 @@ public class HttpConnection1 : HttpProtocol
     }
 
     internal override void DisableKeepAlive(ConnectionEndReason reason)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override void Abort(ConnectionAbortedException ex, ConnectionEndReason reason)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override void HandleReadDataRateTimeout()
+    {
+        throw new NotImplementedException();
+    }
+
+    public override void HandleRequestHeadersTimeout()
+    {
+        throw new NotImplementedException();
+    }
+
+    public override void OnInputOrOutputCompleted()
+    {
+        throw new NotImplementedException();
+    }
+
+    public override void StopProcessingNextRequest(ConnectionEndReason reason)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override void Tick(long timestamp)
     {
         throw new NotImplementedException();
     }

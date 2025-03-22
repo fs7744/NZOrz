@@ -5,7 +5,6 @@ using NZ.Orz.Config.Validators;
 using NZ.Orz.Connections;
 using NZ.Orz.Health;
 using NZ.Orz.Hosting;
-using NZ.Orz.Http;
 using NZ.Orz.Metrics;
 using NZ.Orz.ReverseProxy.Http;
 using NZ.Orz.ReverseProxy.L4;

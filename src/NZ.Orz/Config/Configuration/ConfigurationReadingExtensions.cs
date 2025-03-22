@@ -2,7 +2,6 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Security.Authentication;
-using static System.Collections.Specialized.BitVector32;
 
 namespace NZ.Orz.Config.Configuration;
 

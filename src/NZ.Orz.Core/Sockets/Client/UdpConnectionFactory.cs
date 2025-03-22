@@ -5,7 +5,6 @@ using System.Buffers;
 using System.IO.Pipelines;
 using System.Net;
 using System.Net.Sockets;
-using System.Reflection;
 
 namespace NZ.Orz.Sockets.Client;
 

@@ -1,5 +1,4 @@
 ﻿using NZ.Orz.Infrastructure;
-using System.Security.Authentication;
 
 namespace NZ.Orz.Config;
 

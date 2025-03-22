@@ -6,7 +6,6 @@ using NZ.Orz.Routing;
 using NZ.Orz.Sockets;
 using System.Collections.Frozen;
 using System.Net.Sockets;
-using System.Xml.Linq;
 
 namespace NZ.Orz.Config.Configuration;
 

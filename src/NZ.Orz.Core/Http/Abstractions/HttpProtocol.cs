@@ -1,11 +1,7 @@
 ﻿using NZ.Orz.Config;
 using NZ.Orz.Connections;
-using System;
-using System.Collections.Generic;
+using NZ.Orz.Connections.Exceptions;
 using System.IO.Pipelines;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace NZ.Orz.Http;
 
@@ -81,4 +77,16 @@ public abstract class HttpProtocol : HttpConnectionContext, IRequestProcessor
     protected abstract MessageBody CreateMessageBody();
 
     internal abstract void DisableKeepAlive(ConnectionEndReason reason);
+
+    public abstract void StopProcessingNextRequest(ConnectionEndReason reason);
+
+    public abstract void HandleRequestHeadersTimeout();
+
+    public abstract void HandleReadDataRateTimeout();
+
+    public abstract void OnInputOrOutputCompleted();
+
+    public abstract void Tick(long timestamp);
+
+    public abstract void Abort(ConnectionAbortedException ex, ConnectionEndReason reason);
 }

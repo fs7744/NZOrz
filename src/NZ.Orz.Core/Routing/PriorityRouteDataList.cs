@@ -1,6 +1,4 @@
-﻿using System.Collections;
-
-namespace NZ.Orz.Routing;
+﻿namespace NZ.Orz.Routing;
 
 public class PriorityRouteDataList<T> : SortedDictionary<int, List<T>>
 {
