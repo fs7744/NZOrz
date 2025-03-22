@@ -47,6 +47,9 @@ public class HttpConnection : ITimeoutHandler
             case GatewayProtocols.HTTP2:
                 break;
 
+            case GatewayProtocols.HTTP3:
+                break;
+
             default:
                 throw new NotSupportedException($"{nameof(SelectProtocol)} returned something other than Http1, Http2.");
         }
