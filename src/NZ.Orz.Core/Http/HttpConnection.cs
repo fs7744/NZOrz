@@ -51,7 +51,7 @@ public class HttpConnection : ITimeoutHandler
                 break;
 
             default:
-                throw new NotSupportedException($"{nameof(SelectProtocol)} returned something other than Http1, Http2.");
+                throw new NotSupportedException($"{nameof(SelectProtocol)} returned something other than Http1, Http2, Http3.");
         }
 
         if (requestProcessor is not null)
