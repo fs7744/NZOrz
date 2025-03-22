@@ -4,8 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NZ.Orz.Http.Http1;
+namespace NZ.Orz.Http;
 
-internal abstract class HttpProtocol
+public interface ITimeoutHandler
 {
+    void OnTimeout(TimeoutReason reason);
 }

@@ -43,7 +43,6 @@ public static partial class NZApp
         services.AddSingleton<IEndPointConvertor, CommonEndPointConvertor>();
         services.AddSingleton<IL4Router, L4Router>();
         services.AddSingleton<IHttpRouter, HttpRouter>();
-        services.AddSingleton<IHttpDispatcher, HttpDispatcher>();
         services.AddSingleton<IOrderMiddleware, L4ProxyMiddleware>();
         services.AddSingleton<ILoadBalancingPolicyFactory, LoadBalancingPolicy>();
         services.AddSingleton<IClusterConfigValidator, ClusterConfigValidator>();

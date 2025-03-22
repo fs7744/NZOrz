@@ -29,7 +29,6 @@ public class OrzServer : IServer
     private readonly IL4Router l4;
     private readonly IActiveHealthCheckMonitor monitor;
     private readonly IHttpRouter httpRouter;
-    private readonly IHttpDispatcher httpDispatcher;
     private readonly TransportManager _transportManager;
     public IFeatureCollection Features { get; }
     private ServiceContext ServiceContext { get; }
@@ -41,8 +40,7 @@ public class OrzServer : IServer
         OrzLogger trace,
         IL4Router l4,
         IActiveHealthCheckMonitor monitor,
-        IHttpRouter httpRouter,
-        IHttpDispatcher httpDispatcher)
+        IHttpRouter httpRouter)
     {
         this.contractor = contractor;
         this.serverOptions = contractor.GetServerOptions();
@@ -51,7 +49,6 @@ public class OrzServer : IServer
         this.l4 = l4;
         this.monitor = monitor;
         this.httpRouter = httpRouter;
-        this.httpDispatcher = httpDispatcher;
         Features = new FeatureCollection();
         var connectionManager = new ConnectionManager(
             trace,
@@ -116,12 +113,12 @@ public class OrzServer : IServer
         else if (protocols.HasFlag(GatewayProtocols.HTTP1) || protocols.HasFlag(GatewayProtocols.HTTP2))
         {
             var next = options.HttpConnectionDelegate;
-            await _transportManager.BindAsync(options.EndPoint, options.Protocols, (ConnectionContext c) => { c.Protocols = protocols; return httpDispatcher.StartHttpAsync(c, next); }, options, cancellationToken);
+            await _transportManager.BindAsync(options.EndPoint, options.Protocols, (ConnectionContext c) => { c.Protocols = protocols; return new HttpConnection(c, ServiceContext).StartHttpAsync(next); }, options, cancellationToken);
         }
         else if (options.Protocols.HasFlag(GatewayProtocols.HTTP3))
         {
             var next = options.HttpConnectionDelegate;
-            await _transportManager.BindAsync(options.EndPoint, options.Protocols, (MultiplexedConnectionContext c) => { c.Protocols = protocols; return httpDispatcher.StartHttpAsync(c, next); }, options, cancellationToken);
+            await _transportManager.BindAsync(options.EndPoint, options.Protocols, (MultiplexedConnectionContext c) => { c.Protocols = protocols; return new HttpConnection(c, ServiceContext).StartHttpAsync(next); }, options, cancellationToken);
         }
     }
 

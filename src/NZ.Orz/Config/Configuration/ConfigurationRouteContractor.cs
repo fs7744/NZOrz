@@ -6,7 +6,7 @@ using NZ.Orz.Routing;
 using NZ.Orz.Sockets;
 using System.Collections.Frozen;
 using System.Net.Sockets;
-using static System.Collections.Specialized.BitVector32;
+using System.Xml.Linq;
 
 namespace NZ.Orz.Config.Configuration;
 
@@ -112,6 +112,40 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
         if (!section.Exists()) return;
         limits.MaxConcurrentConnections = section.ReadInt64(nameof(ServerLimits.MaxConcurrentConnections));
         limits.MaxConcurrentUpgradedConnections = section.ReadInt64(nameof(ServerLimits.MaxConcurrentUpgradedConnections));
+        limits.KeepAliveTimeout = section.ReadTimeSpan(nameof(ServerLimits.KeepAliveTimeout)).GetValueOrDefault(limits.KeepAliveTimeout);
+        limits.RequestHeadersTimeout = section.ReadTimeSpan(nameof(ServerLimits.RequestHeadersTimeout)).GetValueOrDefault(limits.RequestHeadersTimeout);
+        limits.MaxRequestLineSize = section.ReadInt32(nameof(ServerLimits.MaxRequestLineSize)).GetValueOrDefault(limits.MaxRequestLineSize);
+        limits.MaxRequestHeadersTotalSize = section.ReadInt32(nameof(ServerLimits.MaxRequestHeadersTotalSize)).GetValueOrDefault(limits.MaxRequestHeadersTotalSize);
+        limits.MaxRequestHeaderCount = section.ReadInt32(nameof(ServerLimits.MaxRequestHeaderCount)).GetValueOrDefault(limits.MaxRequestHeaderCount);
+        if (configuration.GetSection(nameof(ServerLimits.MaxResponseBufferSize)).Exists())
+        {
+            limits.MaxResponseBufferSize = section.ReadInt64(nameof(ServerLimits.MaxResponseBufferSize));
+        }
+        if (configuration.GetSection(nameof(ServerLimits.MaxRequestBufferSize)).Exists())
+        {
+            limits.MaxRequestBufferSize = section.ReadInt64(nameof(ServerLimits.MaxRequestBufferSize));
+        }
+        if (configuration.GetSection(nameof(ServerLimits.MaxRequestBodySize)).Exists())
+        {
+            limits.MaxRequestBodySize = section.ReadInt64(nameof(ServerLimits.MaxRequestBodySize));
+        }
+        var s = configuration.GetSection(nameof(ServerLimits.MinRequestBodyDataRate));
+        if (s.Exists())
+        {
+            limits.MinRequestBodyDataRate = CreateMinDataRate(s);
+        }
+        s = configuration.GetSection(nameof(ServerLimits.MinResponseDataRate));
+        if (s.Exists())
+        {
+            limits.MinResponseDataRate = CreateMinDataRate(s);
+        }
+    }
+
+    private MinDataRate? CreateMinDataRate(IConfigurationSection section)
+    {
+        if (!section.Exists()) return null;
+        return new MinDataRate(section.ReadDouble(nameof(MinDataRate.BytesPerSecond)).GetValueOrDefault(240),
+            section.ReadTimeSpan(nameof(MinDataRate.GracePeriod)).GetValueOrDefault(TimeSpan.FromSeconds(5)));
     }
 
     private async Task UpdateSnapshotAsync(CancellationToken cancellationToken)

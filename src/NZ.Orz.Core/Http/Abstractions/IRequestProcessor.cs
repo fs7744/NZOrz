@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NZ.Orz.Http.Abstractions;
+namespace NZ.Orz.Http;
 
 internal interface IRequestProcessor
 {
