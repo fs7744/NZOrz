@@ -9,15 +9,15 @@ public class TestProxyHandler : IMiddleware
 {
     private readonly IConnectionFactory connectionFactory;
     private readonly ILogger<TestProxyHandler> logger;
-    private static RouteTable<TcpRouteData> route = CreateRouteTable();
+    private static IRouteTable<TcpRouteData> route = CreateRouteTable();
 
-    private static RouteTable<TcpRouteData> CreateRouteTable()
+    private static IRouteTable<TcpRouteData> CreateRouteTable()
     {
         var builder = new RouteTableBuilder<TcpRouteData>();
         builder.Add("127.0.0.1:5000", new TcpRouteData() { Backends = new List<TcpRouteBackendData>() { new TcpRouteBackendData() { Address = "14.215.177.38", Port = 80 } } }, RouteType.Prefix);
         builder.Add("[::1]:500", new TcpRouteData() { Backends = new List<TcpRouteBackendData>() { new TcpRouteBackendData() { Address = "14.215.177.38", Port = 80 } }, ConnectTimeout = 1, ReadTimeout = 10, WriteTimeout = 10 }, RouteType.Prefix);
         //builder.Add("127.0.0.1:5000", new IPEndPoint(IPAddress.Parse("14.215.177.31"), 80), RouteType.Prefix);
-        return builder.Build();
+        return builder.Build(RouteTableType.OnlyFirst);
     }
 
     public TestProxyHandler(IConnectionFactory connectionFactory, ILogger<TestProxyHandler> logger)
