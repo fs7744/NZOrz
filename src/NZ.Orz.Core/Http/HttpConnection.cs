@@ -1,5 +1,6 @@
 ﻿using NZ.Orz.Config;
 using NZ.Orz.Connections;
+using NZ.Orz.Connections.Exceptions;
 using NZ.Orz.Connections.Features;
 using NZ.Orz.Servers;
 using System.Diagnostics;
@@ -139,35 +140,57 @@ public class HttpConnection : ITimeoutHandler
 
     public void OnTimeout(TimeoutReason reason)
     {
-        //todo
-        //switch (reason)
-        //{
-        //    case TimeoutReason.KeepAlive:
-        //        _requestProcessor!.StopProcessingNextRequest(ConnectionEndReason.KeepAliveTimeout);
-        //        break;
+        switch (reason)
+        {
+            case TimeoutReason.KeepAlive:
+                requestProcessor!.StopProcessingNextRequest(ConnectionEndReason.KeepAliveTimeout);
+                break;
 
-        //    case TimeoutReason.RequestHeaders:
-        //        _requestProcessor!.HandleRequestHeadersTimeout();
-        //        break;
+            case TimeoutReason.RequestHeaders:
+                requestProcessor!.HandleRequestHeadersTimeout();
+                break;
 
-        //    case TimeoutReason.ReadDataRate:
-        //        _requestProcessor!.HandleReadDataRateTimeout();
-        //        break;
+            case TimeoutReason.ReadDataRate:
+                requestProcessor!.HandleReadDataRateTimeout();
+                break;
 
-        //    case TimeoutReason.WriteDataRate:
-        //        Log.ResponseMinimumDataRateNotSatisfied(_context.ConnectionId, _http1Connection?.TraceIdentifier);
-        //        Abort(new ConnectionAbortedException(CoreStrings.ConnectionTimedBecauseResponseMininumDataRateNotSatisfied), ConnectionEndReason.MinResponseDataRate);
-        //        break;
+            case TimeoutReason.WriteDataRate:
+                //Log.ResponseMinimumDataRateNotSatisfied(_context.ConnectionId, _http1Connection?.TraceIdentifier);
+                Abort(new ConnectionAbortedException("The connection was timed out by the server because the response was not read by the client at the specified minimum data rate."), ConnectionEndReason.MinResponseDataRate);
+                break;
 
-        //    case TimeoutReason.RequestBodyDrain:
-        //    case TimeoutReason.TimeoutFeature:
-        //        Abort(new ConnectionAbortedException(CoreStrings.ConnectionTimedOutByServer), ConnectionEndReason.ServerTimeout);
-        //        break;
+            case TimeoutReason.RequestBodyDrain:
+            case TimeoutReason.TimeoutFeature:
+                Abort(new ConnectionAbortedException("The connection was timed out by the server."), ConnectionEndReason.ServerTimeout);
+                break;
 
-        //    default:
-        //        Debug.Assert(false, "Invalid TimeoutReason");
-        //        break;
-        //}
+            default:
+                Debug.Assert(false, "Invalid TimeoutReason");
+                break;
+        }
+    }
+
+    private void Abort(ConnectionAbortedException ex, ConnectionEndReason reason)
+    {
+        ProtocolSelectionState previousState;
+
+        lock (_protocolSelectionLock)
+        {
+            previousState = _protocolSelectionState;
+            Debug.Assert(previousState != ProtocolSelectionState.Initializing, "The state should never be initializing");
+
+            _protocolSelectionState = ProtocolSelectionState.Aborted;
+        }
+
+        switch (previousState)
+        {
+            case ProtocolSelectionState.Selected:
+                requestProcessor!.Abort(ex, reason);
+                break;
+
+            case ProtocolSelectionState.Aborted:
+                break;
+        }
     }
 
     private enum ProtocolSelectionState

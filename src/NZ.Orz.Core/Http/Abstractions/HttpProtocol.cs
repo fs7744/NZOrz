@@ -7,7 +7,7 @@ namespace NZ.Orz.Http;
 
 public abstract class HttpProtocol : HttpConnectionContext, IRequestProcessor
 {
-    private bool _keepAlive;
+    protected volatile bool _keepAlive = true;
     protected RequestProcessingStatus _requestProcessingStatus;
 
     protected HttpProtocol(GatewayProtocols protocols, BaseConnectionContext connectionContext) : base(protocols, connectionContext)
