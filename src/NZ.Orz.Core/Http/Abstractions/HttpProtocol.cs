@@ -12,6 +12,7 @@ public abstract class HttpProtocol : HttpConnectionContext, IRequestProcessor
     protected volatile bool _keepAlive = true;
     protected RequestProcessingStatus _requestProcessingStatus;
     protected string? _methodText;
+    protected int _requestHeadersParsed;
 
     public HttpMethod Method { get; set; }
     public HttpVersion Version { get; set; }
@@ -34,6 +35,13 @@ public abstract class HttpProtocol : HttpConnectionContext, IRequestProcessor
     public string? Path { get; set; }
     public string? QueryString { get; set; }
     public string? RawTarget { get; set; }
+
+    public HttpRequestHeaders RequestHeaders { get; set; }
+
+    //public IHeaderDictionary RequestTrailers { get; } = new HeaderDictionary();
+    public bool RequestTrailersAvailable { get; set; }
+
+    public Stream RequestBody { get; set; } = default!;
 
     protected HttpProtocol(GatewayProtocols protocols, BaseConnectionContext connectionContext) : base(protocols, connectionContext)
     {
@@ -99,11 +107,13 @@ public abstract class HttpProtocol : HttpConnectionContext, IRequestProcessor
         IsExtendedConnectRequest = false;
         IsExtendedConnectAccepted = false;
         ConnectProtocol = null;
+        _requestHeadersParsed = 0;
         //_endpoint = null;
         //_httpProtocol = null;
         //IsWebTransportRequest = false;
         //_statusCode = StatusCodes.Status200OK;
         //_reasonPhrase = null;
+        RequestHeaders?.Clear();
         //todo
         OnReset();
     }

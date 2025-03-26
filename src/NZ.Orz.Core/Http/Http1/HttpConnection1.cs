@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.VisualBasic;
+using NZ.Orz.Buffers;
 using NZ.Orz.Config;
 using NZ.Orz.Connections;
 using NZ.Orz.Connections.Exceptions;
@@ -10,6 +11,8 @@ using System.Buffers;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO.Pipelines;
+using System.Net.Http.Headers;
+using System.Reflection.Metadata;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -616,6 +619,74 @@ public class HttpConnection1 : HttpProtocol
                 ? target.GetAsciiStringEscaped(MaxExceptionDetailSize)
                 : string.Empty);
 
+    public void OnHeader(bool trailers, ReadOnlySpan<byte> name, ReadOnlySpan<byte> value)
+    {
+        if (trailers)
+        {
+            OnTrailer(name, value);
+        }
+        else
+        {
+            OnHeader(name, value, checkForNewlineChars: false);
+        }
+    }
+
+    public void OnHeadersComplete(bool trailers, bool endStream)
+    {
+        if (trailers)
+        {
+            OnTrailersComplete();
+        }
+        else
+        {
+            OnHeadersComplete();
+        }
+    }
+
+    public virtual void OnHeader(ReadOnlySpan<byte> name, ReadOnlySpan<byte> value, bool checkForNewlineChars)
+    {
+        IncrementRequestHeadersCount();
+        //todo
+        //RequestHeaders.Append(name, value, checkForNewlineChars);
+    }
+
+    public virtual void OnHeader(int index, bool indexOnly, ReadOnlySpan<byte> name, ReadOnlySpan<byte> value)
+    {
+        IncrementRequestHeadersCount();
+
+        // This method should be overriden in specific implementations and the base should be
+        // called to validate the header count.
+    }
+
+    public void OnTrailer(ReadOnlySpan<byte> name, ReadOnlySpan<byte> value)
+    {
+        IncrementRequestHeadersCount();
+        //todo
+        //string key = name.GetHeaderName();
+        //var valueStr = value.GetRequestHeaderString(key, HttpRequestHeaders.EncodingSelector, checkForNewlineChars: false);
+        //RequestTrailers.Append(key, valueStr);
+    }
+
+    private void IncrementRequestHeadersCount()
+    {
+        _requestHeadersParsed++;
+        if (_requestHeadersParsed > limits.MaxRequestHeaderCount)
+        {
+            throw BadHttpRequestException.GetException(RequestRejectionReason.TooManyHeaders);
+        }
+    }
+
+    public void OnHeadersComplete()
+    {
+        //todo
+        //HttpRequestHeaders.OnHeadersComplete();
+    }
+
+    public void OnTrailersComplete()
+    {
+        RequestTrailersAvailable = true;
+    }
+
     #region HttpParser
 
     public bool ParseRequestLine(ref SequenceReader<byte> reader)
@@ -792,7 +863,357 @@ public class HttpConnection1 : HttpProtocol
 
     private bool ParseHeaders(bool trailers, ref SequenceReader<byte> reader)
     {
-        throw new NotImplementedException();
+        while (!reader.End)
+        {
+            var span = reader.UnreadSpan;
+            // Fast path, CR/LF at the beginning
+            if (span.Length >= 2 && span[0] == ByteCR && span[1] == ByteLF)
+            {
+                reader.Advance(2);
+                OnHeadersComplete(trailers, endStream: false);
+                return true;
+            }
+            var foundCrlf = false;
+
+            var lfOrCrIndex = span.IndexOfAny(ByteCR, ByteLF);
+            if (lfOrCrIndex >= 0)
+            {
+                if (span[lfOrCrIndex] == ByteCR)
+                {
+                    // We got a CR. Is this a CR/LF sequence?
+                    var crIndex = lfOrCrIndex;
+                    reader.Advance(crIndex + 1);
+
+                    bool hasDataAfterCr;
+
+                    if ((uint)span.Length > (uint)(crIndex + 1) && span[crIndex + 1] == ByteLF)
+                    {
+                        // CR/LF in the same span (common case)
+                        span = span.Slice(0, crIndex);
+                        foundCrlf = true;
+                    }
+                    else if ((hasDataAfterCr = reader.TryPeek(out byte lfMaybe)) && lfMaybe == ByteLF)
+                    {
+                        // CR/LF but split between spans
+                        span = span.Slice(0, span.Length - 1);
+                        foundCrlf = true;
+                    }
+                    else
+                    {
+                        // What's after the CR?
+                        if (!hasDataAfterCr)
+                        {
+                            // No more chars after CR? Don't consume an incomplete header
+                            reader.Rewind(crIndex + 1);
+                            return false;
+                        }
+                        else if (crIndex == 0)
+                        {
+                            // CR followed by something other than LF
+                            throw BadHttpRequestException.GetException(RequestRejectionReason.InvalidRequestHeadersNoCRLF);
+                        }
+                        else
+                        {
+                            // Include the thing after the CR in the rejection exception.
+                            var stopIndex = crIndex + 2;
+                            RejectRequestHeader(span[..stopIndex]);
+                        }
+                    }
+
+                    if (foundCrlf)
+                    {
+                        // Advance past the LF too
+                        reader.Advance(1);
+
+                        // Empty line?
+                        if (crIndex == 0)
+                        {
+                            OnHeadersComplete(trailers, endStream: false);
+                            return true;
+                        }
+                    }
+                }
+                else
+                {
+                    // We got an LF with no CR before it.
+                    var lfIndex = lfOrCrIndex;
+                    if (_disableHttp1LineFeedTerminators)
+                    {
+                        RejectRequestHeader(AppendEndOfLine(span[..lfIndex], lineFeedOnly: true));
+                    }
+
+                    // Consume the header including the LF
+                    reader.Advance(lfIndex + 1);
+
+                    span = span.Slice(0, lfIndex);
+                    if (span.Length == 0)
+                    {
+                        OnHeadersComplete(trailers, endStream: false);
+                        return true;
+                    }
+                }
+            }
+            else
+            {
+                // No CR or LF. Is this a multi-span header?
+                int length = ParseMultiSpanHeader(trailers, ref reader);
+                if (length < 0)
+                {
+                    // Not multi-line, just bad.
+                    return false;
+                }
+
+                // This was a multi-line header. Advance the reader.
+                reader.Advance(length);
+
+                continue;
+            }
+
+            // We got to a point where we believe we have a header.
+            if (!TryTakeSingleHeader(trailers, span))
+            {
+                // Sequence needs to be CRLF and not contain an inner CR not part of terminator.
+                // Not parsable as a valid name:value header pair.
+                RejectRequestHeader(AppendEndOfLine(span, lineFeedOnly: !foundCrlf));
+            }
+        }
+
+        return false;
+    }
+
+    private static byte[] AppendEndOfLine(ReadOnlySpan<byte> span, bool lineFeedOnly)
+    {
+        var array = new byte[span.Length + (lineFeedOnly ? 1 : 2)];
+
+        span.CopyTo(array);
+        array[^1] = ByteLF;
+
+        if (!lineFeedOnly)
+        {
+            array[^2] = ByteCR;
+        }
+
+        return array;
+    }
+
+    // Parse a header that might cross multiple spans, and return the length of the header
+    // or -1 if there was a failure during parsing.
+    private int ParseMultiSpanHeader(bool trailers, ref SequenceReader<byte> reader)
+    {
+        var currentSlice = reader.UnreadSequence;
+
+        SequencePosition position = currentSlice.Start;
+
+        // Skip the first segment as the caller already searched it for CR/LF
+        var result = currentSlice.TryGet(ref position, out ReadOnlyMemory<byte> memory);
+        // there will always be at least 1 segment so this will never return false
+        Debug.Assert(result);
+
+        if (position.GetObject() == null)
+        {
+            // Only 1 segment in the reader currently, this is a partial header, wait for more data
+            return -1;
+        }
+
+        var index = -1;
+        var headerLength = memory.Length;
+        while (currentSlice.TryGet(ref position, out memory))
+        {
+            index = memory.Span.IndexOfAny(ByteCR, ByteLF);
+            if (index >= 0)
+            {
+                headerLength += index;
+                break;
+            }
+            else if (position.GetObject() == null)
+            {
+                return -1;
+            }
+
+            headerLength += memory.Length;
+        }
+
+        // No CR or LF found in the SequenceReader
+        if (index == -1)
+        {
+            return -1;
+        }
+
+        // Is the first EOL char the last of the current slice?
+        if (headerLength == currentSlice.Length - 1)
+        {
+            // Check the EOL char
+            if (memory.Span[index] == ByteCR)
+            {
+                // CR without LF, can't read the header
+                return -1;
+            }
+            else
+            {
+                if (_disableHttp1LineFeedTerminators)
+                {
+                    // LF only but disabled
+
+                    // Advance 1 to include LF in result
+                    RejectRequestHeader(currentSlice.Slice(0, headerLength + 1).ToSpan());
+                }
+            }
+        }
+
+        ReadOnlySequence<byte> header;
+        if (memory.Span[index] == ByteCR)
+        {
+            // First EOL char is CR, include the char after CR
+            // Advance 2 to include CR and LF
+            headerLength += 2;
+            header = currentSlice.Slice(0, headerLength);
+        }
+        else if (_disableHttp1LineFeedTerminators)
+        {
+            // The terminator is an LF and we don't allow it.
+            // Advance 1 to include LF in result
+            RejectRequestHeader(currentSlice.Slice(0, headerLength + 1).ToSpan());
+            return -1;
+        }
+        else
+        {
+            // First EOL char is LF. only include this one
+            headerLength += 1;
+            header = currentSlice.Slice(0, headerLength);
+        }
+
+        // 'a:b\n' or 'a:b\r\n'
+        var minHeaderSpan = _disableHttp1LineFeedTerminators ? 5 : 4;
+        if (headerLength < minHeaderSpan)
+        {
+            RejectRequestHeader(currentSlice.Slice(0, headerLength).ToSpan());
+        }
+
+        byte[]? array = null;
+        Span<byte> headerSpan = headerLength <= 256 ? stackalloc byte[256] : array = ArrayPool<byte>.Shared.Rent(headerLength);
+
+        header.CopyTo(headerSpan);
+        headerSpan = headerSpan.Slice(0, headerLength);
+
+        var terminatorSize = -1;
+
+        if (headerSpan[^1] == ByteLF)
+        {
+            if (headerSpan[^2] == ByteCR)
+            {
+                terminatorSize = 2;
+            }
+            else if (!_disableHttp1LineFeedTerminators)
+            {
+                terminatorSize = 1;
+            }
+        }
+
+        // Last chance to bail if the terminator size is not valid or the header doesn't parse.
+        if (terminatorSize == -1 || !TryTakeSingleHeader(trailers, headerSpan.Slice(0, headerSpan.Length - terminatorSize)))
+        {
+            RejectRequestHeader(headerSpan);
+        }
+
+        if (array is not null)
+        {
+            ArrayPool<byte>.Shared.Return(array);
+        }
+
+        return headerLength;
+    }
+
+    private bool TryTakeSingleHeader(bool trailers, ReadOnlySpan<byte> headerLine)
+    {
+        // We are looking for a colon to terminate the header name.
+        // However, the header name cannot contain a space or tab so look for all three
+        // and see which is found first.
+        var nameEnd = headerLine.IndexOfAny(ByteColon, ByteSpace, ByteTab);
+        // If not found length with be -1; casting to uint will turn it to uint.MaxValue
+        // which will be larger than any possible headerLine.Length. This also serves to eliminate
+        // the bounds check for the next lookup of headerLine[nameEnd]
+        if ((uint)nameEnd >= (uint)headerLine.Length)
+        {
+            // Colon not found.
+            return false;
+        }
+
+        // Early memory read to hide latency
+        var expectedColon = headerLine[nameEnd];
+        if (nameEnd == 0)
+        {
+            // Header name is empty.
+            return false;
+        }
+        if (expectedColon != ByteColon)
+        {
+            // Header name space or tab.
+            return false;
+        }
+
+        // Skip colon to get to the value start.
+        var valueStart = nameEnd + 1;
+
+        // Generally there will only be one space, so we will check it directly
+        if ((uint)valueStart < (uint)headerLine.Length)
+        {
+            var ch = headerLine[valueStart];
+            if (ch == ByteSpace || ch == ByteTab)
+            {
+                // Ignore first whitespace.
+                valueStart++;
+
+                // More header chars?
+                if ((uint)valueStart < (uint)headerLine.Length)
+                {
+                    ch = headerLine[valueStart];
+                    // Do a fast check; as we now expect non-space, before moving into loop.
+                    if (ch <= ByteSpace && (ch == ByteSpace || ch == ByteTab))
+                    {
+                        valueStart++;
+                        // Is more whitespace, so we will loop to find the end. This is the slow path.
+                        for (; valueStart < headerLine.Length; valueStart++)
+                        {
+                            ch = headerLine[valueStart];
+                            if (ch != ByteTab && ch != ByteSpace)
+                            {
+                                // Non-whitespace char found, valueStart is now start of value.
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        var valueEnd = headerLine.Length - 1;
+        // Ignore end whitespace. Generally there will no spaces
+        // so we will check the first before moving to a loop.
+        if (valueEnd > valueStart)
+        {
+            var ch = headerLine[valueEnd];
+            // Do a fast check; as we now expect non-space, before moving into loop.
+            if (ch <= ByteSpace && (ch == ByteSpace || ch == ByteTab))
+            {
+                // Is whitespace so move to loop
+                valueEnd--;
+                for (; valueEnd > valueStart; valueEnd--)
+                {
+                    ch = headerLine[valueEnd];
+                    if (ch != ByteTab && ch != ByteSpace)
+                    {
+                        // Non-whitespace char found, valueEnd is now start of value.
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Range end is exclusive, so add 1 to valueEnd
+        valueEnd++;
+        OnHeader(trailers, name: headerLine.Slice(0, nameEnd), value: headerLine[valueStart..valueEnd]);
+
+        return true;
     }
 
     #endregion HttpParser
