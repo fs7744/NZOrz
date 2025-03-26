@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <RootNamespace>NZ.Orz</RootNamespace>
 	  <LangVersion>preview</LangVersion>
+	  <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
 	<ItemGroup>

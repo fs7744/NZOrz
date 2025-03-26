@@ -17,4 +17,5 @@ public class ServerOptions
 
     public StringComparison RouteComparison { get; set; } = StringComparison.OrdinalIgnoreCase;
     public RouteTableType L4RouteType { get; set; } = RouteTableType.OnlyFirst;
+    public bool DisableHttp1LineFeedTerminators { get; set; }
 }

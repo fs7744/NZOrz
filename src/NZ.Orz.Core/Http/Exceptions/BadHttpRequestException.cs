@@ -120,4 +120,57 @@ public class BadHttpRequestException : IOException
         }
         return ex;
     }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal static BadHttpRequestException GetException(RequestRejectionReason reason, string detail)
+    {
+        BadHttpRequestException ex;
+        switch (reason)
+        {
+            case RequestRejectionReason.TlsOverHttpError:
+                ex = new BadHttpRequestException("Detected a TLS handshake to an endpoint that does not have TLS enabled.", StatusCodes.Status400BadRequest, reason);
+                break;
+
+            case RequestRejectionReason.InvalidRequestLine:
+                ex = new BadHttpRequestException($"Invalid request line: '{detail}'", StatusCodes.Status400BadRequest, reason);
+                break;
+
+            case RequestRejectionReason.InvalidRequestTarget:
+                ex = new BadHttpRequestException($"Invalid request target: '{detail}'", StatusCodes.Status400BadRequest, reason);
+                break;
+
+            case RequestRejectionReason.InvalidRequestHeader:
+                ex = new BadHttpRequestException($"Invalid request header: '{detail}'", StatusCodes.Status400BadRequest, reason);
+                break;
+
+            case RequestRejectionReason.InvalidContentLength:
+                ex = new BadHttpRequestException($"Invalid content length: {detail}", StatusCodes.Status400BadRequest, reason);
+                break;
+
+            case RequestRejectionReason.UnrecognizedHTTPVersion:
+                ex = new BadHttpRequestException($"Unrecognized HTTP version: '{detail}'", StatusCodes.Status505HttpVersionNotsupported, reason);
+                break;
+
+            case RequestRejectionReason.FinalTransferCodingNotChunked:
+                ex = new BadHttpRequestException($"The message body length cannot be determined because the final transfer coding was set to '{detail}' instead of 'chunked'.", StatusCodes.Status400BadRequest, reason);
+                break;
+
+            case RequestRejectionReason.LengthRequiredHttp10:
+                ex = new BadHttpRequestException($"{detail} request contains no Content-Length header.", StatusCodes.Status400BadRequest, reason);
+                break;
+
+            case RequestRejectionReason.InvalidHostHeader:
+                ex = new BadHttpRequestException($"Invalid Host header: '{detail}'", StatusCodes.Status400BadRequest, reason);
+                break;
+
+            case RequestRejectionReason.RequestBodyTooLarge:
+                ex = new BadHttpRequestException($"Request body too large. The max request body size is {detail} bytes.", StatusCodes.Status413PayloadTooLarge, reason);
+                break;
+
+            default:
+                ex = new BadHttpRequestException("Bad request.", StatusCodes.Status400BadRequest, reason);
+                break;
+        }
+        return ex;
+    }
 }

@@ -101,6 +101,7 @@ public class ConfigurationRouteContractor : IRouteContractor, IDisposable
             s.RouteCahceSize = section.ReadInt32(nameof(ServerOptions.RouteCahceSize)).GetValueOrDefault(s.RouteCahceSize);
             s.RouteComparison = section.ReadEnum<StringComparison>(nameof(ServerOptions.RouteComparison)).GetValueOrDefault(s.RouteComparison);
             s.L4RouteType = section.ReadEnum<RouteTableType>(nameof(ServerOptions.L4RouteType)).GetValueOrDefault(s.L4RouteType);
+            s.DisableHttp1LineFeedTerminators = section.ReadBool(nameof(ServerOptions.DisableHttp1LineFeedTerminators)).GetValueOrDefault(s.DisableHttp1LineFeedTerminators);
             CreateLimits(s.Limits, section.GetSection(nameof(ServerOptions.Limits)));
         }
         return s;
