@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -8,10 +10,6 @@ namespace NZ.Orz.Http;
 
 public static class HeaderNames
 {
-    private const string PseudoHeaderNamesObsoletionMessage = "This is obsolete and will be removed in a future version. Header dictionaries do not contain this key.";
-
-    // Use readonly statics rather than constants so ReferenceEquals works
-
     /// <summary>Gets the <c>Accept</c> HTTP header name.</summary>
     public static readonly string Accept = "Accept";
 
@@ -59,10 +57,6 @@ public static class HeaderNames
 
     /// <summary>Gets the <c>Alt-Svc</c> HTTP header name.</summary>
     public static readonly string AltSvc = "Alt-Svc";
-
-    /// <summary>Gets the <c>:authority</c> HTTP header name.</summary>
-    [Obsolete(PseudoHeaderNamesObsoletionMessage, false)]
-    public static readonly string Authority = ":authority";
 
     /// <summary>Gets the <c>Authorization</c> HTTP header name.</summary>
     public static readonly string Authorization = "Authorization";
@@ -178,16 +172,8 @@ public static class HeaderNames
     /// <summary>Gets the <c>Max-Forwards</c> HTTP header name.</summary>
     public static readonly string MaxForwards = "Max-Forwards";
 
-    /// <summary>Gets the <c>:method</c> HTTP header name.</summary>
-    [Obsolete(PseudoHeaderNamesObsoletionMessage, false)]
-    public static readonly string Method = ":method";
-
     /// <summary>Gets the <c>Origin</c> HTTP header name.</summary>
     public static readonly string Origin = "Origin";
-
-    /// <summary>Gets the <c>:path</c> HTTP header name.</summary>
-    [Obsolete(PseudoHeaderNamesObsoletionMessage, false)]
-    public static readonly string Path = ":path";
 
     /// <summary>Gets the <c>Pragma</c> HTTP header name.</summary>
     public static readonly string Pragma = "Pragma";
@@ -213,10 +199,6 @@ public static class HeaderNames
     /// <summary>Gets the <c>Request-Id</c> HTTP header name.</summary>
     public static readonly string RequestId = "Request-Id";
 
-    /// <summary>Gets the <c>:scheme</c> HTTP header name.</summary>
-    [Obsolete(PseudoHeaderNamesObsoletionMessage, false)]
-    public static readonly string Scheme = ":scheme";
-
     /// <summary>Gets the <c>Sec-WebSocket-Accept</c> HTTP header name.</summary>
     public static readonly string SecWebSocketAccept = "Sec-WebSocket-Accept";
 
@@ -237,10 +219,6 @@ public static class HeaderNames
 
     /// <summary>Gets the <c>Set-Cookie</c> HTTP header name.</summary>
     public static readonly string SetCookie = "Set-Cookie";
-
-    /// <summary>Gets the <c>:status</c> HTTP header name.</summary>
-    [Obsolete(PseudoHeaderNamesObsoletionMessage, false)]
-    public static readonly string Status = ":status";
 
     /// <summary>Gets the <c>Strict-Transport-Security</c> HTTP header name.</summary>
     public static readonly string StrictTransportSecurity = "Strict-Transport-Security";
@@ -281,9 +259,6 @@ public static class HeaderNames
     /// <summary>Gets the <c>Warning</c> HTTP header name.</summary>
     public static readonly string Warning = "Warning";
 
-    /// <summary>Gets the <c>Sec-WebSocket-Protocol</c> HTTP header name.</summary>
-    public static readonly string WebSocketSubProtocols = "Sec-WebSocket-Protocol";
-
     /// <summary>Gets the <c>WWW-Authenticate</c> HTTP header name.</summary>
     public static readonly string WWWAuthenticate = "WWW-Authenticate";
 
@@ -305,7 +280,7 @@ public static class HeaderNames
     /// <summary>Gets the <c>X-XSS-Protection</c> HTTP header name.</summary>
     public static readonly string XXSSProtection = "X-XSS-Protection";
 
-    private static readonly HashSet<string> _internedHeaderNames = new HashSet<string>(91, StringComparer.OrdinalIgnoreCase)
+    private static readonly FrozenSet<string> _internedHeaderNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             HeaderNames.Accept,
             HeaderNames.AcceptCharset,
@@ -390,7 +365,6 @@ public static class HeaderNames
             HeaderNames.Vary,
             HeaderNames.Via,
             HeaderNames.Warning,
-            HeaderNames.WebSocketSubProtocols,
             HeaderNames.WWWAuthenticate,
             HeaderNames.XContentTypeOptions,
             HeaderNames.XFrameOptions,
@@ -398,8 +372,9 @@ public static class HeaderNames
             HeaderNames.XRequestedWith,
             HeaderNames.XUACompatible,
             HeaderNames.XXSSProtection,
-        };
+        }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static string GetInternedHeaderName(string name)
     {
         // Some headers can be very long lived; for example those on a WebSocket connection
@@ -411,4 +386,210 @@ public static class HeaderNames
 
         return name;
     }
+
+    private static readonly FrozenDictionary<string, KnownHeaderType> _internedHeaderType = new Dictionary<string, KnownHeaderType>(StringComparer.OrdinalIgnoreCase)
+    {
+        { HeaderNames.Host, KnownHeaderType.Host },
+        //{ HeaderNames.Accept, KnownHeaderType.Accept },
+        //{ HeaderNames.AcceptCharset, KnownHeaderType.AcceptCharset },
+        //{ HeaderNames.AcceptEncoding, KnownHeaderType.AcceptEncoding },
+        //{ HeaderNames.AcceptLanguage, KnownHeaderType.AcceptLanguage },
+        //{ HeaderNames.AcceptRanges, KnownHeaderType.AcceptRanges },
+        //{ HeaderNames.AccessControlAllowCredentials, KnownHeaderType.AccessControlAllowCredentials },
+        //{ HeaderNames.AccessControlAllowHeaders, KnownHeaderType.AccessControlAllowHeaders },
+        //{ HeaderNames.AccessControlAllowMethods, KnownHeaderType.AccessControlAllowMethods },
+        //{ HeaderNames.AccessControlAllowOrigin, KnownHeaderType.AccessControlAllowOrigin },
+        //{ HeaderNames.AccessControlExposeHeaders, KnownHeaderType.AccessControlExposeHeaders },
+        //{ HeaderNames.AccessControlMaxAge, KnownHeaderType.AccessControlMaxAge },
+        //{ HeaderNames.AccessControlRequestHeaders, KnownHeaderType.AccessControlRequestHeaders },
+        //{ HeaderNames.AccessControlRequestMethod, KnownHeaderType.AccessControlRequestMethod },
+        //{ HeaderNames.Age, KnownHeaderType.Age },
+        //{ HeaderNames.Allow, KnownHeaderType.Allow },
+        //{ HeaderNames.AltSvc, KnownHeaderType.AltSvc },
+        //{ HeaderNames.Authorization, KnownHeaderType.Authorization },
+        //{ HeaderNames.Baggage, KnownHeaderType.Baggage },
+        //{ HeaderNames.CacheControl, KnownHeaderType.CacheControl },
+        //{ HeaderNames.Connection, KnownHeaderType.Connection },
+        //{ HeaderNames.ContentDisposition, KnownHeaderType.ContentDisposition },
+        //{ HeaderNames.ContentEncoding, KnownHeaderType.ContentEncoding },
+        //{ HeaderNames.ContentLanguage, KnownHeaderType.ContentLanguage },
+        //{ HeaderNames.ContentLength, KnownHeaderType.ContentLength },
+        //{ HeaderNames.ContentLocation, KnownHeaderType.ContentLocation },
+        //{ HeaderNames.ContentMD5, KnownHeaderType.ContentMD5 },
+        //{ HeaderNames.ContentRange, KnownHeaderType.ContentRange },
+        //{ HeaderNames.ContentSecurityPolicy, KnownHeaderType.ContentSecurityPolicy },
+        //{ HeaderNames.ContentSecurityPolicyReportOnly, KnownHeaderType.ContentSecurityPolicyReportOnly },
+        //{ HeaderNames.ContentType, KnownHeaderType.ContentType },
+        //{ HeaderNames.CorrelationContext, KnownHeaderType.CorrelationContext },
+        //{ HeaderNames.Cookie, KnownHeaderType.Cookie },
+        //{ HeaderNames.Date, KnownHeaderType.Date },
+        //{ HeaderNames.DNT, KnownHeaderType.DNT },
+        //{ HeaderNames.ETag, KnownHeaderType.ETag },
+        //{ HeaderNames.Expires, KnownHeaderType.Expires },
+        //{ HeaderNames.Expect, KnownHeaderType.Expect },
+        //{ HeaderNames.From, KnownHeaderType.From },
+        //{ HeaderNames.GrpcAcceptEncoding, KnownHeaderType.GrpcAcceptEncoding },
+        //{ HeaderNames.GrpcEncoding, KnownHeaderType.GrpcEncoding },
+        //{ HeaderNames.GrpcMessage, KnownHeaderType.GrpcMessage },
+        //{ HeaderNames.GrpcStatus, KnownHeaderType.GrpcStatus },
+        //{ HeaderNames.GrpcTimeout, KnownHeaderType.GrpcTimeout },
+        //{ HeaderNames.KeepAlive, KnownHeaderType.KeepAlive },
+        //{ HeaderNames.IfMatch, KnownHeaderType.IfMatch },
+        //{ HeaderNames.IfModifiedSince, KnownHeaderType.IfModifiedSince },
+        //{ HeaderNames.IfNoneMatch, KnownHeaderType.IfNoneMatch },
+        //{ HeaderNames.IfRange, KnownHeaderType.IfRange },
+        //{ HeaderNames.IfUnmodifiedSince, KnownHeaderType.IfUnmodifiedSince },
+        //{ HeaderNames.LastModified, KnownHeaderType.LastModified },
+        //{ HeaderNames.Link, KnownHeaderType.Link },
+        //{ HeaderNames.Location, KnownHeaderType.Location },
+        //{ HeaderNames.MaxForwards, KnownHeaderType.MaxForwards },
+        //{ HeaderNames.Origin, KnownHeaderType.Origin },
+        //{ HeaderNames.Pragma, KnownHeaderType.Pragma },
+        //{ HeaderNames.ProxyAuthenticate, KnownHeaderType.ProxyAuthenticate },
+        //{ HeaderNames.ProxyAuthorization, KnownHeaderType.ProxyAuthorization },
+        //{ HeaderNames.ProxyConnection, KnownHeaderType.ProxyConnection },
+        //{ HeaderNames.Range, KnownHeaderType.Range },
+        //{ HeaderNames.Referer, KnownHeaderType.Referer },
+        //{ HeaderNames.RetryAfter, KnownHeaderType.RetryAfter },
+        //{ HeaderNames.RequestId, KnownHeaderType.RequestId },
+        //{ HeaderNames.SecWebSocketAccept, KnownHeaderType.SecWebSocketAccept },
+        //{ HeaderNames.SecWebSocketKey, KnownHeaderType.SecWebSocketKey },
+        //{ HeaderNames.SecWebSocketProtocol, KnownHeaderType.SecWebSocketProtocol },
+        //{ HeaderNames.SecWebSocketVersion, KnownHeaderType.SecWebSocketVersion },
+        //{ HeaderNames.SecWebSocketExtensions, KnownHeaderType.SecWebSocketExtensions },
+        //{ HeaderNames.Server, KnownHeaderType.Server },
+        //{ HeaderNames.SetCookie, KnownHeaderType.SetCookie },
+        //{ HeaderNames.StrictTransportSecurity, KnownHeaderType.StrictTransportSecurity },
+        //{ HeaderNames.TE, KnownHeaderType.TE },
+        //{ HeaderNames.Trailer, KnownHeaderType.Trailer },
+        //{ HeaderNames.TransferEncoding, KnownHeaderType.TransferEncoding },
+        //{ HeaderNames.Translate, KnownHeaderType.Translate },
+        //{ HeaderNames.TraceParent, KnownHeaderType.TraceParent },
+        //{ HeaderNames.TraceState, KnownHeaderType.TraceState },
+        //{ HeaderNames.Upgrade, KnownHeaderType.Upgrade },
+        //{ HeaderNames.UpgradeInsecureRequests, KnownHeaderType.UpgradeInsecureRequests },
+        //{ HeaderNames.UserAgent, KnownHeaderType.UserAgent },
+        //{ HeaderNames.Vary, KnownHeaderType.Vary },
+        //{ HeaderNames.Via, KnownHeaderType.Via },
+        //{ HeaderNames.Warning, KnownHeaderType.Warning },
+        //{ HeaderNames.WWWAuthenticate, KnownHeaderType.WWWAuthenticate },
+        //{ HeaderNames.XContentTypeOptions, KnownHeaderType.XContentTypeOptions },
+        //{ HeaderNames.XFrameOptions, KnownHeaderType.XFrameOptions },
+        //{ HeaderNames.XPoweredBy, KnownHeaderType.XPoweredBy },
+        //{ HeaderNames.XRequestedWith, KnownHeaderType.XRequestedWith },
+        //{ HeaderNames.XUACompatible, KnownHeaderType.XUACompatible },
+        //{ HeaderNames.XXSSProtection, KnownHeaderType.XXSSProtection }
+    }.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool GetInternedHeaderType(string name, out KnownHeaderType type)
+    {
+        if (_internedHeaderType.TryGetValue(name, out type))
+        {
+            return true;
+        }
+
+        return false;
+    }
+}
+
+public enum KnownHeaderType
+{
+    Unknown = 0,
+    Host,
+    //Accept = 1,
+    //AcceptCharset = 2,
+    //AcceptEncoding = 3,
+    //AcceptLanguage,
+    //AcceptRanges,
+    //AccessControlAllowCredentials,
+    //AccessControlAllowHeaders,
+    //AccessControlAllowMethods,
+    //AccessControlAllowOrigin,
+    //AccessControlExposeHeaders,
+    //AccessControlMaxAge,
+    //AccessControlRequestHeaders,
+    //AccessControlRequestMethod,
+    //Age,
+    //Allow,
+    //AltSvc,
+    //AltUsed,
+    //Authority,
+    //Authorization,
+    //Baggage,
+    //CacheControl,
+    //Connection,
+    //ContentDisposition,
+    //ContentEncoding,
+    //ContentLanguage,
+    //ContentLength,
+    //ContentLocation,
+    //ContentMD5,
+    //ContentRange,
+    //ContentSecurityPolicy,
+    //ContentSecurityPolicyReportOnly,
+    //ContentType,
+    //Cookie,
+    //CorrelationContext,
+    //Date,
+    //DNT,
+    //ETag,
+    //Expect,
+    //Expires,
+    //From,
+    //GrpcAcceptEncoding,
+    //GrpcEncoding,
+    //GrpcMessage,
+    //GrpcStatus,
+    //GrpcTimeout,
+    //IfMatch,
+    //IfModifiedSince,
+    //IfNoneMatch,
+    //IfRange,
+    //IfUnmodifiedSince,
+    //KeepAlive,
+    //LastModified,
+    //Link,
+    //Location,
+    //MaxForwards,
+    //Method,
+    //Origin,
+    //Path,
+    //Pragma,
+    //Protocol,
+    //ProxyAuthenticate,
+    //ProxyAuthorization,
+    //ProxyConnection,
+    //Range,
+    //Referer,
+    //RequestId,
+    //SecWebSocketAccept,
+    //SecWebSocketKey,
+    //SecWebSocketProtocol,
+    //SecWebSocketVersion,
+    //SecWebSocketExtensions,
+    //StrictTransportSecurity,
+    //RetryAfter,
+    //Scheme,
+    //Server,
+    //SetCookie,
+    //TE,
+    //TraceParent,
+    //TraceState,
+    //Trailer,
+    //TransferEncoding,
+    //Translate,
+    //Upgrade,
+    //UpgradeInsecureRequests,
+    //UserAgent,
+    //Vary,
+    //Via,
+    //Warning,
+    //WWWAuthenticate,
+    //XContentTypeOptions,
+    //XFrameOptions,
+    //XPoweredBy,
+    //XRequestedWith,
+    //XUACompatible,
+    //XXSSProtection,
 }

@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace NZ.Orz.Http;
 
-public interface IHeaderDictionary : IEnumerable<KeyValuePair<string, StringValues>>
+public interface IHeaderDictionary : IEnumerable<KeyValuePair<string, StringValues>>, ICollection<KeyValuePair<string, StringValues>>
 {
     int Count { get; }
     StringValues this[string key] { get; set; }
@@ -23,8 +23,4 @@ public interface IHeaderDictionary : IEnumerable<KeyValuePair<string, StringValu
     bool TryGetValue(string key, [MaybeNullWhen(false)] out StringValues value);
 
     void Clear();
-}
-
-public class HttpRequestHeaders : HttpHeaders
-{
 }
