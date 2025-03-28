@@ -3,14 +3,13 @@ using NZ.Orz.Http.Exceptions;
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
+using System.Reflection.PortableExecutable;
 using System.Runtime.CompilerServices;
 
 namespace NZ.Orz.Http;
 
 public partial class HttpRequestHeaders : IHeaderDictionary
 {
-    private ulong _bits;
-    private HeaderReferences _r = new HeaderReferences();
     private Dictionary<string, StringValues> dict;
 
     public int Count => BitOperations.PopCount(_bits) + (dict == null ? 0 : dict.Count);
@@ -26,7 +25,7 @@ public partial class HttpRequestHeaders : IHeaderDictionary
         }
         set
         {
-            if (GetInternedHeaderType(key, out var k))
+            if (TestHeaderNames.GetInternedHeaderType(key, out var k))
             {
                 FastAdd(k, value);
             }
@@ -49,7 +48,7 @@ public partial class HttpRequestHeaders : IHeaderDictionary
 
     public void Add(string key, StringValues value)
     {
-        if (GetInternedHeaderType(key, out var k))
+        if (TestHeaderNames.GetInternedHeaderType(key, out var k))
         {
             FastAdd(k, value);
         }
@@ -66,7 +65,7 @@ public partial class HttpRequestHeaders : IHeaderDictionary
 
     public bool Remove(string key)
     {
-        if (GetInternedHeaderType(key, out var k))
+        if (TestHeaderNames.GetInternedHeaderType(key, out var k))
         {
             return FastRemove(k);
         }
@@ -78,7 +77,7 @@ public partial class HttpRequestHeaders : IHeaderDictionary
 
     public bool TryGetValue(string key, [MaybeNullWhen(false)] out StringValues value)
     {
-        if (GetInternedHeaderType(key, out var k))
+        if (TestHeaderNames.GetInternedHeaderType(key, out var k))
         {
             return FastTryGetValue(k, out value);
         }
@@ -151,17 +150,6 @@ public partial class HttpRequestHeaders : IHeaderDictionary
                 ? BitOperations.TrailingZeroCount(bits)
                 : -1;
         }
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool GetInternedHeaderType(string name, out KnownHeaderType type)
-    {
-        if (_internedHeaderType.TryGetValue(name, out type))
-        {
-            return true;
-        }
-
-        return false;
     }
 
     private static long ParseContentLength(string value)

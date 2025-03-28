@@ -122,7 +122,7 @@ public class BadHttpRequestException : IOException
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    internal static BadHttpRequestException GetException(RequestRejectionReason reason, string detail)
+    public static BadHttpRequestException GetException(RequestRejectionReason reason, string detail)
     {
         BadHttpRequestException ex;
         switch (reason)
