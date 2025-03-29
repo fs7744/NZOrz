@@ -1,4 +1,6 @@
-﻿using System.Data;
+﻿using NZ.Orz.Http;
+using System.Data;
+using System.Text;
 
 namespace CodeGenerater;
 
@@ -6,105 +8,57 @@ public class HttpRequestHeaderGenerate
 {
     private List<string> headers = new List<string>()
     {
-        "Host",
-"ContentLength",
-"ContentType",
-"Connection",
-"UserAgent",
-"Accept",
-"AcceptCharset",
-"AcceptEncoding",
-"AcceptLanguage",
-"AcceptRanges",
-"AccessControlAllowCredentials",
-"AccessControlAllowHeaders",
-"AccessControlAllowMethods",
-"AccessControlAllowOrigin",
-"AccessControlExposeHeaders",
-"AccessControlMaxAge",
-"AccessControlRequestHeaders",
-"AccessControlRequestMethod",
-"Age",
-"Allow",
-"AltSvc",
-"AltUsed",
-"Authority",
-"Authorization",
-"Baggage",
-"CacheControl",
-"ContentDisposition",
-"ContentEncoding",
-"ContentLanguage",
-"ContentLocation",
-"ContentMD5",
-"ContentRange",
-"ContentSecurityPolicy",
-"ContentSecurityPolicyReportOnly",
-"Cookie",
-"CorrelationContext",
-"Date",
-"DNT",
-"ETag",
-"Expect",
-"Expires",
-"From",
-"GrpcAcceptEncoding",
-"GrpcEncoding",
-"GrpcMessage",
-"GrpcStatus",
-"GrpcTimeout",
-"IfMatch",
-"IfModifiedSince",
-"IfNoneMatch",
-"IfRange",
-"IfUnmodifiedSince",
-"KeepAlive",
-"LastModified",
-"Link",
-"Location",
-"MaxForwards",
-"Method",
-"Origin",
-"Path",
-"Pragma",
-"Protocol",
-"ProxyAuthenticate",
-"ProxyAuthorization",
-"ProxyConnection",
-"Range",
-"Referer",
-"RequestId",
-"SecWebSocketAccept",
-"SecWebSocketKey",
-"SecWebSocketProtocol",
-"SecWebSocketVersion",
-"SecWebSocketExtensions",
-"StrictTransportSecurity",
-"RetryAfter",
-"Scheme",
-"Server",
-"SetCookie",
-"TE",
-"TraceParent",
-"TraceState",
-"Trailer",
-"TransferEncoding",
-"Translate",
-"Upgrade",
-"UpgradeInsecureRequests",
-"Vary",
-"Via",
-"Warning",
-"WWWAuthenticate",
-"XContentTypeOptions",
-"XFrameOptions",
-"XPoweredBy",
-"XRequestedWith",
-"XUACompatible",
-"XXSSProtection",
+        nameof(HeaderNames.Host),
+nameof(HeaderNames.Connection),
+nameof(HeaderNames.ContentLength),
+nameof(HeaderNames.UserAgent),
+nameof(HeaderNames.Upgrade),
+nameof(HeaderNames.UpgradeInsecureRequests),
+nameof(HeaderNames.Cookie),
+nameof(HeaderNames.TraceParent),
+nameof(HeaderNames.TraceState),
+nameof(HeaderNames.XForwardedFor),
+nameof(HeaderNames.XForwardedHost),
+nameof(HeaderNames.XForwardedProto),
+nameof(HeaderNames.Origin),
+nameof(HeaderNames.CacheControl),
+nameof(HeaderNames.ContentType),
+nameof(HeaderNames.AccessControlRequestMethod),
+nameof(HeaderNames.AccessControlRequestHeaders),
+nameof(HeaderNames.XRequestID),
+nameof(HeaderNames.Accept),
+nameof(HeaderNames.AcceptCharset),
+nameof(HeaderNames.AcceptDatetime),
+nameof(HeaderNames.AcceptEncoding),
+nameof(HeaderNames.AcceptLanguage),
+nameof(HeaderNames.ContentEncoding),
+nameof(HeaderNames.ContentMD5),
+nameof(HeaderNames.Expect),
+nameof(HeaderNames.IfMatch),
+nameof(HeaderNames.IfModifiedSince),
+nameof(HeaderNames.IfNoneMatch),
+nameof(HeaderNames.IfRange),
+nameof(HeaderNames.IfUnmodifiedSince),
+nameof(HeaderNames.MaxForwards),
+nameof(HeaderNames.Pragma),
+nameof(HeaderNames.Prefer),
+nameof(HeaderNames.ProxyAuthorization),
+nameof(HeaderNames.Range),
+nameof(HeaderNames.Referer),
+nameof(HeaderNames.TE),
+nameof(HeaderNames.Trailer),
+nameof(HeaderNames.TransferEncoding),
+nameof(HeaderNames.ProxyConnection),
+nameof(HeaderNames.XCorrelationID),
+nameof(HeaderNames.CorrelationID),
+nameof(HeaderNames.RequestId),
+nameof(HeaderNames.KeepAlive),
+nameof(HeaderNames.ProxyAuthenticate),
+nameof(HeaderNames.Forwarded),
+nameof(HeaderNames.XCsrfToken),
     };
 
-    private Dictionary<string, ulong> bits = new(StringComparer.OrdinalIgnoreCase)
+    private Dictionary<string, string> bits = new(StringComparer.OrdinalIgnoreCase)
     {
     };
 
@@ -236,22 +190,143 @@ public partial class HttpRequestHeaders
 
     private string GenerateMoveNext()
     {
-        throw new NotImplementedException();
+        var sb = new StringBuilder();
+        var index = 0;
+        foreach (var (k, v) in bits)
+        {
+            if (k == nameof(HeaderNames.ContentLength))
+            {
+                sb.AppendLine(@$"
+ case {index}:
+    _current = new KeyValuePair<string, StringValues>(HeaderNames.ContentLength, HeaderUtilities.FormatNonNegativeInt64(_collection._contentLength.Value));
+    _currentBits &= ~{v};
+    break;
+");
+            }
+            else
+            {
+                sb.AppendLine(@$"
+ case {index}:
+    _current = new KeyValuePair<string, StringValues>(HeaderNames.{k}, _collection._r.{k});
+    _currentBits &= ~{v};
+    break;
+");
+            }
+            index++;
+        }
+        var r = sb.ToString();
+        return r;
     }
 
     private string GenerateCopyTo()
     {
-        throw new NotImplementedException();
+        var sb = new StringBuilder();
+
+        foreach (var (k, v) in bits)
+        {
+            if (k == nameof(HeaderNames.ContentLength))
+            {
+                sb.AppendLine(@$"
+if ((_bits & {v}) != 0UL)
+{{
+    if (arrayIndex == array.Length)
+    {{
+        return;
+    }}
+    array[arrayIndex] = new KeyValuePair<string, StringValues>(HeaderNames.{k}, HeaderUtilities.FormatNonNegativeInt64(_contentLength.Value));
+    ++arrayIndex;
+}}
+");
+            }
+            else
+            {
+                sb.AppendLine(@$"
+if ((_bits & {v}) != 0UL)
+{{
+    if (arrayIndex == array.Length)
+    {{
+        return;
+    }}
+    array[arrayIndex] = new KeyValuePair<string, StringValues>(HeaderNames.{k}, _r.{k});
+    ++arrayIndex;
+}}
+");
+            }
+        }
+        var r = sb.ToString();
+        return r;
     }
 
     private string GenerateTryGetValue()
     {
-        throw new NotImplementedException();
+        var sb = new StringBuilder();
+
+        foreach (var (k, v) in bits)
+        {
+            if (k == nameof(HeaderNames.ContentLength))
+            {
+                sb.AppendLine(@$"
+case KnownHeaderType.ContentLength:
+    if ((_bits & {v}) != 0UL)
+    {{
+        value = HeaderUtilities.FormatNonNegativeInt64(_contentLength.Value);
+        return true;
+    }}
+    break;
+");
+            }
+            else
+            {
+                sb.AppendLine(@$"
+case KnownHeaderType.{k}:
+    if ((_bits & {v}) != 0UL)
+    {{
+        value = _r.{k};
+        return true;
+    }}
+    break;
+");
+            }
+        }
+        var r = sb.ToString();
+        return r;
     }
 
     private string GenerateRemove()
     {
-        throw new NotImplementedException();
+        var sb = new StringBuilder();
+
+        foreach (var (k, v) in bits)
+        {
+            if (k == nameof(HeaderNames.ContentLength))
+            {
+                sb.AppendLine(@$"
+case KnownHeaderType.ContentLength:
+    if ((_bits & {v}) != 0UL)
+    {{
+        _bits &= ~{v};
+        _contentLength = default;
+        return true;
+    }}
+    return true;
+");
+            }
+            else
+            {
+                sb.AppendLine(@$"
+case KnownHeaderType.{k}:
+    if ((_bits & {v}) != 0UL)
+    {{
+        _bits &= ~{v};
+        _r.{k} = default;
+        return true;
+    }}
+    return false;
+");
+            }
+        }
+        var r = sb.ToString();
+        return r;
     }
 
     private void InitData()
@@ -259,7 +334,7 @@ public partial class HttpRequestHeaders
         ulong b = 1UL;
         foreach (var item in headers)
         {
-            bits.Add(item, b);
+            bits.Add(item, $"{b}UL");
             b <<= 1;
             if (b == 0) break;
         }
@@ -267,31 +342,156 @@ public partial class HttpRequestHeaders
 
     private string GenerateAdd()
     {
-        throw new NotImplementedException();
+        var sb = new StringBuilder();
+
+        foreach (var (k, v) in bits)
+        {
+            if (k == nameof(HeaderNames.ContentLength))
+            {
+                sb.AppendLine(@$"
+case KnownHeaderType.ContentLength:
+    _bits |= {v};
+    _contentLength = ParseContentLength(value.ToString());
+    return true;
+");
+            }
+            else
+            {
+                sb.AppendLine(@$"
+case KnownHeaderType.{k}:
+    {k} = value;
+    return true;
+");
+            }
+        }
+        var r = sb.ToString();
+        return r;
     }
 
     private string GenerateInternedHeaderType()
     {
-        throw new NotImplementedException();
+        var sb = new StringBuilder();
+
+        foreach (var (k, v) in bits)
+        {
+            sb.AppendLine(@$"{{HeaderNames.{k},KnownHeaderType.{k}}},");
+        }
+        var r = sb.ToString();
+        return r;
     }
 
     private string GenerateKnownHeaderType()
     {
-        throw new NotImplementedException();
+        var sb = new StringBuilder();
+
+        foreach (var (k, v) in bits)
+        {
+            sb.AppendLine(@$"{k},");
+        }
+        var r = sb.ToString();
+        return r;
     }
 
     private string GenerateGetter()
     {
-        throw new NotImplementedException();
+        var sb = new StringBuilder();
+
+        foreach (var (k, v) in bits)
+        {
+            if (k == nameof(HeaderNames.ContentLength))
+            {
+                sb.AppendLine(@$"
+public long? ContentLength
+{{
+    get {{ return _contentLength; }}
+    set
+    {{
+        if (value.HasValue)
+        {{
+            _bits |= {v};
+            _contentLength = value;
+        }}
+        else
+        {{
+            _bits &= ~{v};
+            _contentLength = default;
+        }}
+    }}
+}}
+");
+            }
+            else
+            {
+                sb.AppendLine(@$"
+public StringValues {k}
+{{
+    get {{ return _r.{k}; }}
+    set
+    {{
+        if (!StringValues.IsNullOrEmpty(value))
+        {{
+            _bits |= {v};
+            _r.{k} = value;
+        }}
+        else
+        {{
+            _bits &= ~{v};
+            _r.{k} = default;
+        }}
+    }}
+}}
+");
+            }
+        }
+        var r = sb.ToString();
+        return r;
     }
 
     private string GenerateClear()
     {
-        throw new NotImplementedException();
+        var sb = new StringBuilder();
+
+        foreach (var (k, v) in bits)
+        {
+            if (k == nameof(HeaderNames.ContentLength))
+            {
+                sb.AppendLine(@$"
+if ((_bits & {v}) != 0UL)
+{{
+    _contentLength = null;
+}}
+");
+            }
+            else
+            {
+                sb.AppendLine(@$"
+
+if ((_bits & {v}) != 0UL)
+{{
+    _r.{k} = default;
+}}
+");
+            }
+        }
+        var r = sb.ToString();
+        return r;
     }
 
     private string GenerateFields()
     {
-        throw new NotImplementedException();
+        var sb = new StringBuilder();
+
+        foreach (var (k, v) in bits)
+        {
+            if (k == nameof(HeaderNames.ContentLength))
+            {
+            }
+            else
+            {
+                sb.AppendLine(@$"public StringValues {k};");
+            }
+        }
+        var r = sb.ToString();
+        return r;
     }
 }

@@ -34,7 +34,7 @@ public class HeaderDictoryBenchmarks
         set("Accept", "Host");
         set("Accept-Encoding", "Host");
         set("Connection", "Host");
-        set(TestHeaderNames.ContentLength, "333");
+        set(HeaderNames.ContentLength, "333");
     }
 
     //[IterationCleanup]
@@ -64,14 +64,14 @@ public class HeaderDictoryBenchmarks
         ae = Enumerator();
         be = HttpRequestHeadersEnumerator();
         if (ae.Length != be.Length) throw new InvalidOperationException();
-        if (dict[TestHeaderNames.ContentLength] != headers.ContentLength.GetValueOrDefault().ToString()) throw new InvalidOperationException();
+        if (dict[HeaderNames.ContentLength] != headers.ContentLength.GetValueOrDefault().ToString()) throw new InvalidOperationException();
     }
 
     [Benchmark, BenchmarkCategory("GetSet")]
     public StringValues GetSet()
     {
-        dict[TestHeaderNames.Host] = "3";
-        return dict[TestHeaderNames.Host];
+        dict[HeaderNames.Host] = "3";
+        return dict[HeaderNames.Host];
     }
 
     [Benchmark, BenchmarkCategory("GetSet")]
@@ -84,45 +84,45 @@ public class HeaderDictoryBenchmarks
     [Benchmark, BenchmarkCategory("GetSet")]
     public StringValues HttpRequestHeadersDict()
     {
-        headers[TestHeaderNames.Host] = "3";
-        return headers[TestHeaderNames.Host];
+        headers[HeaderNames.Host] = "3";
+        return headers[HeaderNames.Host];
     }
 
     [Benchmark, BenchmarkCategory("GetSet")]
     public StringV StringValuesHeaderDict()
     {
-        sdict[TestHeaderNames.Host] = "3";
-        return sdict[TestHeaderNames.Host];
+        sdict[HeaderNames.Host] = "3";
+        return sdict[HeaderNames.Host];
     }
 
     [Benchmark, BenchmarkCategory("GetSet")]
     public StringValues HttpRequestHeadersDict2()
     {
-        sdict2[TestHeaderNames.Host] = "3";
-        return sdict2[TestHeaderNames.Host];
+        sdict2[HeaderNames.Host] = "3";
+        return sdict2[HeaderNames.Host];
     }
 
     [Benchmark, BenchmarkCategory("GetSet")]
     public StringValues HttpRequestHeadersUnknownDict()
     {
-        headers[TestHeaderNames.AcceptRanges] = "3";
-        return headers[TestHeaderNames.AcceptRanges];
+        headers[HeaderNames.AcceptRanges] = "3";
+        return headers[HeaderNames.AcceptRanges];
     }
 
     [Benchmark, BenchmarkCategory("GetSet")]
     public StringV StringValuesHeaderDictAppend()
     {
-        sdict[TestHeaderNames.AcceptRanges] = "3";
-        sdict.Append(TestHeaderNames.AcceptRanges, "3");
-        return sdict[TestHeaderNames.AcceptRanges];
+        sdict[HeaderNames.AcceptRanges] = "3";
+        sdict.Append(HeaderNames.AcceptRanges, "3");
+        return sdict[HeaderNames.AcceptRanges];
     }
 
     [Benchmark, BenchmarkCategory("GetSet")]
     public StringValues HttpRequestHeadersDict2Append()
     {
-        sdict2[TestHeaderNames.AcceptRanges] = "3";
-        sdict2.Append(TestHeaderNames.AcceptRanges, "3");
-        return sdict2[TestHeaderNames.AcceptRanges];
+        sdict2[HeaderNames.AcceptRanges] = "3";
+        sdict2.Append(HeaderNames.AcceptRanges, "3");
+        return sdict2[HeaderNames.AcceptRanges];
     }
 
     [Benchmark, BenchmarkCategory("Count")]

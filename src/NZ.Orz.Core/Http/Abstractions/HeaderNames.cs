@@ -10,17 +10,66 @@ namespace NZ.Orz.Http;
 
 public static class HeaderNames
 {
-    /// <summary>Gets the <c>Accept</c> HTTP header name.</summary>
+    public static readonly string AIM = "A-IM";
     public static readonly string Accept = "Accept";
-
-    /// <summary>Gets the <c>Accept-Charset</c> HTTP header name.</summary>
     public static readonly string AcceptCharset = "Accept-Charset";
-
-    /// <summary>Gets the <c>Accept-Encoding</c> HTTP header name.</summary>
+    public static readonly string AcceptDatetime = "Accept-Datetime";
     public static readonly string AcceptEncoding = "Accept-Encoding";
-
-    /// <summary>Gets the <c>Accept-Language</c> HTTP header name.</summary>
     public static readonly string AcceptLanguage = "Accept-Language";
+    public static readonly string AccessControlRequestMethod = "Access-Control-Request-Method";
+    public static readonly string AccessControlRequestHeaders = "Access-Control-Request-Headers";
+    public static readonly string CacheControl = "Cache-Control";
+    public static readonly string Connection = "Connection";
+    public static readonly string ContentEncoding = "Content-Encoding";
+    public static readonly string ContentLength = "Content-Length";
+    public static readonly string ContentMD5 = "Content-MD5";
+    public static readonly string ContentType = "Content-Type";
+    public static readonly string Cookie = "Cookie";
+    public static readonly string Expect = "Expect";
+    public static readonly string Forwarded = "Forwarded";
+    public static readonly string From = "From";
+    public static readonly string Host = "Host";
+    public static readonly string IfMatch = "If-Match";
+    public static readonly string IfModifiedSince = "If-Modified-Since";
+    public static readonly string IfNoneMatch = "If-None-Match";
+    public static readonly string IfRange = "If-Range";
+    public static readonly string IfUnmodifiedSince = "If-Unmodified-Since";
+    public static readonly string MaxForwards = "Max-Forwards";
+    public static readonly string Origin = "Origin";
+    public static readonly string Pragma = "Pragma";
+    public static readonly string Prefer = "Prefer";
+    public static readonly string ProxyAuthorization = "Proxy-Authorization";
+    public static readonly string Range = "Range";
+    public static readonly string Referer = "Referer";
+    public static readonly string TE = "TE";
+    public static readonly string Trailer = "Trailer";
+    public static readonly string TransferEncoding = "Transfer-Encoding";
+    public static readonly string UserAgent = "User-Agent";
+    public static readonly string Upgrade = "Upgrade";
+    public static readonly string Via = "Via";
+    public static readonly string Warning = "Warning";
+
+    public static readonly string UpgradeInsecureRequests = "Upgrade-Insecure-Requests";
+    public static readonly string XRequestedWith = "X-Requested-With";
+    public static readonly string DNT = "DNT";
+    public static readonly string XForwardedFor = "X-Forwarded-For";
+    public static readonly string XForwardedHost = "X-Forwarded-Host";
+    public static readonly string XForwardedProto = "X-Forwarded-Proto";
+    public static readonly string FrontEndHttps = "Front-End-Https";
+    public static readonly string XHttpMethodOverride = "X-Http-Method-Override";
+    public static readonly string XCsrfToken = "X-Csrf-Token";
+    public static readonly string XRequestID = "X-Request-ID";
+    public static readonly string ProxyConnection = "Proxy-Connection";
+    public static readonly string XCorrelationID = "X-Correlation-ID";
+    public static readonly string CorrelationID = "Correlation-ID";
+    public static readonly string RequestId = "Request-Id";
+    public static readonly string KeepAlive = "Keep-Alive";
+    public static readonly string ProxyAuthenticate = "Proxy-Authenticate";
+    public static readonly string TraceParent = "traceparent";
+    public static readonly string TraceState = "tracestate";
+
+    /// <summary>Gets the <c>Date</c> HTTP header name.</summary>
+    public static readonly string Date = "Date";
 
     /// <summary>Gets the <c>Accept-Ranges</c> HTTP header name.</summary>
     public static readonly string AcceptRanges = "Accept-Ranges";
@@ -43,12 +92,6 @@ public static class HeaderNames
     /// <summary>Gets the <c>Access-Control-Max-Age</c> HTTP header name.</summary>
     public static readonly string AccessControlMaxAge = "Access-Control-Max-Age";
 
-    /// <summary>Gets the <c>Access-Control-Request-Headers</c> HTTP header name.</summary>
-    public static readonly string AccessControlRequestHeaders = "Access-Control-Request-Headers";
-
-    /// <summary>Gets the <c>Access-Control-Request-Method</c> HTTP header name.</summary>
-    public static readonly string AccessControlRequestMethod = "Access-Control-Request-Method";
-
     /// <summary>Gets the <c>Age</c> HTTP header name.</summary>
     public static readonly string Age = "Age";
 
@@ -64,29 +107,14 @@ public static class HeaderNames
     /// <summary>Gets the <c>baggage</c> HTTP header name.</summary>
     public static readonly string Baggage = "baggage";
 
-    /// <summary>Gets the <c>Cache-Control</c> HTTP header name.</summary>
-    public static readonly string CacheControl = "Cache-Control";
-
-    /// <summary>Gets the <c>Connection</c> HTTP header name.</summary>
-    public static readonly string Connection = "Connection";
-
     /// <summary>Gets the <c>Content-Disposition</c> HTTP header name.</summary>
     public static readonly string ContentDisposition = "Content-Disposition";
-
-    /// <summary>Gets the <c>Content-Encoding</c> HTTP header name.</summary>
-    public static readonly string ContentEncoding = "Content-Encoding";
 
     /// <summary>Gets the <c>Content-Language</c> HTTP header name.</summary>
     public static readonly string ContentLanguage = "Content-Language";
 
-    /// <summary>Gets the <c>Content-Length</c> HTTP header name.</summary>
-    public static readonly string ContentLength = "Content-Length";
-
     /// <summary>Gets the <c>Content-Location</c> HTTP header name.</summary>
     public static readonly string ContentLocation = "Content-Location";
-
-    /// <summary>Gets the <c>Content-MD5</c> HTTP header name.</summary>
-    public static readonly string ContentMD5 = "Content-MD5";
 
     /// <summary>Gets the <c>Content-Range</c> HTTP header name.</summary>
     public static readonly string ContentRange = "Content-Range";
@@ -97,32 +125,14 @@ public static class HeaderNames
     /// <summary>Gets the <c>Content-Security-Policy-Report-Only</c> HTTP header name.</summary>
     public static readonly string ContentSecurityPolicyReportOnly = "Content-Security-Policy-Report-Only";
 
-    /// <summary>Gets the <c>Content-Type</c> HTTP header name.</summary>
-    public static readonly string ContentType = "Content-Type";
-
     /// <summary>Gets the <c>Correlation-Context</c> HTTP header name.</summary>
     public static readonly string CorrelationContext = "Correlation-Context";
-
-    /// <summary>Gets the <c>Cookie</c> HTTP header name.</summary>
-    public static readonly string Cookie = "Cookie";
-
-    /// <summary>Gets the <c>Date</c> HTTP header name.</summary>
-    public static readonly string Date = "Date";
-
-    /// <summary>Gets the <c>DNT</c> HTTP header name.</summary>
-    public static readonly string DNT = "DNT";
 
     /// <summary>Gets the <c>ETag</c> HTTP header name.</summary>
     public static readonly string ETag = "ETag";
 
     /// <summary>Gets the <c>Expires</c> HTTP header name.</summary>
     public static readonly string Expires = "Expires";
-
-    /// <summary>Gets the <c>Expect</c> HTTP header name.</summary>
-    public static readonly string Expect = "Expect";
-
-    /// <summary>Gets the <c>From</c> HTTP header name.</summary>
-    public static readonly string From = "From";
 
     /// <summary>Gets the <c>Grpc-Accept-Encoding</c> HTTP header name.</summary>
     public static readonly string GrpcAcceptEncoding = "Grpc-Accept-Encoding";
@@ -139,27 +149,6 @@ public static class HeaderNames
     /// <summary>Gets the <c>Grpc-Timeout</c> HTTP header name.</summary>
     public static readonly string GrpcTimeout = "Grpc-Timeout";
 
-    /// <summary>Gets the <c>Host</c> HTTP header name.</summary>
-    public static readonly string Host = "Host";
-
-    /// <summary>Gets the <c>Keep-Alive</c> HTTP header name.</summary>
-    public static readonly string KeepAlive = "Keep-Alive";
-
-    /// <summary>Gets the <c>If-Match</c> HTTP header name.</summary>
-    public static readonly string IfMatch = "If-Match";
-
-    /// <summary>Gets the <c>If-Modified-Since</c> HTTP header name.</summary>
-    public static readonly string IfModifiedSince = "If-Modified-Since";
-
-    /// <summary>Gets the <c>If-None-Match</c> HTTP header name.</summary>
-    public static readonly string IfNoneMatch = "If-None-Match";
-
-    /// <summary>Gets the <c>If-Range</c> HTTP header name.</summary>
-    public static readonly string IfRange = "If-Range";
-
-    /// <summary>Gets the <c>If-Unmodified-Since</c> HTTP header name.</summary>
-    public static readonly string IfUnmodifiedSince = "If-Unmodified-Since";
-
     /// <summary>Gets the <c>Last-Modified</c> HTTP header name.</summary>
     public static readonly string LastModified = "Last-Modified";
 
@@ -169,35 +158,8 @@ public static class HeaderNames
     /// <summary>Gets the <c>Location</c> HTTP header name.</summary>
     public static readonly string Location = "Location";
 
-    /// <summary>Gets the <c>Max-Forwards</c> HTTP header name.</summary>
-    public static readonly string MaxForwards = "Max-Forwards";
-
-    /// <summary>Gets the <c>Origin</c> HTTP header name.</summary>
-    public static readonly string Origin = "Origin";
-
-    /// <summary>Gets the <c>Pragma</c> HTTP header name.</summary>
-    public static readonly string Pragma = "Pragma";
-
-    /// <summary>Gets the <c>Proxy-Authenticate</c> HTTP header name.</summary>
-    public static readonly string ProxyAuthenticate = "Proxy-Authenticate";
-
-    /// <summary>Gets the <c>Proxy-Authorization</c> HTTP header name.</summary>
-    public static readonly string ProxyAuthorization = "Proxy-Authorization";
-
-    /// <summary>Gets the <c>Proxy-Connection</c> HTTP header name.</summary>
-    public static readonly string ProxyConnection = "Proxy-Connection";
-
-    /// <summary>Gets the <c>Range</c> HTTP header name.</summary>
-    public static readonly string Range = "Range";
-
-    /// <summary>Gets the <c>Referer</c> HTTP header name.</summary>
-    public static readonly string Referer = "Referer";
-
     /// <summary>Gets the <c>Retry-After</c> HTTP header name.</summary>
     public static readonly string RetryAfter = "Retry-After";
-
-    /// <summary>Gets the <c>Request-Id</c> HTTP header name.</summary>
-    public static readonly string RequestId = "Request-Id";
 
     /// <summary>Gets the <c>Sec-WebSocket-Accept</c> HTTP header name.</summary>
     public static readonly string SecWebSocketAccept = "Sec-WebSocket-Accept";
@@ -223,41 +185,11 @@ public static class HeaderNames
     /// <summary>Gets the <c>Strict-Transport-Security</c> HTTP header name.</summary>
     public static readonly string StrictTransportSecurity = "Strict-Transport-Security";
 
-    /// <summary>Gets the <c>TE</c> HTTP header name.</summary>
-    public static readonly string TE = "TE";
-
-    /// <summary>Gets the <c>Trailer</c> HTTP header name.</summary>
-    public static readonly string Trailer = "Trailer";
-
-    /// <summary>Gets the <c>Transfer-Encoding</c> HTTP header name.</summary>
-    public static readonly string TransferEncoding = "Transfer-Encoding";
-
     /// <summary>Gets the <c>Translate</c> HTTP header name.</summary>
     public static readonly string Translate = "Translate";
 
-    /// <summary>Gets the <c>traceparent</c> HTTP header name.</summary>
-    public static readonly string TraceParent = "traceparent";
-
-    /// <summary>Gets the <c>tracestate</c> HTTP header name.</summary>
-    public static readonly string TraceState = "tracestate";
-
-    /// <summary>Gets the <c>Upgrade</c> HTTP header name.</summary>
-    public static readonly string Upgrade = "Upgrade";
-
-    /// <summary>Gets the <c>Upgrade-Insecure-Requests</c> HTTP header name.</summary>
-    public static readonly string UpgradeInsecureRequests = "Upgrade-Insecure-Requests";
-
-    /// <summary>Gets the <c>User-Agent</c> HTTP header name.</summary>
-    public static readonly string UserAgent = "User-Agent";
-
     /// <summary>Gets the <c>Vary</c> HTTP header name.</summary>
     public static readonly string Vary = "Vary";
-
-    /// <summary>Gets the <c>Via</c> HTTP header name.</summary>
-    public static readonly string Via = "Via";
-
-    /// <summary>Gets the <c>Warning</c> HTTP header name.</summary>
-    public static readonly string Warning = "Warning";
 
     /// <summary>Gets the <c>WWW-Authenticate</c> HTTP header name.</summary>
     public static readonly string WWWAuthenticate = "WWW-Authenticate";
@@ -270,9 +202,6 @@ public static class HeaderNames
 
     /// <summary>Gets the <c>X-Powered-By</c> HTTP header name.</summary>
     public static readonly string XPoweredBy = "X-Powered-By";
-
-    /// <summary>Gets the <c>X-Requested-With</c> HTTP header name.</summary>
-    public static readonly string XRequestedWith = "X-Requested-With";
 
     /// <summary>Gets the <c>X-UA-Compatible</c> HTTP header name.</summary>
     public static readonly string XUACompatible = "X-UA-Compatible";

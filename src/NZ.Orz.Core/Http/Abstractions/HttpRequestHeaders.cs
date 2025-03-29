@@ -12,6 +12,7 @@ public partial class HttpRequestHeaders : IHeaderDictionary
     private ulong _bits;
     private HeaderReferences _r = new HeaderReferences();
     private Dictionary<string, StringValues> dict;
+    internal long? _contentLength;
 
     public int Count => BitOperations.PopCount(_bits) + (dict == null ? 0 : dict.Count);
 

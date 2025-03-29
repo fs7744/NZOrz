@@ -36,7 +36,7 @@ public abstract class HttpProtocol : HttpConnectionContext, IRequestProcessor
     public string? QueryString { get; set; }
     public string? RawTarget { get; set; }
 
-    public HttpRequestHeaders RequestHeaders { get; set; }
+    public IHeaderDictionary RequestHeaders { get; set; }
 
     //public IHeaderDictionary RequestTrailers { get; } = new HeaderDictionary();
     public bool RequestTrailersAvailable { get; set; }
