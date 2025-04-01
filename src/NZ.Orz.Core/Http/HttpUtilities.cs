@@ -4,6 +4,7 @@ using System.Buffers.Binary;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
+using NZ.Orz.Http.Exceptions;
 
 namespace NZ.Orz.Http;
 
@@ -303,5 +304,58 @@ public static class HttpUtilities
         }
         knownScheme = HttpScheme.Unknown;
         return false;
+    }
+
+    // The same as GetAsciiString but throws BadRequest for null character
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static string GetHeaderName(this ReadOnlySpan<byte> span)
+    {
+        if (span.IsEmpty)
+        {
+            return string.Empty;
+        }
+#if NET9_0_OR_GREATER
+        var str = string.Create(span.Length, span, static (destination, source) =>
+        {
+            if (source.Contains((byte)0)
+                || Ascii.ToUtf16(source, destination, out var written) != OperationStatus.Done)
+            {
+                throw BadHttpRequestException.GetException(RequestRejectionReason.InvalidCharactersInHeaderName);
+            }
+            else
+            {
+                Debug.Assert(written == destination.Length);
+            }
+        });
+#else
+        var str = span.GetAsciiString();
+#endif
+
+        return str;
+    }
+
+    public static string GetRequestHeaderString(this ReadOnlySpan<byte> span, string name, bool checkForNewlineChars)
+    {
+        string result = span.GetAsciiOrUTF8String(DefaultRequestHeaderEncoding);
+
+        // New Line characters (CR, LF) are considered invalid at this point.
+        // Null characters are also not allowed.
+        var hasInvalidChar = checkForNewlineChars ?
+            ((ReadOnlySpan<char>)result).ContainsAny('\r', '\n', '\0')
+            : ((ReadOnlySpan<char>)result).Contains('\0');
+
+        if (hasInvalidChar)
+        {
+            if (checkForNewlineChars)
+            {
+                throw new InvalidOperationException("Newline characters (CR/LF) or Null are not allowed in request headers.");
+            }
+            else
+            {
+                throw new InvalidOperationException("Null characters are not allowed in request headers.");
+            }
+        }
+
+        return result;
     }
 }

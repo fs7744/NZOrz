@@ -1,4 +1,5 @@
-﻿using NZ.Orz.Http;
+﻿using Microsoft.Extensions.Primitives;
+using NZ.Orz.Http;
 using System.Data;
 using System.Text;
 
@@ -139,6 +140,42 @@ public partial class HttpRequestHeaders
         ((ICollection<KeyValuePair<string, StringValues>>?)dict)?.CopyTo(array, arrayIndex);
     }}
 
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    public void Append(ReadOnlySpan<byte> name, ReadOnlySpan<byte> value, bool checkForNewlineChars)
+    {{
+        var nameStr = string.Empty;
+        ref byte nameStart = ref MemoryMarshal.GetReference(name);
+        ref StringValues values = ref Unsafe.NullRef<StringValues>();
+        var flag = 0UL;
+        switch (name.Length)
+        {{
+            {GenerateAppend()}
+
+            default:
+                break;
+        }}
+        if (flag != 0UL)
+        {{
+            var valueStr = value.GetRequestHeaderString(nameStr, checkForNewlineChars);
+            if ((_bits & flag) == 0)
+            {{
+                _bits |= flag;
+                values = new StringValues(valueStr);
+            }}
+            else
+            {{
+                values = StringValues.Concat(values, valueStr);
+            }}
+        }}
+        else
+        {{
+            nameStr = name.GetHeaderName();
+            var valueStr = value.GetRequestHeaderString(nameStr, checkForNewlineChars);
+            dict.TryGetValue(nameStr, out var existing);
+            dict[nameStr] = StringValues.Concat(existing, valueStr);
+        }}
+    }}
+
     public partial struct Enumerator
     {{
         public bool MoveNext()
@@ -186,6 +223,79 @@ public partial class HttpRequestHeaders
     }}.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
 }}
 ";
+    }
+
+    private string GenerateAppend()
+    {
+        var sb = new StringBuilder();
+
+        foreach (var kvs in bits.Select(i => (i.Key, Encoding.ASCII.GetBytes(i.Key), i.Value)).GroupBy(i => i.Item2.Length).OrderBy(i => i.Key))
+        {
+            var c = kvs.Key;
+            var a = kvs.ToArray();
+            sb.AppendLine($"case {c}:{{");
+            List<(string, string[])> np = new();
+            var pi = 0;
+            while (c > 0)
+            {
+                if (c >= 8)
+                {
+                    sb.AppendLine($"var l{pi}= ReadUnalignedLittleEndian_ulong(ref nameStart);");
+                    c -= 8;
+                    if (c > 0)
+                    {
+                        sb.AppendLine($"nameStart = Unsafe.AddByteOffset(ref nameStart, (IntPtr)(8);");
+                    }
+                    np.Add(($"l{pi}", a.Select(i => $"{HttpRequestHeaders.ReadUnalignedLittleEndian_ulong(ref i.Item2[i.Item2.Length - c - 1])}UL").ToArray()));
+                    pi++;
+                }
+                else if (c >= 4)
+                {
+                    sb.AppendLine($"var l{pi}= ReadUnalignedLittleEndian_uint(ref nameStart);");
+                    c -= 4;
+                    if (c > 0)
+                    {
+                        sb.AppendLine($"nameStart = Unsafe.AddByteOffset(ref nameStart, (IntPtr)(4);");
+                    }
+                    np.Add(($"i{pi}", a.Select(i => $"{HttpRequestHeaders.ReadUnalignedLittleEndian_uint(ref i.Item2[i.Item2.Length - c - 1])}U").ToArray()));
+                    pi++;
+                }
+                else if (c >= 2)
+                {
+                    sb.AppendLine($"var s{pi}= ReadUnalignedLittleEndian_ushort(ref nameStart);");
+                    c -= 2;
+                    if (c > 0)
+                    {
+                        sb.AppendLine($"nameStart = Unsafe.AddByteOffset(ref nameStart, (IntPtr)(2);");
+                    }
+                    np.Add(($"s{pi}", a.Select(i => $"{HttpRequestHeaders.ReadUnalignedLittleEndian_ushort(ref i.Item2[i.Item2.Length - c - 1])}").ToArray()));
+                    pi++;
+                }
+                else
+                {
+                    np.Add(("nameStart", a.Select(i => $"{i.Item2[i.Item2.Length - c - 1]}").ToArray()));
+                    c--;
+                }
+            }
+
+            for (int i = 0; i < a.Length; i++)
+            {
+                var (k, kbs, v) = a[i];
+                sb.Append(i == 0 ? "if" : " else if");
+                sb.Append(" (");
+                sb.Append(string.Join(" && ", np.Select(x =>
+                {
+                    return $"{x.Item1} == {x.Item2[i]}";
+                })));
+                sb.AppendLine(")");
+                sb.AppendLine("{");
+                //todo
+                sb.AppendLine("}");
+            }
+            sb.AppendLine($"}} break;");
+        }
+        var r = sb.ToString();
+        return r;
     }
 
     private string GenerateMoveNext()

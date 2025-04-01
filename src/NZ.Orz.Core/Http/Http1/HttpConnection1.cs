@@ -85,6 +85,9 @@ public class HttpConnection1 : HttpProtocol
     protected override void OnReset()
     {
         _requestTimedOut = false;
+        _requestTargetForm = HttpRequestTarget.Unknown;
+        _absoluteRequestTarget = null;
+        _remainingRequestHeadersBytesAllowed = (long)limits.MaxRequestHeadersTotalSize + 2;
         // todo
     }
 
@@ -646,8 +649,8 @@ public class HttpConnection1 : HttpProtocol
     public virtual void OnHeader(ReadOnlySpan<byte> name, ReadOnlySpan<byte> value, bool checkForNewlineChars)
     {
         IncrementRequestHeadersCount();
-        //todo
-        //RequestHeaders.Append(name, value, checkForNewlineChars);
+
+        RequestHeaders.Append(name, value, checkForNewlineChars);
     }
 
     public virtual void OnHeader(int index, bool indexOnly, ReadOnlySpan<byte> name, ReadOnlySpan<byte> value)

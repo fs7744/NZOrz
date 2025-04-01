@@ -1,9 +1,13 @@
 ﻿using Microsoft.Extensions.Primitives;
 using NZ.Orz.Http.Exceptions;
+using System.Buffers.Binary;
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Numerics;
+using System.Reflection.PortableExecutable;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace NZ.Orz.Http;
 
@@ -11,7 +15,7 @@ public partial class HttpRequestHeaders : IHeaderDictionary
 {
     private ulong _bits;
     private HeaderReferences _r = new HeaderReferences();
-    private Dictionary<string, StringValues> dict;
+    private Dictionary<string, StringValues> dict = new Dictionary<string, StringValues>(StringComparer.OrdinalIgnoreCase);
     internal long? _contentLength;
 
     public int Count => BitOperations.PopCount(_bits) + (dict == null ? 0 : dict.Count);
@@ -33,10 +37,6 @@ public partial class HttpRequestHeaders : IHeaderDictionary
             }
             else
             {
-                if (dict == null)
-                {
-                    dict = new Dictionary<string, StringValues>(StringComparer.OrdinalIgnoreCase);
-                }
                 dict[key] = value;
             }
         }
@@ -125,7 +125,7 @@ public partial class HttpRequestHeaders : IHeaderDictionary
         internal Enumerator(HttpRequestHeaders collection)
         {
             _collection = collection;
-            _enumerator = _collection.dict?.GetEnumerator();
+            _enumerator = _collection.dict.GetEnumerator();
             _currentBits = collection._bits;
             _next = GetNext(_currentBits);
         }
@@ -173,5 +173,83 @@ public partial class HttpRequestHeaders : IHeaderDictionary
         }
 
         return parsed;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ushort ReadUnalignedLittleEndian_ushort(ref byte source)
+    {
+        ushort result = Unsafe.ReadUnaligned<ushort>(ref source);
+        if (!BitConverter.IsLittleEndian)
+        {
+            result = BinaryPrimitives.ReverseEndianness(result);
+        }
+        return result;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static uint ReadUnalignedLittleEndian_uint(ref byte source)
+    {
+        uint result = Unsafe.ReadUnaligned<uint>(ref source);
+        if (!BitConverter.IsLittleEndian)
+        {
+            result = BinaryPrimitives.ReverseEndianness(result);
+        }
+        return result;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ulong ReadUnalignedLittleEndian_ulong(ref byte source)
+    {
+        ulong result = Unsafe.ReadUnaligned<ulong>(ref source);
+        if (!BitConverter.IsLittleEndian)
+        {
+            result = BinaryPrimitives.ReverseEndianness(result);
+        }
+        return result;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    public void Append(ReadOnlySpan<byte> name, ReadOnlySpan<byte> value, bool checkForNewlineChars)
+    {
+        var nameStr = string.Empty;
+        ref byte nameStart = ref MemoryMarshal.GetReference(name);
+        ref StringValues values = ref Unsafe.NullRef<StringValues>();
+        var flag = 0UL;
+        switch (name.Length)
+        {
+            case 4:
+                var n = ReadUnalignedLittleEndian_uint(ref nameStart);
+                nameStart = Unsafe.AddByteOffset(ref nameStart, (IntPtr)2);
+                if (n == 1953722184U)
+                {
+                    flag = 1UL;
+                    values = ref _r.Host;
+                    nameStr = HeaderNames.Host;
+                }
+                break;
+
+            default:
+                break;
+        }
+        if (flag != 0UL)
+        {
+            var valueStr = value.GetRequestHeaderString(nameStr, checkForNewlineChars);
+            if ((_bits & flag) == 0)
+            {
+                _bits |= flag;
+                values = new StringValues(valueStr);
+            }
+            else
+            {
+                values = StringValues.Concat(values, valueStr);
+            }
+        }
+        else
+        {
+            nameStr = name.GetHeaderName();
+            var valueStr = value.GetRequestHeaderString(nameStr, checkForNewlineChars);
+            dict.TryGetValue(nameStr, out var existing);
+            dict[nameStr] = StringValues.Concat(existing, valueStr);
+        }
     }
 }
