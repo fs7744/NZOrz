@@ -9,8 +9,6 @@ using NZ.Orz.Metrics;
 using NZ.Orz.ReverseProxy.Http;
 using NZ.Orz.ReverseProxy.L4;
 using System.IO.Pipelines;
-using System.Net;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace NZ.Orz.Servers;
 

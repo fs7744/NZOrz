@@ -6,7 +6,6 @@ using NZ.Orz.Infrastructure;
 using System.Buffers;
 using System.IO.Pipelines;
 using System.Net.Security;
-using System.Security.Cryptography.X509Certificates;
 
 namespace NZ.Orz.ReverseProxy.L4;
 

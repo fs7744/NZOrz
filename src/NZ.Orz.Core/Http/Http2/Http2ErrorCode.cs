@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace NZ.Orz.Http.Http2;
+﻿namespace NZ.Orz.Http.Http2;
 
 internal enum Http2ErrorCode : uint
 {
