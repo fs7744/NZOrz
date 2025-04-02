@@ -101,6 +101,26 @@ public partial class OrzLogger : ILogger
         GeneralLog.RequestBodyDrainTimedOut(_httplogger, connectionId, traceIdentifier);
     }
 
+    public void RequestProcessingError(string connectionId, Exception ex)
+    {
+        GeneralLog.RequestProcessingError(_httplogger, connectionId, ex);
+    }
+
+    public void RequestAborted(string connectionId, string traceIdentifier)
+    {
+        GeneralLog.RequestAbortedException(_httplogger, connectionId, traceIdentifier);
+    }
+
+    public void ConnectionKeepAlive(string connectionId)
+    {
+        GeneralLog.ConnectionKeepAlive(_httplogger, connectionId);
+    }
+
+    public void ConnectionHeadResponseBodyWrite(string connectionId, long count)
+    {
+        GeneralLog.ConnectionHeadResponseBodyWrite(_httplogger, connectionId, count);
+    }
+
     private static partial class GeneralLog
     {
         [LoggerMessage(0, LogLevel.Error, @"Unexpected exception {Msg}.", EventName = "UnexpectedException", SkipEnabledCheck = true)]
@@ -135,6 +155,18 @@ public partial class OrzLogger : ILogger
 
         [LoggerMessage(35, LogLevel.Information, @"Connection id ""{ConnectionId}"", Request id ""{TraceIdentifier}"": automatic draining of the request body timed out after taking over 5 seconds.", EventName = "RequestBodyDrainTimedOut")]
         public static partial void RequestBodyDrainTimedOut(ILogger logger, string connectionId, string traceIdentifier);
+
+        [LoggerMessage(36, LogLevel.Debug, @"Connection id ""{ConnectionId}"" request processing ended abnormally.", EventName = "RequestProcessingError")]
+        public static partial void RequestProcessingError(ILogger logger, string connectionId, Exception ex);
+
+        [LoggerMessage(37, LogLevel.Debug, @"Connection id ""{ConnectionId}"", Request id ""{TraceIdentifier}"": The request was aborted by the client.", EventName = "RequestAborted")]
+        public static partial void RequestAbortedException(ILogger logger, string connectionId, string traceIdentifier);
+
+        [LoggerMessage(38, LogLevel.Debug, @"Connection id ""{ConnectionId}"" completed keep alive response.", EventName = "ConnectionKeepAlive")]
+        public static partial void ConnectionKeepAlive(ILogger logger, string connectionId);
+
+        [LoggerMessage(39, LogLevel.Debug, @"Connection id ""{ConnectionId}"" write of ""{count}"" body bytes to non-body HEAD response.", EventName = "ConnectionHeadResponseBodyWrite")]
+        public static partial void ConnectionHeadResponseBodyWrite(ILogger logger, string connectionId, long count);
     }
 
     #endregion ConnectionsLog
