@@ -7,56 +7,56 @@ namespace CodeGenerater;
 
 public class HttpRequestHeaderGenerate
 {
-    private List<string> headers = new List<string>()
+    private Dictionary<string, string> headers = new()
     {
-        nameof(HeaderNames.Host),
-nameof(HeaderNames.Connection),
-nameof(HeaderNames.ContentLength),
-nameof(HeaderNames.UserAgent),
-nameof(HeaderNames.Upgrade),
-nameof(HeaderNames.UpgradeInsecureRequests),
-nameof(HeaderNames.Cookie),
-nameof(HeaderNames.TraceParent),
-nameof(HeaderNames.TraceState),
-nameof(HeaderNames.XForwardedFor),
-nameof(HeaderNames.XForwardedHost),
-nameof(HeaderNames.XForwardedProto),
-nameof(HeaderNames.Origin),
-nameof(HeaderNames.CacheControl),
-nameof(HeaderNames.ContentType),
-nameof(HeaderNames.AccessControlRequestMethod),
-nameof(HeaderNames.AccessControlRequestHeaders),
-nameof(HeaderNames.XRequestID),
-nameof(HeaderNames.Accept),
-nameof(HeaderNames.AcceptCharset),
-nameof(HeaderNames.AcceptDatetime),
-nameof(HeaderNames.AcceptEncoding),
-nameof(HeaderNames.AcceptLanguage),
-nameof(HeaderNames.ContentEncoding),
-nameof(HeaderNames.ContentMD5),
-nameof(HeaderNames.Expect),
-nameof(HeaderNames.IfMatch),
-nameof(HeaderNames.IfModifiedSince),
-nameof(HeaderNames.IfNoneMatch),
-nameof(HeaderNames.IfRange),
-nameof(HeaderNames.IfUnmodifiedSince),
-nameof(HeaderNames.MaxForwards),
-nameof(HeaderNames.Pragma),
-nameof(HeaderNames.Prefer),
-nameof(HeaderNames.ProxyAuthorization),
-nameof(HeaderNames.Range),
-nameof(HeaderNames.Referer),
-nameof(HeaderNames.TE),
-nameof(HeaderNames.Trailer),
-nameof(HeaderNames.TransferEncoding),
-nameof(HeaderNames.ProxyConnection),
-nameof(HeaderNames.XCorrelationID),
-nameof(HeaderNames.CorrelationID),
-nameof(HeaderNames.RequestId),
-nameof(HeaderNames.KeepAlive),
-nameof(HeaderNames.ProxyAuthenticate),
-nameof(HeaderNames.Forwarded),
-nameof(HeaderNames.XCsrfToken),
+        {nameof(HeaderNames.Host),HeaderNames.Host},
+{nameof(HeaderNames.Connection),HeaderNames.Connection},
+{nameof(HeaderNames.ContentLength),HeaderNames.ContentLength},
+{nameof(HeaderNames.UserAgent),HeaderNames.UserAgent},
+{nameof(HeaderNames.Upgrade),HeaderNames.Upgrade},
+{nameof(HeaderNames.UpgradeInsecureRequests),HeaderNames.UpgradeInsecureRequests},
+{nameof(HeaderNames.Cookie),HeaderNames.Cookie},
+{nameof(HeaderNames.TraceParent),HeaderNames.TraceParent},
+{nameof(HeaderNames.TraceState),HeaderNames.TraceState},
+{nameof(HeaderNames.XForwardedFor),HeaderNames.XForwardedFor},
+{nameof(HeaderNames.XForwardedHost),HeaderNames.XForwardedHost},
+{nameof(HeaderNames.XForwardedProto),HeaderNames.XForwardedProto},
+{nameof(HeaderNames.Origin),HeaderNames.Origin},
+{nameof(HeaderNames.CacheControl),HeaderNames.CacheControl},
+{nameof(HeaderNames.ContentType),HeaderNames.ContentType},
+{nameof(HeaderNames.AccessControlRequestMethod),HeaderNames.AccessControlRequestMethod},
+{nameof(HeaderNames.AccessControlRequestHeaders),HeaderNames.AccessControlRequestHeaders},
+{nameof(HeaderNames.XRequestID),HeaderNames.XRequestID},
+{nameof(HeaderNames.Accept),HeaderNames.Accept},
+{nameof(HeaderNames.AcceptCharset),HeaderNames.AcceptCharset},
+{nameof(HeaderNames.AcceptDatetime),HeaderNames.AcceptDatetime},
+{nameof(HeaderNames.AcceptEncoding),HeaderNames.AcceptEncoding},
+{nameof(HeaderNames.AcceptLanguage),HeaderNames.AcceptLanguage},
+{nameof(HeaderNames.ContentEncoding),HeaderNames.ContentEncoding},
+{nameof(HeaderNames.ContentMD5),HeaderNames.ContentMD5},
+{nameof(HeaderNames.Expect),HeaderNames.Expect},
+{nameof(HeaderNames.IfMatch),HeaderNames.IfMatch},
+{nameof(HeaderNames.IfModifiedSince),HeaderNames.IfModifiedSince},
+{nameof(HeaderNames.IfNoneMatch),HeaderNames.IfNoneMatch},
+{nameof(HeaderNames.IfRange),HeaderNames.IfRange},
+{nameof(HeaderNames.IfUnmodifiedSince),HeaderNames.IfUnmodifiedSince},
+{nameof(HeaderNames.MaxForwards),HeaderNames.MaxForwards},
+{nameof(HeaderNames.Pragma),HeaderNames.Pragma},
+{nameof(HeaderNames.Prefer),HeaderNames.Prefer},
+{nameof(HeaderNames.ProxyAuthorization),HeaderNames.ProxyAuthorization},
+{nameof(HeaderNames.Range),HeaderNames.Range},
+{nameof(HeaderNames.Referer),HeaderNames.Referer},
+{nameof(HeaderNames.TE),HeaderNames.TE},
+{nameof(HeaderNames.Trailer),HeaderNames.Trailer},
+{nameof(HeaderNames.TransferEncoding),HeaderNames.TransferEncoding},
+{nameof(HeaderNames.ProxyConnection),HeaderNames.ProxyConnection},
+{nameof(HeaderNames.XCorrelationID),HeaderNames.XCorrelationID},
+{nameof(HeaderNames.CorrelationID),HeaderNames.CorrelationID},
+{nameof(HeaderNames.RequestId),HeaderNames.RequestId},
+{nameof(HeaderNames.KeepAlive),HeaderNames.KeepAlive},
+{nameof(HeaderNames.ProxyAuthenticate),HeaderNames.ProxyAuthenticate},
+{nameof(HeaderNames.Forwarded),HeaderNames.Forwarded},
+{nameof(HeaderNames.XCsrfToken),HeaderNames.XCsrfToken},
     };
 
     private Dictionary<string, string> bits = new(StringComparer.OrdinalIgnoreCase)
@@ -70,9 +70,12 @@ nameof(HeaderNames.XCsrfToken),
             throw new DuplicateNameException();
         }
         InitData();
-        return $@"
-using Microsoft.Extensions.Primitives;
+        return $@"using Microsoft.Extensions.Primitives;
+using NZ.Orz.Http.Exceptions;
+using System.Collections.Frozen;
 using System.Numerics;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace NZ.Orz.Http;
 
@@ -229,52 +232,58 @@ public partial class HttpRequestHeaders
     {
         var sb = new StringBuilder();
 
-        foreach (var kvs in bits.Select(i => (i.Key, Encoding.ASCII.GetBytes(i.Key), i.Value)).GroupBy(i => i.Item2.Length).OrderBy(i => i.Key))
+        foreach (var kvs in bits.Select(i => (i.Key, Encoding.ASCII.GetBytes(headers[i.Key]), i.Value)).GroupBy(i => i.Item2.Length).OrderBy(i => i.Key))
         {
             var c = kvs.Key;
             var a = kvs.ToArray();
             sb.AppendLine($"case {c}:{{");
             List<(string, string[])> np = new();
             var pi = 0;
+            var idex = 0;
+            sb.AppendLine($"ref byte ns = ref nameStart;");
             while (c > 0)
             {
                 if (c >= 8)
                 {
-                    sb.AppendLine($"var l{pi}= ReadUnalignedLittleEndian_ulong(ref nameStart);");
+                    sb.AppendLine($"var l{pi}= ReadUnalignedLittleEndian_ulong(ref ns);");
                     c -= 8;
                     if (c > 0)
                     {
-                        sb.AppendLine($"nameStart = Unsafe.AddByteOffset(ref nameStart, (IntPtr)(8);");
+                        sb.AppendLine($"ns = ref Unsafe.AddByteOffset(ref ns, (IntPtr)(8));");
                     }
-                    np.Add(($"l{pi}", a.Select(i => $"{HttpRequestHeaders.ReadUnalignedLittleEndian_ulong(ref i.Item2[i.Item2.Length - c - 1])}UL").ToArray()));
+                    np.Add(($"l{pi}", a.Select(i => $"{HttpRequestHeaders.ReadUnalignedLittleEndian_ulong(ref i.Item2[idex])}UL").ToArray()));
                     pi++;
+                    idex += 8;
                 }
                 else if (c >= 4)
                 {
-                    sb.AppendLine($"var l{pi}= ReadUnalignedLittleEndian_uint(ref nameStart);");
+                    sb.AppendLine($"var i{pi}= ReadUnalignedLittleEndian_uint(ref ns);");
                     c -= 4;
                     if (c > 0)
                     {
-                        sb.AppendLine($"nameStart = Unsafe.AddByteOffset(ref nameStart, (IntPtr)(4);");
+                        sb.AppendLine($"ns = ref Unsafe.AddByteOffset(ref ns, (IntPtr)(4));");
                     }
-                    np.Add(($"i{pi}", a.Select(i => $"{HttpRequestHeaders.ReadUnalignedLittleEndian_uint(ref i.Item2[i.Item2.Length - c - 1])}U").ToArray()));
+                    np.Add(($"i{pi}", a.Select(i => $"{HttpRequestHeaders.ReadUnalignedLittleEndian_uint(ref i.Item2[idex])}U").ToArray()));
                     pi++;
+                    idex += 4;
                 }
                 else if (c >= 2)
                 {
-                    sb.AppendLine($"var s{pi}= ReadUnalignedLittleEndian_ushort(ref nameStart);");
+                    sb.AppendLine($"var s{pi}= ReadUnalignedLittleEndian_ushort(ref ns);");
                     c -= 2;
                     if (c > 0)
                     {
-                        sb.AppendLine($"nameStart = Unsafe.AddByteOffset(ref nameStart, (IntPtr)(2);");
+                        sb.AppendLine($"ns = ref Unsafe.AddByteOffset(ref ns, (IntPtr)(2));");
                     }
-                    np.Add(($"s{pi}", a.Select(i => $"{HttpRequestHeaders.ReadUnalignedLittleEndian_ushort(ref i.Item2[i.Item2.Length - c - 1])}").ToArray()));
+                    np.Add(($"s{pi}", a.Select(i => $"{HttpRequestHeaders.ReadUnalignedLittleEndian_ushort(ref i.Item2[idex])}").ToArray()));
                     pi++;
+                    idex += 2;
                 }
                 else
                 {
-                    np.Add(("nameStart", a.Select(i => $"{i.Item2[i.Item2.Length - c - 1]}").ToArray()));
+                    np.Add(("ns", a.Select(i => $"{i.Item2[idex]}").ToArray()));
                     c--;
+                    idex++;
                 }
             }
 
@@ -288,9 +297,29 @@ public partial class HttpRequestHeaders
                     return $"{x.Item1} == {x.Item2[i]}";
                 })));
                 sb.AppendLine(")");
-                sb.AppendLine("{");
-                //todo
-                sb.AppendLine("}");
+                if (k == nameof(HeaderNames.ContentLength))
+                {
+                    sb.AppendLine(@$"{{
+                    if ((_bits & {v}) == 0)
+                    {{
+                        _bits |= {v};
+                        AppendContentLength(value);
+                        return;
+                    }}
+                    else
+                    {{
+                        throw BadHttpRequestException.GetException(RequestRejectionReason.MultipleContentLengths);
+                    }}
+}}");
+                }
+                else
+                {
+                    sb.AppendLine(@$"{{
+                    flag = {v};
+                    values = ref _r.{k};
+                    nameStr = HeaderNames.{k};
+}}");
+                }
             }
             sb.AppendLine($"}} break;");
         }
@@ -442,7 +471,7 @@ case KnownHeaderType.{k}:
     private void InitData()
     {
         ulong b = 1UL;
-        foreach (var item in headers)
+        foreach (var item in headers.Keys)
         {
             bits.Add(item, $"{b}UL");
             b <<= 1;

@@ -1,6 +1,9 @@
 ﻿using Microsoft.Extensions.Primitives;
+using NZ.Orz.Http.Exceptions;
 using System.Collections.Frozen;
 using System.Numerics;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace NZ.Orz.Http;
 
@@ -2650,6 +2653,535 @@ public partial class HttpRequestHeaders
         }
 
         ((ICollection<KeyValuePair<string, StringValues>>?)dict)?.CopyTo(array, arrayIndex);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    public void Append(ReadOnlySpan<byte> name, ReadOnlySpan<byte> value, bool checkForNewlineChars)
+    {
+        var nameStr = string.Empty;
+        ref byte nameStart = ref MemoryMarshal.GetReference(name);
+        ref StringValues values = ref Unsafe.NullRef<StringValues>();
+        var flag = 0UL;
+        switch (name.Length)
+        {
+            case 2:
+                {
+                    ref byte ns = ref nameStart;
+                    var s0 = ReadUnalignedLittleEndian_ushort(ref ns);
+                    if (s0 == 17748)
+                    {
+                        flag = 137438953472UL;
+                        values = ref _r.TE;
+                        nameStr = HeaderNames.TE;
+                    }
+                }
+                break;
+
+            case 4:
+                {
+                    ref byte ns = ref nameStart;
+                    var i0 = ReadUnalignedLittleEndian_uint(ref ns);
+                    if (i0 == 1953722184U)
+                    {
+                        flag = 1UL;
+                        values = ref _r.Host;
+                        nameStr = HeaderNames.Host;
+                    }
+                }
+                break;
+
+            case 5:
+                {
+                    ref byte ns = ref nameStart;
+                    var i0 = ReadUnalignedLittleEndian_uint(ref ns);
+                    ns = ref Unsafe.AddByteOffset(ref ns, (IntPtr)(4));
+                    if (i0 == 1735287122U && ns == 101)
+                    {
+                        flag = 34359738368UL;
+                        values = ref _r.Range;
+                        nameStr = HeaderNames.Range;
+                    }
+                }
+                break;
+
+            case 6:
+                {
+                    ref byte ns = ref nameStart;
+                    var i0 = ReadUnalignedLittleEndian_uint(ref ns);
+                    ns = ref Unsafe.AddByteOffset(ref ns, (IntPtr)(4));
+                    var s1 = ReadUnalignedLittleEndian_ushort(ref ns);
+                    if (i0 == 1802465091U && s1 == 25961)
+                    {
+                        flag = 64UL;
+                        values = ref _r.Cookie;
+                        nameStr = HeaderNames.Cookie;
+                    }
+                    else if (i0 == 1734963791U && s1 == 28265)
+                    {
+                        flag = 4096UL;
+                        values = ref _r.Origin;
+                        nameStr = HeaderNames.Origin;
+                    }
+                    else if (i0 == 1701012289U && s1 == 29808)
+                    {
+                        flag = 262144UL;
+                        values = ref _r.Accept;
+                        nameStr = HeaderNames.Accept;
+                    }
+                    else if (i0 == 1701869637U && s1 == 29795)
+                    {
+                        flag = 33554432UL;
+                        values = ref _r.Expect;
+                        nameStr = HeaderNames.Expect;
+                    }
+                    else if (i0 == 1734439504U && s1 == 24941)
+                    {
+                        flag = 4294967296UL;
+                        values = ref _r.Pragma;
+                        nameStr = HeaderNames.Pragma;
+                    }
+                    else if (i0 == 1717924432U && s1 == 29285)
+                    {
+                        flag = 8589934592UL;
+                        values = ref _r.Prefer;
+                        nameStr = HeaderNames.Prefer;
+                    }
+                }
+                break;
+
+            case 7:
+                {
+                    ref byte ns = ref nameStart;
+                    var i0 = ReadUnalignedLittleEndian_uint(ref ns);
+                    ns = ref Unsafe.AddByteOffset(ref ns, (IntPtr)(4));
+                    var s1 = ReadUnalignedLittleEndian_ushort(ref ns);
+                    ns = ref Unsafe.AddByteOffset(ref ns, (IntPtr)(2));
+                    if (i0 == 1919381589U && s1 == 25697 && ns == 101)
+                    {
+                        flag = 16UL;
+                        values = ref _r.Upgrade;
+                        nameStr = HeaderNames.Upgrade;
+                    }
+                    else if (i0 == 1701209426U && s1 == 25970 && ns == 114)
+                    {
+                        flag = 68719476736UL;
+                        values = ref _r.Referer;
+                        nameStr = HeaderNames.Referer;
+                    }
+                    else if (i0 == 1767993940U && s1 == 25964 && ns == 114)
+                    {
+                        flag = 274877906944UL;
+                        values = ref _r.Trailer;
+                        nameStr = HeaderNames.Trailer;
+                    }
+                }
+                break;
+
+            case 8:
+                {
+                    ref byte ns = ref nameStart;
+                    var l0 = ReadUnalignedLittleEndian_ulong(ref ns);
+                    if (l0 == 7521983763894330953UL)
+                    {
+                        flag = 67108864UL;
+                        values = ref _r.IfMatch;
+                        nameStr = HeaderNames.IfMatch;
+                    }
+                    else if (l0 == 7306930284701509193UL)
+                    {
+                        flag = 536870912UL;
+                        values = ref _r.IfRange;
+                        nameStr = HeaderNames.IfRange;
+                    }
+                }
+                break;
+
+            case 9:
+                {
+                    ref byte ns = ref nameStart;
+                    var l0 = ReadUnalignedLittleEndian_ulong(ref ns);
+                    ns = ref Unsafe.AddByteOffset(ref ns, (IntPtr)(8));
+                    if (l0 == 7306090258443169606UL && ns == 100)
+                    {
+                        flag = 70368744177664UL;
+                        values = ref _r.Forwarded;
+                        nameStr = HeaderNames.Forwarded;
+                    }
+                }
+                break;
+
+            case 10:
+                {
+                    ref byte ns = ref nameStart;
+                    var l0 = ReadUnalignedLittleEndian_ulong(ref ns);
+                    ns = ref Unsafe.AddByteOffset(ref ns, (IntPtr)(8));
+                    var s1 = ReadUnalignedLittleEndian_ushort(ref ns);
+                    if (l0 == 7598807758576447299UL && s1 == 28271)
+                    {
+                        flag = 2UL;
+                        values = ref _r.Connection;
+                        nameStr = HeaderNames.Connection;
+                    }
+                    else if (l0 == 7306880583880504149UL && s1 == 29806)
+                    {
+                        flag = 8UL;
+                        values = ref _r.UserAgent;
+                        nameStr = HeaderNames.UserAgent;
+                    }
+                    else if (l0 == 7022364598273667700UL && s1 == 25972)
+                    {
+                        flag = 256UL;
+                        values = ref _r.TraceState;
+                        nameStr = HeaderNames.TraceState;
+                    }
+                    else if (l0 == 3275369708604450130UL && s1 == 25673)
+                    {
+                        flag = 8796093022208UL;
+                        values = ref _r.RequestId;
+                        nameStr = HeaderNames.RequestId;
+                    }
+                    else if (l0 == 7596518334882211147UL && s1 == 25974)
+                    {
+                        flag = 17592186044416UL;
+                        values = ref _r.KeepAlive;
+                        nameStr = HeaderNames.KeepAlive;
+                    }
+                }
+                break;
+
+            case 11:
+                {
+                    ref byte ns = ref nameStart;
+                    var l0 = ReadUnalignedLittleEndian_ulong(ref ns);
+                    ns = ref Unsafe.AddByteOffset(ref ns, (IntPtr)(8));
+                    var s1 = ReadUnalignedLittleEndian_ushort(ref ns);
+                    ns = ref Unsafe.AddByteOffset(ref ns, (IntPtr)(2));
+                    if (l0 == 8241992373826056820UL && s1 == 28261 && ns == 116)
+                    {
+                        flag = 128UL;
+                        values = ref _r.TraceParent;
+                        nameStr = HeaderNames.TraceParent;
+                    }
+                    else if (l0 == 3275364211029339971UL && s1 == 17485 && ns == 53)
+                    {
+                        flag = 16777216UL;
+                        values = ref _r.ContentMD5;
+                        nameStr = HeaderNames.ContentMD5;
+                    }
+                }
+                break;
+
+            case 12:
+                {
+                    ref byte ns = ref nameStart;
+                    var l0 = ReadUnalignedLittleEndian_ulong(ref ns);
+                    ns = ref Unsafe.AddByteOffset(ref ns, (IntPtr)(8));
+                    var i1 = ReadUnalignedLittleEndian_uint(ref ns);
+                    if (l0 == 3275364211029339971UL && i1 == 1701869908U)
+                    {
+                        flag = 16384UL;
+                        values = ref _r.ContentType;
+                        nameStr = HeaderNames.ContentType;
+                    }
+                    else if (l0 == 8315181416901127512UL && i1 == 1145646452U)
+                    {
+                        flag = 131072UL;
+                        values = ref _r.XRequestID;
+                        nameStr = HeaderNames.XRequestID;
+                    }
+                    else if (l0 == 8607064185059696973UL && i1 == 1935962721U)
+                    {
+                        flag = 2147483648UL;
+                        values = ref _r.MaxForwards;
+                        nameStr = HeaderNames.MaxForwards;
+                    }
+                    else if (l0 == 6065616914884013400UL && i1 == 1852140399U)
+                    {
+                        flag = 140737488355328UL;
+                        values = ref _r.XCsrfToken;
+                        nameStr = HeaderNames.XCsrfToken;
+                    }
+                }
+                break;
+
+            case 13:
+                {
+                    ref byte ns = ref nameStart;
+                    var l0 = ReadUnalignedLittleEndian_ulong(ref ns);
+                    ns = ref Unsafe.AddByteOffset(ref ns, (IntPtr)(8));
+                    var i1 = ReadUnalignedLittleEndian_uint(ref ns);
+                    ns = ref Unsafe.AddByteOffset(ref ns, (IntPtr)(4));
+                    if (l0 == 8017301675215905091UL && i1 == 1869771886U && ns == 108)
+                    {
+                        flag = 8192UL;
+                        values = ref _r.CacheControl;
+                        nameStr = HeaderNames.CacheControl;
+                    }
+                    else if (l0 == 3271142128686556745UL && i1 == 1668571469U && ns == 104)
+                    {
+                        flag = 268435456UL;
+                        values = ref _r.IfNoneMatch;
+                        nameStr = HeaderNames.IfNoneMatch;
+                    }
+                }
+                break;
+
+            case 14:
+                {
+                    ref byte ns = ref nameStart;
+                    var l0 = ReadUnalignedLittleEndian_ulong(ref ns);
+                    ns = ref Unsafe.AddByteOffset(ref ns, (IntPtr)(8));
+                    var i1 = ReadUnalignedLittleEndian_uint(ref ns);
+                    ns = ref Unsafe.AddByteOffset(ref ns, (IntPtr)(4));
+                    var s2 = ReadUnalignedLittleEndian_ushort(ref ns);
+                    if (l0 == 3275364211029339971UL && i1 == 1735288140U && s2 == 26740)
+                    {
+                        if ((_bits & 4UL) == 0)
+                        {
+                            _bits |= 4UL;
+                            AppendContentLength(value);
+                            return;
+                        }
+                        else
+                        {
+                            throw BadHttpRequestException.GetException(RequestRejectionReason.MultipleContentLengths);
+                        }
+                    }
+                    else if (l0 == 4840653200579322689UL && i1 == 1936875880U && s2 == 29797)
+                    {
+                        flag = 524288UL;
+                        values = ref _r.AcceptCharset;
+                        nameStr = HeaderNames.AcceptCharset;
+                    }
+                    else if (l0 == 8386103164108173123UL && i1 == 762212201U && s2 == 17481)
+                    {
+                        flag = 4398046511104UL;
+                        values = ref _r.CorrelationID;
+                        nameStr = HeaderNames.CorrelationID;
+                    }
+                }
+                break;
+
+            case 15:
+                {
+                    ref byte ns = ref nameStart;
+                    var l0 = ReadUnalignedLittleEndian_ulong(ref ns);
+                    ns = ref Unsafe.AddByteOffset(ref ns, (IntPtr)(8));
+                    var i1 = ReadUnalignedLittleEndian_uint(ref ns);
+                    ns = ref Unsafe.AddByteOffset(ref ns, (IntPtr)(4));
+                    var s2 = ReadUnalignedLittleEndian_ushort(ref ns);
+                    ns = ref Unsafe.AddByteOffset(ref ns, (IntPtr)(2));
+                    if (l0 == 8242000126441565528UL && i1 == 761554276U && s2 == 28486 && ns == 114)
+                    {
+                        flag = 512UL;
+                        values = ref _r.XForwardedFor;
+                        nameStr = HeaderNames.XForwardedFor;
+                    }
+                    else if (l0 == 4912710794617250625UL && i1 == 1952805985U && s2 == 28009 && ns == 101)
+                    {
+                        flag = 1048576UL;
+                        values = ref _r.AcceptDatetime;
+                        nameStr = HeaderNames.AcceptDatetime;
+                    }
+                    else if (l0 == 4984768388655178561UL && i1 == 1685021550U && s2 == 28265 && ns == 103)
+                    {
+                        flag = 2097152UL;
+                        values = ref _r.AcceptEncoding;
+                        nameStr = HeaderNames.AcceptEncoding;
+                    }
+                    else if (l0 == 5489171546920674113UL && i1 == 1969712737U && s2 == 26465 && ns == 101)
+                    {
+                        flag = 4194304UL;
+                        values = ref _r.AcceptLanguage;
+                        nameStr = HeaderNames.AcceptLanguage;
+                    }
+                }
+                break;
+
+            case 16:
+                {
+                    ref byte ns = ref nameStart;
+                    var l0 = ReadUnalignedLittleEndian_ulong(ref ns);
+                    ns = ref Unsafe.AddByteOffset(ref ns, (IntPtr)(8));
+                    var l1 = ReadUnalignedLittleEndian_ulong(ref ns);
+                    if (l0 == 8242000126441565528UL && l1 == 8391172886511248740UL)
+                    {
+                        flag = 1024UL;
+                        values = ref _r.XForwardedHost;
+                        nameStr = HeaderNames.XForwardedHost;
+                    }
+                    else if (l0 == 3275364211029339971UL && l1 == 7453010313431182917UL)
+                    {
+                        flag = 8388608UL;
+                        values = ref _r.ContentEncoding;
+                        nameStr = HeaderNames.ContentEncoding;
+                    }
+                    else if (l0 == 8017301761384477264UL && l1 == 7957695015191670382UL)
+                    {
+                        flag = 1099511627776UL;
+                        values = ref _r.ProxyConnection;
+                        nameStr = HeaderNames.ProxyConnection;
+                    }
+                    else if (l0 == 7810774964562505048UL && l1 == 4920514020217812065UL)
+                    {
+                        flag = 2199023255552UL;
+                        values = ref _r.XCorrelationID;
+                        nameStr = HeaderNames.XCorrelationID;
+                    }
+                }
+                break;
+
+            case 17:
+                {
+                    ref byte ns = ref nameStart;
+                    var l0 = ReadUnalignedLittleEndian_ulong(ref ns);
+                    ns = ref Unsafe.AddByteOffset(ref ns, (IntPtr)(8));
+                    var l1 = ReadUnalignedLittleEndian_ulong(ref ns);
+                    ns = ref Unsafe.AddByteOffset(ref ns, (IntPtr)(8));
+                    if (l0 == 8242000126441565528UL && l1 == 8390050319499027812UL && ns == 111)
+                    {
+                        flag = 2048UL;
+                        values = ref _r.XForwardedProto;
+                        nameStr = HeaderNames.XForwardedProto;
+                    }
+                    else if (l0 == 7379539893622236745UL && l1 == 7164779863157794153UL && ns == 101)
+                    {
+                        flag = 134217728UL;
+                        values = ref _r.IfModifiedSince;
+                        nameStr = HeaderNames.IfModifiedSince;
+                    }
+                    else if (l0 == 8243107338930713172UL && l1 == 7956000646299010349UL && ns == 103)
+                    {
+                        flag = 549755813888UL;
+                        values = ref _r.TransferEncoding;
+                        nameStr = HeaderNames.TransferEncoding;
+                    }
+                }
+                break;
+
+            case 18:
+                {
+                    ref byte ns = ref nameStart;
+                    var l0 = ReadUnalignedLittleEndian_ulong(ref ns);
+                    ns = ref Unsafe.AddByteOffset(ref ns, (IntPtr)(8));
+                    var l1 = ReadUnalignedLittleEndian_ulong(ref ns);
+                    ns = ref Unsafe.AddByteOffset(ref ns, (IntPtr)(8));
+                    var s2 = ReadUnalignedLittleEndian_ushort(ref ns);
+                    if (l0 == 8449084375658623568UL && l1 == 7017568593162627188UL && s2 == 25972)
+                    {
+                        flag = 35184372088832UL;
+                        values = ref _r.ProxyAuthenticate;
+                        nameStr = HeaderNames.ProxyAuthenticate;
+                    }
+                }
+                break;
+
+            case 19:
+                {
+                    ref byte ns = ref nameStart;
+                    var l0 = ReadUnalignedLittleEndian_ulong(ref ns);
+                    ns = ref Unsafe.AddByteOffset(ref ns, (IntPtr)(8));
+                    var l1 = ReadUnalignedLittleEndian_ulong(ref ns);
+                    ns = ref Unsafe.AddByteOffset(ref ns, (IntPtr)(8));
+                    var s2 = ReadUnalignedLittleEndian_ushort(ref ns);
+                    ns = ref Unsafe.AddByteOffset(ref ns, (IntPtr)(2));
+                    if (l0 == 7237123446850545225UL && l1 == 7589459706270803561UL && s2 == 25454 && ns == 101)
+                    {
+                        flag = 1073741824UL;
+                        values = ref _r.IfUnmodifiedSince;
+                        nameStr = HeaderNames.IfUnmodifiedSince;
+                    }
+                    else if (l0 == 8449084375658623568UL && l1 == 8386118574450632820UL && s2 == 28521 && ns == 110)
+                    {
+                        flag = 17179869184UL;
+                        values = ref _r.ProxyAuthorization;
+                        nameStr = HeaderNames.ProxyAuthorization;
+                    }
+                }
+                break;
+
+            case 25:
+                {
+                    ref byte ns = ref nameStart;
+                    var l0 = ReadUnalignedLittleEndian_ulong(ref ns);
+                    ns = ref Unsafe.AddByteOffset(ref ns, (IntPtr)(8));
+                    var l1 = ReadUnalignedLittleEndian_ulong(ref ns);
+                    ns = ref Unsafe.AddByteOffset(ref ns, (IntPtr)(8));
+                    var l2 = ReadUnalignedLittleEndian_ulong(ref ns);
+                    ns = ref Unsafe.AddByteOffset(ref ns, (IntPtr)(8));
+                    if (l0 == 3271131074048520277UL && l1 == 7310034214940012105UL && l2 == 8391162085809410605UL && ns == 115)
+                    {
+                        flag = 32UL;
+                        values = ref _r.UpgradeInsecureRequests;
+                        nameStr = HeaderNames.UpgradeInsecureRequests;
+                    }
+                }
+                break;
+
+            case 29:
+                {
+                    ref byte ns = ref nameStart;
+                    var l0 = ReadUnalignedLittleEndian_ulong(ref ns);
+                    ns = ref Unsafe.AddByteOffset(ref ns, (IntPtr)(8));
+                    var l1 = ReadUnalignedLittleEndian_ulong(ref ns);
+                    ns = ref Unsafe.AddByteOffset(ref ns, (IntPtr)(8));
+                    var l2 = ReadUnalignedLittleEndian_ulong(ref ns);
+                    ns = ref Unsafe.AddByteOffset(ref ns, (IntPtr)(8));
+                    var i3 = ReadUnalignedLittleEndian_uint(ref ns);
+                    ns = ref Unsafe.AddByteOffset(ref ns, (IntPtr)(4));
+                    if (l0 == 4840652113952596801UL && l1 == 5921508310979473007UL && l2 == 5561229153844687205UL && i3 == 1869116517U && ns == 100)
+                    {
+                        flag = 32768UL;
+                        values = ref _r.AccessControlRequestMethod;
+                        nameStr = HeaderNames.AccessControlRequestMethod;
+                    }
+                }
+                break;
+
+            case 30:
+                {
+                    ref byte ns = ref nameStart;
+                    var l0 = ReadUnalignedLittleEndian_ulong(ref ns);
+                    ns = ref Unsafe.AddByteOffset(ref ns, (IntPtr)(8));
+                    var l1 = ReadUnalignedLittleEndian_ulong(ref ns);
+                    ns = ref Unsafe.AddByteOffset(ref ns, (IntPtr)(8));
+                    var l2 = ReadUnalignedLittleEndian_ulong(ref ns);
+                    ns = ref Unsafe.AddByteOffset(ref ns, (IntPtr)(8));
+                    var i3 = ReadUnalignedLittleEndian_uint(ref ns);
+                    ns = ref Unsafe.AddByteOffset(ref ns, (IntPtr)(4));
+                    var s4 = ReadUnalignedLittleEndian_ushort(ref ns);
+                    if (l0 == 4840652113952596801UL && l1 == 5921508310979473007UL && l2 == 5200941183655047525UL && i3 == 1701077349U && s4 == 29554)
+                    {
+                        flag = 65536UL;
+                        values = ref _r.AccessControlRequestHeaders;
+                        nameStr = HeaderNames.AccessControlRequestHeaders;
+                    }
+                }
+                break;
+
+            default:
+                break;
+        }
+        if (flag != 0UL)
+        {
+            var valueStr = value.GetRequestHeaderString(nameStr, checkForNewlineChars);
+            if ((_bits & flag) == 0)
+            {
+                _bits |= flag;
+                values = new StringValues(valueStr);
+            }
+            else
+            {
+                values = StringValues.Concat(values, valueStr);
+            }
+        }
+        else
+        {
+            nameStr = name.GetHeaderName();
+            var valueStr = value.GetRequestHeaderString(nameStr, checkForNewlineChars);
+            dict.TryGetValue(nameStr, out var existing);
+            dict[nameStr] = StringValues.Concat(existing, valueStr);
+        }
     }
 
     public partial struct Enumerator

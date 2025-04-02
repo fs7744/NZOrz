@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Primitives;
 using NZ.Orz.Http.Exceptions;
 using System.Buffers.Binary;
+using System.Buffers.Text;
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -208,48 +209,61 @@ public partial class HttpRequestHeaders : IHeaderDictionary
         return result;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    public void Append(ReadOnlySpan<byte> name, ReadOnlySpan<byte> value, bool checkForNewlineChars)
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private void AppendContentLength(ReadOnlySpan<byte> value)
     {
-        var nameStr = string.Empty;
-        ref byte nameStart = ref MemoryMarshal.GetReference(name);
-        ref StringValues values = ref Unsafe.NullRef<StringValues>();
-        var flag = 0UL;
-        switch (name.Length)
+        if (!Utf8Parser.TryParse(value, out long parsed, out var consumed) ||
+            parsed < 0 ||
+            consumed != value.Length)
         {
-            case 4:
-                var n = ReadUnalignedLittleEndian_uint(ref nameStart);
-                nameStart = Unsafe.AddByteOffset(ref nameStart, (IntPtr)2);
-                if (n == 1953722184U)
-                {
-                    flag = 1UL;
-                    values = ref _r.Host;
-                    nameStr = HeaderNames.Host;
-                }
-                break;
+            throw BadHttpRequestException.GetException(RequestRejectionReason.InvalidContentLength, value.GetRequestHeaderString(HeaderNames.ContentLength, checkForNewlineChars: false));
+        }
 
-            default:
-                break;
-        }
-        if (flag != 0UL)
-        {
-            var valueStr = value.GetRequestHeaderString(nameStr, checkForNewlineChars);
-            if ((_bits & flag) == 0)
-            {
-                _bits |= flag;
-                values = new StringValues(valueStr);
-            }
-            else
-            {
-                values = StringValues.Concat(values, valueStr);
-            }
-        }
-        else
-        {
-            nameStr = name.GetHeaderName();
-            var valueStr = value.GetRequestHeaderString(nameStr, checkForNewlineChars);
-            dict.TryGetValue(nameStr, out var existing);
-            dict[nameStr] = StringValues.Concat(existing, valueStr);
-        }
+        _contentLength = parsed;
     }
+
+    //[MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    //public void Append(ReadOnlySpan<byte> name, ReadOnlySpan<byte> value, bool checkForNewlineChars)
+    //{
+    //    var nameStr = string.Empty;
+    //    ref byte nameStart = ref MemoryMarshal.GetReference(name);
+    //    ref StringValues values = ref Unsafe.NullRef<StringValues>();
+    //    var flag = 0UL;
+    //    switch (name.Length)
+    //    {
+    //        case 4:
+    //            var n = ReadUnalignedLittleEndian_uint(ref nameStart);
+    //            nameStart = Unsafe.AddByteOffset(ref nameStart, (IntPtr)2);
+    //            if (n == 1953722184U)
+    //            {
+    //                flag = 1UL;
+    //                values = ref _r.Host;
+    //                nameStr = HeaderNames.Host;
+    //            }
+    //            break;
+
+    //        default:
+    //            break;
+    //    }
+    //    if (flag != 0UL)
+    //    {
+    //        var valueStr = value.GetRequestHeaderString(nameStr, checkForNewlineChars);
+    //        if ((_bits & flag) == 0)
+    //        {
+    //            _bits |= flag;
+    //            values = new StringValues(valueStr);
+    //        }
+    //        else
+    //        {
+    //            values = StringValues.Concat(values, valueStr);
+    //        }
+    //    }
+    //    else
+    //    {
+    //        nameStr = name.GetHeaderName();
+    //        var valueStr = value.GetRequestHeaderString(nameStr, checkForNewlineChars);
+    //        dict.TryGetValue(nameStr, out var existing);
+    //        dict[nameStr] = StringValues.Concat(existing, valueStr);
+    //    }
+    //}
 }
