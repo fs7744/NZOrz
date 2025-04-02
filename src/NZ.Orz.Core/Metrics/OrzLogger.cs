@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using NZ.Orz.Config;
+using NZ.Orz.Http.Exceptions;
 using System.Net;
 
 namespace NZ.Orz.Metrics;
@@ -10,6 +11,7 @@ public partial class OrzLogger : ILogger
     private readonly ILogger _connectionsLogger;
     private readonly ILogger _socketlogger;
     private readonly ILogger _proxylogger;
+    private readonly ILogger _httplogger;
 
     public OrzLogger(ILoggerFactory loggerFactory)
     {
@@ -17,6 +19,7 @@ public partial class OrzLogger : ILogger
         _connectionsLogger = loggerFactory.CreateLogger("NZ.Orz.Server.Connections");
         _socketlogger = loggerFactory.CreateLogger("NZ.Orz.Server.Transport.Sockets");
         _proxylogger = loggerFactory.CreateLogger("NZ.Orz.Server.ReverseProxy");
+        _httplogger = loggerFactory.CreateLogger("NZ.Orz.Server.Http");
     }
 
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
@@ -73,6 +76,31 @@ public partial class OrzLogger : ILogger
         GeneralLog.ConnectionStop(_connectionsLogger, connectionId);
     }
 
+    public void ApplicationError(string connectionId, string traceIdentifier, Exception ex)
+    {
+        GeneralLog.ApplicationError(_httplogger, connectionId, traceIdentifier, ex);
+    }
+
+    public void ConnectionBadRequest(string connectionId, BadHttpRequestException ex)
+    {
+        GeneralLog.ConnectionBadRequest(_httplogger, connectionId, ex.Message, ex);
+    }
+
+    public void RequestBodyDrainBodyReaderInvalidState(string connectionId, string traceIdentifier, Exception ex)
+    {
+        GeneralLog.RequestBodyDrainBodyReaderInvalidState(_httplogger, connectionId, traceIdentifier, ex);
+    }
+
+    public void RequestBodyNotEntirelyRead(string connectionId, string traceIdentifier)
+    {
+        GeneralLog.RequestBodyNotEntirelyRead(_httplogger, connectionId, traceIdentifier);
+    }
+
+    public void RequestBodyDrainTimedOut(string connectionId, string traceIdentifier)
+    {
+        GeneralLog.RequestBodyDrainTimedOut(_httplogger, connectionId, traceIdentifier);
+    }
+
     private static partial class GeneralLog
     {
         [LoggerMessage(0, LogLevel.Error, @"Unexpected exception {Msg}.", EventName = "UnexpectedException", SkipEnabledCheck = true)]
@@ -92,6 +120,21 @@ public partial class OrzLogger : ILogger
 
         [LoggerMessage(5, LogLevel.Debug, @"Connection id ""{ConnectionId}"" accepted.", EventName = "ConnectionAccepted")]
         public static partial void ConnectionAccepted(ILogger logger, string connectionId);
+
+        [LoggerMessage(31, LogLevel.Error, @"Connection id ""{ConnectionId}"", Request id ""{TraceIdentifier}"": An unhandled exception was thrown by the application.", EventName = "ApplicationError")]
+        public static partial void ApplicationError(ILogger logger, string connectionId, string traceIdentifier, Exception ex);
+
+        [LoggerMessage(32, LogLevel.Debug, @"Connection id ""{ConnectionId}"" bad request data: ""{message}""", EventName = "ConnectionBadRequest")]
+        public static partial void ConnectionBadRequest(ILogger logger, string connectionId, string message, BadHttpRequestException ex);
+
+        [LoggerMessage(33, LogLevel.Error, @"Connection id ""{ConnectionId}"", Request id ""{TraceIdentifier}"": automatic draining of the request body failed because the body reader is in an invalid state.", EventName = "RequestBodyDrainBodyReaderInvalidState")]
+        public static partial void RequestBodyDrainBodyReaderInvalidState(ILogger logger, string connectionId, string traceIdentifier, Exception ex);
+
+        [LoggerMessage(34, LogLevel.Information, @"Connection id ""{ConnectionId}"", Request id ""{TraceIdentifier}"": the application completed without reading the entire request body.", EventName = "RequestBodyNotEntirelyRead")]
+        public static partial void RequestBodyNotEntirelyRead(ILogger logger, string connectionId, string traceIdentifier);
+
+        [LoggerMessage(35, LogLevel.Information, @"Connection id ""{ConnectionId}"", Request id ""{TraceIdentifier}"": automatic draining of the request body timed out after taking over 5 seconds.", EventName = "RequestBodyDrainTimedOut")]
+        public static partial void RequestBodyDrainTimedOut(ILogger logger, string connectionId, string traceIdentifier);
     }
 
     #endregion ConnectionsLog

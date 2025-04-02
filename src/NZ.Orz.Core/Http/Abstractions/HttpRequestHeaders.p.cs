@@ -45,6 +45,8 @@ public partial class HttpRequestHeaders
         }
     }
 
+    public bool HasConnection => (_bits & 2UL) != 0;
+
     public long? ContentLength
     {
         get { return _contentLength; }
@@ -134,6 +136,8 @@ public partial class HttpRequestHeaders
             }
         }
     }
+
+    public bool HasCookie => (_bits & 64UL) != 0;
 
     public StringValues TraceParent
     {
@@ -728,6 +732,8 @@ public partial class HttpRequestHeaders
             }
         }
     }
+
+    public bool HasTransferEncoding => (_bits & 549755813888UL) != 0;
 
     public StringValues ProxyConnection
     {

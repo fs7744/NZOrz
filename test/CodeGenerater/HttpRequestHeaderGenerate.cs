@@ -581,6 +581,19 @@ public StringValues {k}
 }}
 ");
             }
+
+            if (k == nameof(HeaderNames.Connection))
+            {
+                sb.AppendLine(@$"public bool HasConnection => (_bits & {v}) != 0;");
+            }
+            else if (k == nameof(HeaderNames.Cookie))
+            {
+                sb.AppendLine(@$"public bool HasCookie => (_bits & {v}) != 0;");
+            }
+            else if (k == nameof(HeaderNames.TransferEncoding))
+            {
+                sb.AppendLine(@$"public bool HasTransferEncoding => (_bits & {v}) != 0;");
+            }
         }
         var r = sb.ToString();
         return r;

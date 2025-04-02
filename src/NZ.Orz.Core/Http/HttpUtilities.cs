@@ -11,6 +11,8 @@ namespace NZ.Orz.Http;
 
 public static class HttpUtilities
 {
+    public static readonly TimeSpan RequestBodyDrainTimeout = TimeSpan.FromSeconds(5);
+
     #region HttpCharacters
 
     // ALPHA and DIGIT https://tools.ietf.org/html/rfc5234#appendix-B.1

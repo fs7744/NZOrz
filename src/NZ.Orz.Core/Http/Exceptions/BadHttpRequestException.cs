@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace NZ.Orz.Http.Exceptions;
 
@@ -173,4 +174,7 @@ public class BadHttpRequestException : IOException
         }
         return ex;
     }
+
+    internal static BadHttpRequestException GetException(RequestRejectionReason reason, HttpMethod method)
+        => GetException(reason, method.ToString().ToUpperInvariant());
 }

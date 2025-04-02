@@ -1,18 +1,16 @@
-﻿using Microsoft.Extensions.Logging;
-using Microsoft.VisualBasic;
-using NZ.Orz.Buffers;
+﻿using NZ.Orz.Buffers;
 using NZ.Orz.Config;
 using NZ.Orz.Connections;
 using NZ.Orz.Connections.Exceptions;
 using NZ.Orz.Http.Exceptions;
+using NZ.Orz.Http.Http1;
 using NZ.Orz.Infrastructure;
 using NZ.Orz.Servers;
 using System.Buffers;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO.Pipelines;
-using System.Net.Http.Headers;
-using System.Reflection.Metadata;
+using System.Net;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -34,7 +32,6 @@ public class HttpConnection1 : HttpProtocol
     private const int MinTlsRequestSize = 1;
     private static ReadOnlySpan<byte> RequestLineDelimiters => [ByteLF, 0];
 
-    private readonly ServiceContext serviceContext;
     private ServerLimits limits;
     private long _remainingRequestHeadersBytesAllowed;
     private readonly bool _showErrorDetails;
@@ -49,18 +46,15 @@ public class HttpConnection1 : HttpProtocol
     private Uri? _parsedAbsoluteRequestTarget;
     private bool _http2PrefaceDetected;
 
-    public HttpConnection1(ConnectionContext connectionContext, ServiceContext serviceContext, TimeoutControl timeoutControl) : base(GatewayProtocols.HTTP1, connectionContext)
+    public HttpConnection1(ConnectionContext connectionContext, ServiceContext serviceContext, TimeoutControl timeoutControl) : base(GatewayProtocols.HTTP1, connectionContext, serviceContext, timeoutControl)
     {
         Input = connectionContext.Transport.Input;
-        this.serviceContext = serviceContext;
-        TimeoutControl = timeoutControl;
         this.limits = serviceContext.ServerOptions.Limits;
         _showErrorDetails = serviceContext.Log.IsEnabled(Microsoft.Extensions.Logging.LogLevel.Information);
         _disableHttp1LineFeedTerminators = serviceContext.ServerOptions.DisableHttp1LineFeedTerminators;
     }
 
     public PipeReader Input { get; }
-    public TimeoutControl TimeoutControl { get; }
 
     public bool RequestTimedOut => _requestTimedOut;
 
@@ -77,10 +71,10 @@ public class HttpConnection1 : HttpProtocol
         TimeoutControl.SetTimeout(limits.KeepAliveTimeout, TimeoutReason.KeepAlive);
     }
 
-    protected override MessageBody CreateMessageBody()
-    {
-        throw new NotImplementedException();
-    }
+    protected override string CreateRequestId()
+       => StringUtilities.ConcatAsHexSuffix(ConnectionId, ':', _requestCount);
+
+    protected override MessageBody CreateMessageBody() => Http1MessageBody.For(Version, RequestHeaders, this);
 
     protected override void OnReset()
     {
@@ -658,6 +652,51 @@ public class HttpConnection1 : HttpProtocol
 
     public void OnHeadersComplete()
     {
+    }
+
+    public static ConnectionEndReason GetConnectionEndReason(BadHttpRequestException ex)
+    {
+        switch (ex?.Reason)
+        {
+            case RequestRejectionReason.UnrecognizedHTTPVersion:
+                return ConnectionEndReason.InvalidHttpVersion;
+
+            case RequestRejectionReason.InvalidRequestLine:
+            case RequestRejectionReason.RequestLineTooLong:
+            case RequestRejectionReason.InvalidRequestTarget:
+                return ConnectionEndReason.InvalidRequestLine;
+
+            case RequestRejectionReason.InvalidRequestHeadersNoCRLF:
+            case RequestRejectionReason.InvalidRequestHeader:
+            case RequestRejectionReason.InvalidContentLength:
+            case RequestRejectionReason.MultipleContentLengths:
+            case RequestRejectionReason.MalformedRequestInvalidHeaders:
+            case RequestRejectionReason.InvalidCharactersInHeaderName:
+            case RequestRejectionReason.LengthRequiredHttp10:
+            case RequestRejectionReason.OptionsMethodRequired:
+            case RequestRejectionReason.ConnectMethodRequired:
+            case RequestRejectionReason.MissingHostHeader:
+            case RequestRejectionReason.MultipleHostHeaders:
+            case RequestRejectionReason.InvalidHostHeader:
+                return ConnectionEndReason.InvalidRequestHeaders;
+
+            case RequestRejectionReason.HeadersExceedMaxTotalSize:
+                return ConnectionEndReason.MaxRequestHeadersTotalSizeExceeded;
+
+            case RequestRejectionReason.TooManyHeaders:
+                return ConnectionEndReason.MaxRequestHeaderCountExceeded;
+
+            case RequestRejectionReason.TlsOverHttpError:
+                return ConnectionEndReason.TlsNotSupported;
+
+            case RequestRejectionReason.UnexpectedEndOfRequestContent:
+                return ConnectionEndReason.UnexpectedEndOfRequestContent;
+
+            default:
+                // In some scenarios the end reason might already be set to a more specific error
+                // and attempting to set the reason again has no impact.
+                return ConnectionEndReason.OtherError;
+        }
     }
 
     #region HttpParser
