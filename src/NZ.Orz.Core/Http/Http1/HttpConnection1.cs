@@ -195,7 +195,7 @@ public class HttpConnection1 : HttpProtocol
                     break;
                 }
             case RequestProcessingStatus.ParsingHeaders:
-                if (TakeMessageHeaders(ref reader, trailers: false))
+                if (TakeMessageHeaders(ref reader))
                 {
                     _requestProcessingStatus = RequestProcessingStatus.AppStarted;
                     // Consumed preamble
@@ -235,20 +235,20 @@ public class HttpConnection1 : HttpProtocol
         }
     }
 
-    public bool TakeMessageHeaders(ref SequenceReader<byte> reader, bool trailers)
+    public bool TakeMessageHeaders(ref SequenceReader<byte> reader)
     {
         // Make sure the buffer is limited
         if (reader.Remaining > _remainingRequestHeadersBytesAllowed)
         {
             // Input oversize, cap amount checked
-            return TrimAndTakeMessageHeaders(ref reader, trailers);
+            return TrimAndTakeMessageHeaders(ref reader);
         }
 
         var alreadyConsumed = reader.Consumed;
 
         try
         {
-            var result = ParseHeaders(trailers, ref reader);
+            var result = ParseHeaders(ref reader);
             if (result)
             {
                 TimeoutControl.CancelTimeout();
@@ -261,13 +261,13 @@ public class HttpConnection1 : HttpProtocol
             _remainingRequestHeadersBytesAllowed -= reader.Consumed - alreadyConsumed;
         }
 
-        bool TrimAndTakeMessageHeaders(ref SequenceReader<byte> reader, bool trailers)
+        bool TrimAndTakeMessageHeaders(ref SequenceReader<byte> reader)
         {
             var trimmedBuffer = reader.Sequence.Slice(reader.Position, _remainingRequestHeadersBytesAllowed);
             var trimmedReader = new SequenceReader<byte>(trimmedBuffer);
             try
             {
-                if (!ParseHeaders(trailers, ref trimmedReader))
+                if (!ParseHeaders(ref trimmedReader))
                 {
                     // We read the maximum allowed but didn't complete the headers.
                     throw BadHttpRequestException.GetException(RequestRejectionReason.HeadersExceedMaxTotalSize);
@@ -622,28 +622,14 @@ public class HttpConnection1 : HttpProtocol
                 ? target.GetAsciiStringEscaped(MaxExceptionDetailSize)
                 : string.Empty);
 
-    public void OnHeader(bool trailers, ReadOnlySpan<byte> name, ReadOnlySpan<byte> value)
+    public void OnHeader(ReadOnlySpan<byte> name, ReadOnlySpan<byte> value)
     {
-        if (trailers)
-        {
-            OnTrailer(name, value);
-        }
-        else
-        {
-            OnHeader(name, value, checkForNewlineChars: false);
-        }
+        OnHeader(name, value, checkForNewlineChars: false);
     }
 
-    public void OnHeadersComplete(bool trailers, bool endStream)
+    public void OnHeadersComplete(bool endStream)
     {
-        if (trailers)
-        {
-            OnTrailersComplete();
-        }
-        else
-        {
-            OnHeadersComplete();
-        }
+        OnHeadersComplete();
     }
 
     public virtual void OnHeader(ReadOnlySpan<byte> name, ReadOnlySpan<byte> value, bool checkForNewlineChars)
@@ -661,15 +647,6 @@ public class HttpConnection1 : HttpProtocol
         // called to validate the header count.
     }
 
-    public void OnTrailer(ReadOnlySpan<byte> name, ReadOnlySpan<byte> value)
-    {
-        IncrementRequestHeadersCount();
-        //todo
-        //string key = name.GetHeaderName();
-        //var valueStr = value.GetRequestHeaderString(key, HttpRequestHeaders.EncodingSelector, checkForNewlineChars: false);
-        //RequestTrailers.Append(key, valueStr);
-    }
-
     private void IncrementRequestHeadersCount()
     {
         _requestHeadersParsed++;
@@ -681,13 +658,6 @@ public class HttpConnection1 : HttpProtocol
 
     public void OnHeadersComplete()
     {
-        //todo
-        //HttpRequestHeaders.OnHeadersComplete();
-    }
-
-    public void OnTrailersComplete()
-    {
-        RequestTrailersAvailable = true;
     }
 
     #region HttpParser
@@ -864,7 +834,7 @@ public class HttpConnection1 : HttpProtocol
                 ? headerLine.GetAsciiStringEscaped(MaxExceptionDetailSize)
                 : string.Empty);
 
-    private bool ParseHeaders(bool trailers, ref SequenceReader<byte> reader)
+    private bool ParseHeaders(ref SequenceReader<byte> reader)
     {
         while (!reader.End)
         {
@@ -873,7 +843,7 @@ public class HttpConnection1 : HttpProtocol
             if (span.Length >= 2 && span[0] == ByteCR && span[1] == ByteLF)
             {
                 reader.Advance(2);
-                OnHeadersComplete(trailers, endStream: false);
+                OnHeadersComplete(endStream: false);
                 return true;
             }
             var foundCrlf = false;
@@ -931,7 +901,7 @@ public class HttpConnection1 : HttpProtocol
                         // Empty line?
                         if (crIndex == 0)
                         {
-                            OnHeadersComplete(trailers, endStream: false);
+                            OnHeadersComplete(endStream: false);
                             return true;
                         }
                     }
@@ -951,7 +921,7 @@ public class HttpConnection1 : HttpProtocol
                     span = span.Slice(0, lfIndex);
                     if (span.Length == 0)
                     {
-                        OnHeadersComplete(trailers, endStream: false);
+                        OnHeadersComplete(endStream: false);
                         return true;
                     }
                 }
@@ -959,7 +929,7 @@ public class HttpConnection1 : HttpProtocol
             else
             {
                 // No CR or LF. Is this a multi-span header?
-                int length = ParseMultiSpanHeader(trailers, ref reader);
+                int length = ParseMultiSpanHeader(ref reader);
                 if (length < 0)
                 {
                     // Not multi-line, just bad.
@@ -973,7 +943,7 @@ public class HttpConnection1 : HttpProtocol
             }
 
             // We got to a point where we believe we have a header.
-            if (!TryTakeSingleHeader(trailers, span))
+            if (!TryTakeSingleHeader(span))
             {
                 // Sequence needs to be CRLF and not contain an inner CR not part of terminator.
                 // Not parsable as a valid name:value header pair.
@@ -1001,7 +971,7 @@ public class HttpConnection1 : HttpProtocol
 
     // Parse a header that might cross multiple spans, and return the length of the header
     // or -1 if there was a failure during parsing.
-    private int ParseMultiSpanHeader(bool trailers, ref SequenceReader<byte> reader)
+    private int ParseMultiSpanHeader(ref SequenceReader<byte> reader)
     {
         var currentSlice = reader.UnreadSequence;
 
@@ -1113,7 +1083,7 @@ public class HttpConnection1 : HttpProtocol
         }
 
         // Last chance to bail if the terminator size is not valid or the header doesn't parse.
-        if (terminatorSize == -1 || !TryTakeSingleHeader(trailers, headerSpan.Slice(0, headerSpan.Length - terminatorSize)))
+        if (terminatorSize == -1 || !TryTakeSingleHeader(headerSpan.Slice(0, headerSpan.Length - terminatorSize)))
         {
             RejectRequestHeader(headerSpan);
         }
@@ -1126,7 +1096,7 @@ public class HttpConnection1 : HttpProtocol
         return headerLength;
     }
 
-    private bool TryTakeSingleHeader(bool trailers, ReadOnlySpan<byte> headerLine)
+    private bool TryTakeSingleHeader(ReadOnlySpan<byte> headerLine)
     {
         // We are looking for a colon to terminate the header name.
         // However, the header name cannot contain a space or tab so look for all three
@@ -1214,7 +1184,7 @@ public class HttpConnection1 : HttpProtocol
 
         // Range end is exclusive, so add 1 to valueEnd
         valueEnd++;
-        OnHeader(trailers, name: headerLine.Slice(0, nameEnd), value: headerLine[valueStart..valueEnd]);
+        OnHeader(name: headerLine.Slice(0, nameEnd), value: headerLine[valueStart..valueEnd]);
 
         return true;
     }

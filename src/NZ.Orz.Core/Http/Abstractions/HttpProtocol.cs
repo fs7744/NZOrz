@@ -38,9 +38,6 @@ public abstract class HttpProtocol : HttpConnectionContext, IRequestProcessor
 
     public HttpRequestHeaders RequestHeaders { get; set; } = new HttpRequestHeaders();
 
-    //public IHeaderDictionary RequestTrailers { get; } = new HeaderDictionary();
-    public bool RequestTrailersAvailable { get; set; }
-
     public Stream RequestBody { get; set; } = default!;
 
     protected HttpProtocol(GatewayProtocols protocols, BaseConnectionContext connectionContext) : base(protocols, connectionContext)
