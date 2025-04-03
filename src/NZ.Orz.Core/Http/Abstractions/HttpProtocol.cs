@@ -12,7 +12,7 @@ using System.Net;
 
 namespace NZ.Orz.Http;
 
-public abstract class HttpProtocol : HttpConnectionContext, IRequestProcessor
+public abstract partial class HttpProtocol : HttpConnectionContext, IRequestProcessor
 {
     public const int MaxExceptionDetailSize = 128;
     protected volatile bool _keepAlive = true;
@@ -730,15 +730,14 @@ public abstract class HttpProtocol : HttpConnectionContext, IRequestProcessor
 
     public void InitializeBodyControl(MessageBody messageBody)
     {
-        //todo
-        //if (_bodyControl == null)
-        //{
-        //    _bodyControl = new BodyControl(bodyControl: this, this);
-        //}
+        if (_bodyControl == null)
+        {
+            _bodyControl = new BodyControl(this);
+        }
 
-        //(RequestBody, ResponseBody, RequestBodyPipeReader, ResponseBodyPipeWriter) = _bodyControl.Start(messageBody);
-        //_requestStreamInternal = RequestBody;
-        //_responseStreamInternal = ResponseBody;
+        (RequestBody, ResponseBody, RequestBodyPipeReader, ResponseBodyPipeWriter) = _bodyControl.Start(messageBody);
+        _requestStreamInternal = RequestBody;
+        _responseStreamInternal = ResponseBody;
     }
 
     private void SetErrorResponseHeaders(int statusCode)

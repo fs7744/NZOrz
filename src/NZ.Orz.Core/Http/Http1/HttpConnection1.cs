@@ -52,6 +52,22 @@ public class HttpConnection1 : HttpProtocol
         this.limits = serviceContext.ServerOptions.Limits;
         _showErrorDetails = serviceContext.Log.IsEnabled(Microsoft.Extensions.Logging.LogLevel.Information);
         _disableHttp1LineFeedTerminators = serviceContext.ServerOptions.DisableHttp1LineFeedTerminators;
+        Initialize(this);
+
+        //todo
+        //_http1Output = new Http1OutputProducer(
+        //    _context.Transport.Output,
+        //    _context.ConnectionId,
+        //    _context.ConnectionContext,
+        //    _context.MemoryPool,
+        //    _context.ServiceContext.Log,
+        //    _context.TimeoutControl,
+        //    minResponseDataRateFeature: this,
+        //    MetricsContext,
+        //    outputAborter: this);
+
+        //Output = _http1Output;
+        //MemoryPool = _context.MemoryPool;
     }
 
     public PipeReader Input { get; }
